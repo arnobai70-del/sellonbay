@@ -23,7 +23,7 @@ const flow = async () => {
     sellerId: `ev-s${k}`,
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   await deliver(o.id, `ev-s${k}`);
   return o;
 };

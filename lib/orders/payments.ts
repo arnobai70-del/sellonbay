@@ -1,5 +1,6 @@
 import 'server-only';
 import { domainProvider } from '../providers/domain';
+import { canUseDemoPayment } from '../commerce/demoPaymentPolicy';
 import type { VerifiedEvent } from '../providers/payment/types';
 import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
@@ -29,12 +30,8 @@ async function claim(provider: string, ev: VerifiedEvent): Promise<boolean> {
   const { error } = await createAdminClient().from('webhook_events').insert({ provider, event_id: ev.id, type: ev.type });
   if (!error) return true;
   if (error.code === '23505') return false; // already claimed
-  if (/relation .* does not exist|schema cache/i.test(error.message)) {
-    // migration 0016 not applied yet: fall back to memory so the flow still works
-    if (memClaims.has(key)) return false;
-    memClaims.add(key);
-    return true;
-  }
+  // A configured database must persist webhook IDs. A memory fallback would
+  // allow event replays across restarts or instances and is unsafe for money.
   throw new Error('Could not record the event: ' + error.message);
 }
 async function release(provider: string, ev: VerifiedEvent) {
@@ -42,9 +39,12 @@ async function release(provider: string, ev: VerifiedEvent) {
   if (supabaseConfigured) await createAdminClient().from('webhook_events').delete().eq('provider', provider).eq('event_id', ev.id);
 }
 
-async function apply(ev: VerifiedEvent): Promise<Outcome> {
+async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   const order = await getOrder(ev.orderId);
   if (!order) return { status: 'rejected', reason: 'unknown order' };
+  // Defense in depth: no fake event, including a signed webhook or extra-work
+  // event, can change a real seller or developer order's financial state.
+  if (provider === 'fake' && !canUseDemoPayment(order)) return { status: 'rejected', reason: 'test gateway cannot modify a real order' };
 
   if (ev.type === 'payment.succeeded' && ev.changeRequestId) {
     const r = await fundExtra(ev.changeRequestId, ev.amountCents, ev.ref);
@@ -104,7 +104,7 @@ async function apply(ev: VerifiedEvent): Promise<Outcome> {
 export async function handlePaymentEvent(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   if (!(await claim(provider, ev))) return { status: 'duplicate' };
   try {
-    const out = await apply(ev);
+    const out = await apply(provider, ev);
     if (out.status === 'rejected') await release(provider, ev); // a rejected event may be retried after the cause is fixed
     return out;
   } catch (e) {

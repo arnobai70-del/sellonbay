@@ -13,7 +13,7 @@ const funded = async () => {
   const buyer = `nb-${k}`,
     seller = `ns-${k}`;
   const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Saffron Table', lines: [['Site', 10_000]], days: 1, buyerId: buyer, sellerId: seller, demo: false });
-  await handlePaymentEvent('fake', { id: 'evt_n' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_n' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return { o: (await getOrder(o.id))!, buyer, seller };
 };
 

@@ -23,7 +23,7 @@ const order = async (fund = true) => {
     productKey: 'saffron-table',
     demo: false,
   });
-  if (fund) await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  if (fund) await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return { o: (await getOrder(o.id))!, buyer: `ch-b${k}`, seller: `ch-s${k}` };
 };
 const ip = () => `7.7.${n}.1`;

@@ -39,7 +39,7 @@ let n = 0;
 /* An order of $100 (seller earns $85) that was accepted. */
 const accepted = async (sellerId: string) => {
   const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 10_000]], days: 1, buyerId: `pb-${++n}`, sellerId, demo: false });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   await deliver(o.id, sellerId);
   await accept(o.id, o.buyerId);
   return o;
@@ -71,7 +71,7 @@ describe('the weekly payout batch', () => {
     const s = `pay-seller-${Date.now()}-d`;
     registerSellerPayout(s, 'Dev Patel', 'payoneer', 'dev@example.com');
     const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 10_000]], days: 1, buyerId: `pb-${++n}`, sellerId: s, demo: false });
-    await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+    await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
     await deliver(o.id, s);
     await accept(o.id, o.buyerId);
     const d = await openDispute(o.id, o.buyerId, { reason: 'not_working', detail: 'It stopped working on the second day, the form gives an error.' });

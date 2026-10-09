@@ -25,7 +25,7 @@ const order = async (to: 'delivered' | 'accepted', buyerId: string | null = null
     productKey: 'saffron-table',
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   await deliver(o.id, sellerId);
   if (to === 'accepted') await accept(o.id, buyerId);
   return (await getOrder(o.id))!;

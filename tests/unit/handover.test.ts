@@ -65,7 +65,7 @@ const repoOrder = (over: object = {}) =>
     ...over,
   });
 const fundIt = (o: { id: string; priceCents: number }) =>
-  handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'pay_x', at: Date.now() });
+  handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'pay_x', at: Date.now() });
 
 describe('repo_access: invite, confirm, then review', () => {
   it('the review window does not start until the buyer confirms access', async () => {

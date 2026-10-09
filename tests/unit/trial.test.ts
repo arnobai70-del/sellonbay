@@ -47,7 +47,7 @@ const finishedTrial = async (buyerId: string, devKey: string, priceCents = 3_500
     devKey,
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: `evt_t${++n}`, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: `evt_t${++n}`, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   await deliver(o.id, null);
   await accept(o.id, buyerId);
   return (await getOrder(o.id))!;
@@ -80,7 +80,7 @@ describe('trial credit toward a full job', () => {
       devKey: 'dev-c',
       demo: false,
     });
-    await handlePaymentEvent('fake', { id: `evt_t${++n}`, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+    await handlePaymentEvent('verified-test-psp', { id: `evt_t${++n}`, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
     expect(await findTrialCredit('buyer-3', 'dev-c', 20_000)).toBeNull();
     await deliver(o.id, null);
     expect(await findTrialCredit('buyer-3', 'dev-c', 20_000)).toBeNull();

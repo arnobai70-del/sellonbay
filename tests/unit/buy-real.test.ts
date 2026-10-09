@@ -21,7 +21,7 @@ const make = async (over: Partial<Parameters<typeof createOrder>[0]> = {}) => {
     demo: false,
     ...over,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return o;
 };
 

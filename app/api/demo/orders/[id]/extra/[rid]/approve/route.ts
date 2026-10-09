@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { orderFor } from '@/lib/commerce/access';
+import { canUseDemoPayment } from '@/lib/commerce/demoPaymentPolicy';
 import { getExtra } from '@/lib/orders/extra';
 import { handlePaymentEvent } from '@/lib/orders/payments';
 import { fakePayments } from '@/lib/providers/payment';
@@ -11,6 +12,7 @@ export const runtime = 'nodejs';
 export async function POST(_r: Request, { params }: { params: Promise<{ id: string; rid: string }> }) {
   const o = await orderFor(await idOf(params));
   if (!o) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+  if (!canUseDemoPayment(o)) return NextResponse.json({ error: 'Extra-work payments require a connected real payment provider.' }, { status: 403 });
   const rid = idParam.safeParse((await params).rid);
   const c = rid.success ? await getExtra(rid.data) : null;
   if (!c || c.orderId !== o.id) return NextResponse.json({ error: 'Request not found.' }, { status: 404 });

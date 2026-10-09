@@ -1,7 +1,7 @@
 import 'server-only';
 import { emailProvider } from './providers/email';
 import { paymentProvider } from './providers/payment';
-import { registrarLive } from './domains';
+import { domainProvider } from './providers/domain';
 import { getSettings } from './settings';
 import { supabaseConfigured } from './supabase/env';
 
@@ -25,14 +25,13 @@ export async function launchChecks(): Promise<Check[]> {
     c('Abuse hashing salt', set('GUARD_SALT', 32), 'GUARD_SALT: a random value of 32 or more characters. Set it once; changing it later forgets blocks.'),
     c('Bot check (Turnstile)', set('TURNSTILE_SECRET_KEY') && set('NEXT_PUBLIC_TURNSTILE_SITE_KEY'), 'Real Cloudflare Turnstile keys. Without them the test keys let every bot through.'),
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
-    c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.', 'warn'),
+    c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
     c('Email', emailProvider().name !== 'fake', 'No email provider is connected: nothing is emailed yet (notifications still show on the site).', 'warn'),
-    c('Domain registrar', registrarLive(), 'No registrar: domain search shows made-up availability and nothing is registered.', 'warn'),
+    c('Domain registrar', domainProvider().name !== 'Demo registrar', 'No registrar: domain search shows made-up availability and nothing is registered.', 'warn'),
     c(
       'Virus scan',
-      process.env.SCAN_REQUIRE_REAL === '1',
-      'Only basic local checks run. Open every digital product in a sandbox before approving it, until ClamAV or VirusTotal is connected.',
-      'warn',
+      false, // No real scanner is wired to defaultDeps yet; an env flag is not proof of protection.
+      'Only basic local checks run. Install and verify a real scanner, then require it for every submitted file.',
     ),
     c('Example listings', !s.showExamples, s.showExamples ? 'Shown, marked Example and not for sale. Hide them in Settings when real sellers have listed enough.' : 'Hidden.', 'warn'),
   ];

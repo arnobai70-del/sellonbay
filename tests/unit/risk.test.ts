@@ -28,7 +28,7 @@ const make = async (o: { buyer: string; cents: number; demo?: boolean; fund?: bo
     productKey: `risk-site-${n}`,
     demo: o.demo ?? false,
   });
-  if (o.fund !== false) await handlePaymentEvent('fake', { id: `evt_${order.id}`, type: 'payment.succeeded', orderId: order.id, amountCents: order.priceCents, ref: 'p', at: Date.now() });
+  if (o.fund !== false) await handlePaymentEvent('verified-test-psp', { id: `evt_${order.id}`, type: 'payment.succeeded', orderId: order.id, amountCents: order.priceCents, ref: 'p', at: Date.now() });
   return order;
 };
 
@@ -47,7 +47,7 @@ describe('daily counters', () => {
   it('the real actions bump their counter: an order, a failed payment and an abuse report', async () => {
     const before = (await series(1))[0].values;
     await make({ buyer: uid(), cents: 5000, fund: false });
-    await handlePaymentEvent('fake', {
+    await handlePaymentEvent('verified-test-psp', {
       id: `evt_fail_${Date.now()}_${n}`,
       type: 'payment.failed',
       orderId: (await make({ buyer: uid(), cents: 5000, fund: false })).id,

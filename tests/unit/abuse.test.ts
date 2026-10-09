@@ -12,7 +12,7 @@ const report = (url: string, ip: string, userId: string | null = null, now = Dat
 /* A buyer who really paid for this listing: the only kind of signed-in reporter that counts in a demo (no email verification exists there). */
 const buyerOf = async (productKey: string, buyerId: string) => {
   const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'S', lines: [['S', 5000]], days: 1, buyerId, sellerId: 'abuse-seller', productKey, demo: false });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return buyerId;
 };
 
