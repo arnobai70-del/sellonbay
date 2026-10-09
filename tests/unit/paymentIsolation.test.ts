@@ -25,7 +25,7 @@ describe('server fake gateway financial isolation', () => {
   });
 
   it('never credits seller ledger or unlocks a real seller purchase', async () => {
-    const o = await make({ sellerId: 'real-seller', productId: null, demo: false });
+    const o = await make({ sellerId: 'real-seller', demo: false });
     const result = await pay(o);
     expect(result).toEqual({ status: 'rejected', reason: 'test gateway cannot modify a real order' });
     expect((await getOrder(o.id))?.state).toBe('awaiting_payment');
