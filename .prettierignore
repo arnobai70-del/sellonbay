@@ -1,0 +1,9 @@
+.next
+node_modules
+prototype
+public
+supabase
+docs
+package-lock.json
+*.pdf
+*.css
