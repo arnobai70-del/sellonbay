@@ -157,7 +157,7 @@ describe('approval gate', () => {
     expect(approvalBlock(scan('infected', 'clamav'), true, false)).toMatch(/malware/);
   });
   it('with the real-scanner switch on, files need a non-local scan', () => {
-    expect(approvalBlock(null, true, true)).toMatch(/real scanner/);
+    expect(approvalBlock(null, true, true)).toMatch(/complete readable/);
     expect(approvalBlock(scan('clean', 'local'), true, true)).toMatch(/real scanner/);
     expect(approvalBlock(scan('clean', 'clamav'), true, true)).toBeNull();
   });
