@@ -2,33 +2,35 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DomainSearch } from '@/components/DomainSearch';
 import { ALL_TLDS, cleanName } from '@/lib/domains';
+import { domainProvider, isLiveRegistrar } from '@/lib/providers/domain';
 
-export const metadata: Metadata = { title: 'Find a domain', description: 'Search a domain name, see the yearly price, and pick a site for it. Registered in your name, transferable any time.' };
+export const metadata: Metadata = { title: 'Domain name ideas', description: 'Explore domain name ideas. Live registrar availability, registration and purchase are not yet connected.' };
 
 const GET: [string, string][] = [
-  ['Registered in your name', 'You are the owner on record. We never hold your domain.'],
-  ['Prices up front', 'The yearly price is on the result. Renewals cost the same.'],
-  ['Privacy where allowed', 'Your contact details are hidden from the public lookup when the ending allows it.'],
-  ['Yours to take away', 'Transfer it to any other provider whenever you like.'],
+  ['Domain registration', 'This feature is not yet live. Bring your own domain for now.'],
+  ['Example prices', 'Displayed ending prices are illustrative only, not live registrar quotes.'],
+  ['Privacy', 'Domain contact privacy depends on a real registrar and the chosen ending.'],
+  ['Ownership', 'Registration and transfer terms will be confirmed when a registrar is connected.'],
 ];
 const STEPS: [string, string][] = [
-  ['Pick the name', 'Search, choose an ending, and pay once at checkout together with your site.'],
-  ['We register it', 'Right after payment, in your name. You get the details in your order.'],
-  ['It goes live', 'The seller connects it to your site, and HTTPS is switched on when it launches.'],
+  ['Explore a name', 'Preview ideas here; example results do not verify availability.'],
+  ['Bring your own domain', 'Choose a website and enter a domain you already control.'],
+  ['Connect the website', 'The seller can help configure your domain according to the selected service.'],
 ];
 const QA: [string, string][] = [
-  ['Who owns the domain?', 'You do. It is registered in your name from the first day, and you can move it to another provider at any time.'],
+  ['Can I buy a new domain here?', 'Not yet. Live registrar checks and registrations are not connected. You can use a domain you already own.'],
   ['Can I use a domain I already own?', 'Yes. Choose "I have a domain" at checkout, or use the box below. The seller connects it for you, and you only change two settings at your provider.'],
-  ['What if the name is taken?', 'Try a different ending or one of the idea chips. If a name is gone before you pay, nothing is charged.'],
-  ['When do I pay for the domain?', 'At checkout, in the same payment as your site. The yearly price is shown first.'],
-  ['What happens next year?', 'You renew at the same price shown today. We remind you before it expires.'],
+  ['Are these names available?', 'Example results are simulated. Availability must be checked with a real registrar before you decide to buy.'],
+  ['When do I pay for a domain?', 'New domain purchase is not available at SellOnBay until a real registrar is connected.'],
+  ['What happens at renewal?', 'The renewal price and schedule depend on the provider you use. The prices shown here are examples.'],
 ];
 
 export default async function Domains({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
+  const registrarConnected = isLiveRegistrar(domainProvider());
   return (
     <div className="dm-page">
-      <DomainSearch initial={cleanName(q ?? '')} />
+      <DomainSearch initial={cleanName(q ?? '')} registrarConnected={registrarConnected} />
 
       <section className="dm-sec">
         <div className="wrap">
@@ -75,7 +77,7 @@ export default async function Domains({ searchParams }: { searchParams: Promise<
             </form>
           </div>
           <div>
-            <h2>Prices per year</h2>
+            <h2>Illustrative yearly prices — not live quotes</h2>
             <ul className="dm-prices">
               {ALL_TLDS.map(([t, p]) => (
                 <li key={t}>

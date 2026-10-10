@@ -1,5 +1,5 @@
 import 'server-only';
-import { domainProvider } from '../providers/domain';
+import { domainProvider, mayOfferNewDomain } from '../providers/domain';
 import { canUseDemoPayment } from '../commerce/demoPaymentPolicy';
 import type { VerifiedEvent } from '../providers/payment/types';
 import { supabaseConfigured } from '../supabase/env';
@@ -57,6 +57,11 @@ async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
     if (order.state !== 'awaiting_payment') return { status: 'ignored', reason: `order is ${order.state}` };
     if (ev.amountCents !== order.priceCents) return { status: 'rejected', reason: 'amount does not match the order' };
     let domain = order.domain;
+    // Never fund a new-domain purchase with an unverified registrar, even if
+    // an old demo order already has a fabricated registration reference.
+    if (domain?.source === 'new' && !mayOfferNewDomain(domainProvider())) {
+      return { status: 'rejected', reason: 'No real registrar is connected. Domain registration is unavailable.' };
+    }
     if (domain?.source === 'new' && !domain.ref) {
       const reg = await domainProvider().register({ domain: domain.name });
       domain = { ...domain, ref: reg.ref, expires: reg.expires };

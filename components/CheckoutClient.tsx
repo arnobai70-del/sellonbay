@@ -16,7 +16,7 @@ const PKG_LABEL: Record<'web' | 'app', Record<Pkg, string>> = {
   app: { asis: '', setup: ' rebranded and built', custom: ' with customisation' },
 };
 
-export function CheckoutClient({ p, pkg: asked, domain }: { p: Product; pkg: Pkg; domain?: string }) {
+export function CheckoutClient({ p, pkg: asked, domain, newDomainsEnabled = false }: { p: Product; pkg: Pkg; domain?: string; newDomainsEnabled?: boolean }) {
   const pkg: Pkg = pkgOffered(p, asked) ? asked : 'asis'; // a package the seller does not offer falls back to as is
   const pl = platformOf(p);
   const app = pl !== 'web';
@@ -243,10 +243,11 @@ export function CheckoutClient({ p, pkg: asked, domain }: { p: Product; pkg: Pkg
                     <button type="button" aria-pressed={mode === 'own'} onClick={() => setMode('own')}>
                       I have a domain
                     </button>
-                    <button type="button" aria-pressed={mode === 'new'} onClick={() => setMode('new')}>
+                    <button type="button" aria-pressed={mode === 'new'} disabled={!newDomainsEnabled} onClick={() => setMode('new')}>
                       I need a domain
                     </button>
                   </div>
+                  {!newDomainsEnabled && <p className="muted" role="status" style={{ marginTop: 10 }}>New domain purchases are not available yet. Please use a domain you already own.</p>}
                   {mode === 'own' ? (
                     <div>
                       <div className="field">
