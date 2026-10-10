@@ -24,3 +24,12 @@ This repository contains a simulated card payment provider, not a real marketpla
 No database migration, live hosting configuration or real-money integration is changed by this security patch.
 
 - Production Turnstile verification fails closed when only public Cloudflare test keys or missing keys are configured, except when explicitly running the demo prototype with `LAUNCHBAY_DEMO=1`.
+
+## P0 antivirus integration (ClamAV)
+
+- Set `CLAMAV_HOST` and `CLAMAV_PORT` to a reachable **internal-only** ClamAV clamd service, with updated signatures. The TCP port is unauthenticated and must never be public.
+- Seller files are transferred to clamd using its binary INSTREAM protocol, with a 50 MiB scan limit and timeout. Empty, oversized, suspicious, infected, unreadable or scanner-unavailable results block approval.
+- In real production, the server requires a real ClamAV-clean result **even if** `SCAN_REQUIRE_REAL` is omitted or set to `0`. `LAUNCHBAY_DEMO=1` is only for the demo prototype.
+- Listing and version approvals re-scan the submitted file before release, and attempt to record the scan in the database. If required scan records cannot be saved, the approval fails closed.
+- The admin launch checklist calls clamd `PING` and reports failure while it is unreachable. A successful PING is **not** full certification: perform real clean/EICAR, large-file, certificate and staging handover tests before production launch.
+- Malware scanning does not replace admin sandbox inspection, suspicious-license review, manual release checks or independent trust review of download links.

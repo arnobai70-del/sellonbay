@@ -145,13 +145,13 @@ describe('the listing scan', () => {
 });
 
 describe('approval gate', () => {
-  const scan = (status: 'clean' | 'infected', scanner: string) =>
+  const scan = (status: 'clean' | 'infected' | 'unknown' | 'suspicious', scanner: string) =>
     ({
       slug: 's',
       version: 1,
       originality: 1,
       at: 0,
-      flags: { malware: { status, detail: [] }, secrets: [], licenceFile: null, duplicate: null, demoReachable: null, scanner },
+      flags: { malware: { status, detail: [] }, secrets: [], licenceFile: null, duplicate: null, demoReachable: null, scanner, fileSha256: 'a'.repeat(64) },
     }) as unknown as ScanResult;
   it('known malware always blocks', () => {
     expect(approvalBlock(scan('infected', 'clamav'), true, false)).toMatch(/malware/);
@@ -160,6 +160,20 @@ describe('approval gate', () => {
     expect(approvalBlock(null, true, true)).toMatch(/real scanner/);
     expect(approvalBlock(scan('clean', 'local'), true, true)).toMatch(/real scanner/);
     expect(approvalBlock(scan('clean', 'clamav'), true, true)).toBeNull();
+  });
+  it('missing, unscannable, suspicious, or corrupted files cannot pass a scan gate', () => {
+    expect(approvalBlock(null, true, false)).toMatch(/complete readable/);
+    expect(approvalBlock(scan('unknown', 'clamav'), true, true)).toMatch(/complete readable/);
+    expect(approvalBlock(scan('suspicious', 'clamav'), true, false)).toMatch(/suspicious/);
+    const missingHash = scan('clean', 'clamav');
+    delete missingHash.flags.fileSha256;
+    expect(approvalBlock(missingHash, true, true)).toMatch(/complete readable/);
+  });
+  it('production always requires real scanning, even when SCAN_REQUIRE_REAL=0', async () => {
+    const { requireRealMalwareScanner } = await import('@/lib/scan');
+    expect(requireRealMalwareScanner({ NODE_ENV: 'production', SCAN_REQUIRE_REAL: '0' })).toBe(true);
+    expect(requireRealMalwareScanner({ NODE_ENV: 'production', LAUNCHBAY_DEMO: '1' })).toBe(false);
+    expect(requireRealMalwareScanner({ NODE_ENV: 'test', SCAN_REQUIRE_REAL: '1' })).toBe(true);
   });
   it('listings without files, or with the switch off, are not held back', () => {
     expect(approvalBlock(null, false, true)).toBeNull();

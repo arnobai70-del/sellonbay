@@ -9,7 +9,7 @@ import { checkNewVersion, decideVersion, eligibleVersion, publishVersion, regist
 
 let n = 0;
 const clean: Deps = {
-  scanner: { name: 'fake', scan: async () => ({ status: 'clean', detail: [] }) },
+  scanner: { name: 'clamav', scan: async () => ({ status: 'clean', detail: [] }) },
   fetchFile: async () => ({ ok: true, status: 200, bytes: new Uint8Array([1, 2, 3, ++n]), name: 'files.zip' }),
   checkDemo: async () => true,
   others: async () => [],
