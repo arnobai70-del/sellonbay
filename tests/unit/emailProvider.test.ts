@@ -36,6 +36,14 @@ describe('transactional email provider', () => {
     await expect(emailProvider().send(mail)).rejects.toThrow(/not configured/);
   });
 
+  it('refuses to simulate email delivery in real production without a configured provider', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('LAUNCHBAY_DEMO', '');
+    vi.stubEnv('EMAIL_PROVIDER', '');
+    expect(emailProvider().name).toBe('unconfigured');
+    await expect(emailProvider().send(mail)).rejects.toThrow(/not configured/);
+  });
+
   it('selects the real provider only with all opt-in variables', () => {
     vi.stubEnv('EMAIL_PROVIDER', 'resend');
     vi.stubEnv('RESEND_API_KEY', key);

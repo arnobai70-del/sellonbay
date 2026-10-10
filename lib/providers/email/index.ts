@@ -22,8 +22,13 @@ const unavailable: EmailProvider = {
 };
 /** Resend is available only after the owner explicitly enables it with valid env settings. */
 export const emailProvider = (): EmailProvider => {
-  if (process.env.EMAIL_PROVIDER !== 'resend') return fake;
-  if (!resendConfigured()) return unavailable;
-  return new ResendEmailProvider(process.env.RESEND_API_KEY!.trim(), process.env.EMAIL_FROM!.trim());
+  if (process.env.EMAIL_PROVIDER === 'resend') {
+    if (!resendConfigured()) return unavailable;
+    return new ResendEmailProvider(process.env.RESEND_API_KEY!.trim(), process.env.EMAIL_FROM!.trim());
+  }
+  // Real production must not silently pretend to deliver email.
+  if (process.env.EMAIL_PROVIDER && process.env.EMAIL_PROVIDER !== 'fake') return unavailable;
+  if (process.env.NODE_ENV === 'production' && process.env.LAUNCHBAY_DEMO !== '1') return unavailable;
+  return fake;
 };
 export const fakeEmail = fake;
