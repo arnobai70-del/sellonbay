@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { ALL_PRODUCTS } from '../apps';
 import { allowedAiBudget, reservedAiTokens } from '../ai/budget';
-import { cacheGet, cachePut, monthTokens, recordRun, runsToday } from '../ai/usage';
+import { cacheGet, cachePut, monthTokens, recordRun, reserveModelRun, runsToday, settleModelRun, type ModelReservation } from '../ai/usage';
 import { verifyTurnstile } from '../bot/turnstile';
 import { CONFIG, DAY_MS } from '../config';
 import { registrarLive } from '../domains';
@@ -40,7 +40,9 @@ export type Output = {
 };
 export type Result = { ok: true; data: Output } | { ok: false; status: number; error: string };
 
-export type Deps = { ai: AiProvider; verify: (token: string | undefined, ip: string) => Promise<boolean>; now: () => number; budget: () => number };
+export type Deps = { ai: AiProvider; verify: (token: string | undefined, ip: string) => Promise<boolean>; now: () => number; budget: () => number;
+  reserveModel?: typeof reserveModelRun; settleModel?: typeof settleModelRun;
+};
 export const defaultDeps: Deps = { ai: aiProvider(), verify: verifyTurnstile, now: () => Date.now(), budget: () => Number(process.env.AI_MONTHLY_TOKEN_BUDGET ?? 2_000_000) };
 
 const fail = (status: number, error: string): Result => ({ ok: false, status, error });
@@ -97,36 +99,59 @@ export async function runSiteIdeas(i: { idea: string; cookieId: string; ip: stri
 
   if (!(await deps.verify(i.token, i.ip))) return fail(400, 'Please finish the bot check and try again.');
   if (left <= 0) return fail(429, `You used your ${CONFIG.ai.freeRunsPerDay} free runs for today. Come back tomorrow, or browse the ready-made sites now.`);
+  const reserveTokens = reservedAiTokens(idea, 700);
+  let reservation: ModelReservation | null = null;
   try {
     const spent = await monthTokens(now, TOOL);
-    // Reserve an upper bound for the forthcoming request before spending on
-    // a model. Additional concurrency controls need a DB-side reservation RPC.
-    if (spent + reservedAiTokens(idea, 700) > budget)
+    if (spent + reserveTokens > budget)
       return fail(503, 'This free tool is resting for the rest of the month. Browse ready-made sites instead.');
+    if (source === 'model') {
+      // The RPC rechecks and claims cookie, IP and global budget atomically.
+      // Real inference must have a persistent DB. Local templates keep the
+      // existing demo quota behavior.
+      reservation = await (deps.reserveModel ?? reserveModelRun)(
+        [subjects[0], subjects[1]], TOOL, CONFIG.ai.freeRunsPerDay, budget, reserveTokens, now,
+      );
+      if (!reservation.allowed)
+        return reservation.reason === 'daily'
+          ? fail(429, 'You have reached your free runs for today.')
+          : fail(503, 'This free tool has reached its monthly token budget.');
+    }
   } catch {
     return fail(503, 'Usage verification is unavailable. Please try again later.');
   }
 
-  let out;
+  let out: Awaited<ReturnType<AiProvider['complete']>> | undefined;
+  let parsed: ReturnType<typeof answerSchema.safeParse> | null = null;
+  let error: Result | null = null;
   try {
     out = await deps.ai.complete({ feature: TOOL, prompt: idea, maxTokens: 700, userKey: subjects[0] });
+    try { parsed = answerSchema.safeParse(JSON.parse(out.text)); } catch { parsed = null; }
+    if (!parsed?.success) error = fail(502, 'The idea helper gave an answer we could not use.');
+    else if (![out.tokensIn, out.tokensOut].every((n) => Number.isSafeInteger(n) && n >= 0))
+      error = fail(502, 'The idea helper returned invalid usage details.');
   } catch {
-    return fail(502, 'The idea helper did not answer. Nothing was used, try again.');
+    error = fail(502, 'The idea helper did not answer. Please try again.');
   }
-  let parsed;
-  try {
-    parsed = answerSchema.safeParse(JSON.parse(out.text));
-  } catch {
-    parsed = null;
+
+  // Provider errors may still incur charges: settle using full reserved upper
+  // bound unless a successful response supplies valid reported usage.
+  if (reservation?.allowed) {
+    const usage = out && !error ? out.tokensIn + out.tokensOut : reserveTokens;
+    try {
+      await (deps.settleModel ?? settleModelRun)(reservation.id, usage);
+    } catch {
+      // RPC failure retains a pending reservation and blocks overspending.
+      return fail(503, 'AI usage settlement is unavailable; request a usage review.');
+    }
   }
-  if (!parsed?.success) return fail(502, 'The idea helper gave an answer we could not use. Nothing was used, try again.');
-  if (![out.tokensIn, out.tokensOut].every((n) => Number.isSafeInteger(n) && n >= 0))
-    return fail(502, 'The idea helper returned invalid usage details.');
+  if (error) return error;
+  if (!out || !parsed?.success) return fail(502, 'The idea helper returned an invalid answer.');
   try {
-    await recordRun(subjects, TOOL, out.tokensIn, out.tokensOut, now);
+    if (source !== 'model') await recordRun(subjects, TOOL, out.tokensIn, out.tokensOut, now);
     await cachePut(TOOL, hash, parsed.data, now);
   } catch {
     return fail(503, 'Usage recording is unavailable. Please try again later.');
   }
-  return finish(parsed.data, false, idea, left - 1, source);
+  return finish(parsed.data, false, idea, reservation?.allowed ? reservation.left : left - 1, source);
 }

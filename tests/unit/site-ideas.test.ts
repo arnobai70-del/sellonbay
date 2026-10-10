@@ -53,7 +53,13 @@ describe('ideas and names', () => {
 let n = 0;
 const who = () => ({ cookieId: `c-${Date.now()}-${++n}`, ip: `11.${n % 250}.${Math.floor(n / 250)}.9` });
 const idea = () => `a bakery number ${++n} in ${Date.now()}`;
-const deps = (over: Partial<Deps> = {}): Deps => ({ ai: new LocalAiProvider(), verify: async () => true, now: () => Date.now(), budget: () => 2_000_000, ...over });
+const deps = (over: Partial<Deps> = {}): Deps => ({
+  ai: new LocalAiProvider(), verify: async () => true, now: () => Date.now(), budget: () => 2_000_000,
+  // Synthetic reservations for unit tests. Production must use the database RPC.
+  reserveModel: async () => ({ allowed: true, id: '00000000-0000-4000-8000-000000000001', left: 4 }),
+  settleModel: async () => {},
+  ...over,
+});
 
 describe('the free tool and its cost controls', () => {
   it('gives ideas, names and products; names are marked "unknown" until a real registrar is connected', async () => {
@@ -174,5 +180,54 @@ describe('the free tool and its cost controls', () => {
     const good = await runSiteIdeas({ idea: text, ...w, token: 't' }, deps());
     expect(good.ok && good.data.cached).toBe(false);
     expect(good.ok && good.data.left).toBe(CONFIG.ai.freeRunsPerDay - 1); // only the good run was counted
+  });
+});
+
+describe('billable AI atomic quota integration boundaries', () => {
+  const model = { name: 'paid-model', complete: async () => ({
+    text: JSON.stringify(generateIdeas('a local bakery shop')), tokensIn: 25, tokensOut: 55,
+  }) };
+  it('rejects a model run if the database quota reservation is unavailable', async () => {
+    let calls = 0;
+    const ai = { name: 'paid-model', complete: async () => { calls++; return model.complete(); } };
+    const r = await runSiteIdeas({ idea: idea(), ...who(), token: 't' }, deps({
+      ai, reserveModel: async () => { throw new Error('database offline'); },
+    }));
+    expect(r).toMatchObject({ ok: false, status: 503 });
+    expect(calls).toBe(0);
+  });
+  it('propagates an atomic per-visitor denial before the model is called', async () => {
+    let calls = 0;
+    const ai = { name: 'paid-model', complete: async () => { calls++; return model.complete(); } };
+    const r = await runSiteIdeas({ idea: idea(), ...who(), token: 't' }, deps({
+      ai, reserveModel: async () => ({ allowed: false, reason: 'daily' }),
+    }));
+    expect(r).toMatchObject({ ok: false, status: 429 });
+    expect(calls).toBe(0);
+  });
+  it('settles successful inference with the provider-reported usage once', async () => {
+    const charges: number[] = [];
+    const r = await runSiteIdeas({ idea: idea(), ...who(), token: 't' }, deps({
+      ai: model, settleModel: async (_id, charged) => { charges.push(charged); },
+    }));
+    expect(r.ok).toBe(true);
+    expect(charges).toEqual([80]);
+  });
+  it('keeps the conservative full token reservation on an unknown provider error', async () => {
+    const charges: number[] = [];
+    const input = idea();
+    const errorModel = { name: 'paid-model-error', complete: async () => Promise.reject(new Error('provider timeout')) };
+    const r = await runSiteIdeas({ idea: input, ...who(), token: 't' }, deps({
+      ai: errorModel,
+      settleModel: async (_id, charged) => { charges.push(charged); },
+    }));
+    expect(r).toMatchObject({ ok: false, status: 502 });
+    expect(charges).toEqual([reservedAiTokens(input, 700)]);
+  });
+  it('does not return a successful answer if atomic settlement fails', async () => {
+    const r = await runSiteIdeas({ idea: idea(), ...who(), token: 't' }, deps({
+      ai: model, settleModel: async () => { throw new Error('quota unavailable'); },
+    }));
+    expect(r).toMatchObject({ ok: false, status: 503 });
   });
 });

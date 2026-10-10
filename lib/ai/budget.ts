@@ -7,7 +7,7 @@ export function allowedAiBudget(value: number): boolean {
 }
 
 export function reservedAiTokens(prompt: string, maxOutputTokens: number): number {
-  // Conservative overestimate for short site-ideas prompts. Provider-specific
-  // tokenisation and atomic multi-worker reservations remain launch tasks.
-  return Math.ceil(prompt.length / 2) + maxOutputTokens;
+  // Conservative overestimate for short site-ideas prompts. Provider-specific tokenisation and hard output caps require
+  // additional vendor-specific verification before real paid use.
+  return Buffer.byteLength(prompt, 'utf8') + maxOutputTokens + 256;
 }

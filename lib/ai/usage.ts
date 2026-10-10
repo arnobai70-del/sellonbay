@@ -95,3 +95,48 @@ export async function cachePut(tool: string, hash: string, output: unknown, now 
     mem.cache.set(`${tool}|${hash}`, { output, at: now });
   }
 }
+
+/**
+ * Real-model inference uses these RPCs, not the legacy read/upsert counters.
+ * The database function takes one transaction-level advisory lock covering
+ * monthly budget and BOTH cookie/IP daily counters across application workers.
+ */
+export type ModelReservation = { allowed: true; id: string; left: number } |
+  { allowed: false; reason: 'daily' | 'budget' };
+
+export async function reserveModelRun(
+  subjects: [string, string], tool: string, dailyLimit: number,
+  monthlyBudget: number, reservedTokens: number, now = Date.now(),
+): Promise<ModelReservation> {
+  if (!(await pg())) throw new Error('A persistent quota database is required for billable AI.');
+  if (!Number.isSafeInteger(reservedTokens) || reservedTokens <= 0 ||
+      !Number.isSafeInteger(monthlyBudget) || monthlyBudget <= 0)
+    throw new Error('Invalid model quota.');
+  const { data, error } = await createAdminClient().rpc('ai_reserve_run', {
+    p_tool: tool,
+    p_cookie_subject: subjects[0],
+    p_ip_subject: subjects[1],
+    p_day: day(now),
+    p_daily_limit: dailyLimit,
+    p_monthly_budget: monthlyBudget,
+    p_reserved_tokens: reservedTokens,
+  });
+  if (error || !data || typeof data !== 'object') throw new Error('Atomic AI quota claim failed.');
+  if (data.allowed === false && (data.reason === 'daily' || data.reason === 'budget'))
+    return { allowed: false, reason: data.reason };
+  if (data.allowed === true && typeof data.id === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id) &&
+    Number.isSafeInteger(data.left) && data.left >= 0)
+    return { allowed: true, id: data.id, left: data.left };
+  throw new Error('Malformed atomic AI quota claim.');
+}
+
+export async function settleModelRun(id: string, chargedTokens: number): Promise<void> {
+  if (!(await pg())) throw new Error('A persistent quota database is required to settle AI usage.');
+  if (!Number.isSafeInteger(chargedTokens) || chargedTokens < 0) throw new Error('Invalid token settlement.');
+  const { data, error } = await createAdminClient().rpc('ai_settle_run', {
+    p_id: id,
+    p_charged_tokens: chargedTokens,
+  });
+  if (error || data !== true) throw new Error('AI usage settlement failed; reservation remains held.');
+}
