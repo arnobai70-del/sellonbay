@@ -18,6 +18,10 @@ const env: Record<string, string> = fs.existsSync(envFile)
     )
   : {};
 const PASS = 'Qa-test-pass-123';
+const strictStaging = process.env.CI_STAGING_STRICT === '1';
+if (strictStaging && (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY)) {
+  throw new Error('The staging RLS suite needs an isolated Supabase URL, anon key and service-role key.');
+}
 
 /* Refused means an error, or nothing came back. */
 const refused = (r: { data: unknown; error: unknown }) => !!r.error || r.data == null || (Array.isArray(r.data) && r.data.length === 0);
@@ -53,7 +57,10 @@ test.describe('RLS: the wrong person is always refused', () => {
       admin.from('webhook_events').select('event_id').limit(1),
     ]);
     ready = probes.every((p) => !p.error);
-    if (!ready) return;
+    if (!ready) {
+      if (strictStaging) throw new Error('Staging migrations are incomplete. RLS tests must FAIL, not silently skip.');
+      return;
+    }
     anon = createClient(url, anonKey, { auth: { persistSession: false } });
     users.buyer = await person('buyer');
     users.seller = await person('seller');
