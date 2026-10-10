@@ -38,7 +38,7 @@ test.describe('site ideas tool', () => {
     await expect(page.locator('.siteideas-list li')).toHaveCount(5);
     await expect(page.locator('.siteideas-names li')).toHaveCount(10);
     await expect(page.locator('.siteideas-products li')).toHaveCount(3);
-    await expect(page.getByRole('link', { name: 'Check availability' }).first()).toHaveAttribute('href', /\/domains\?name=/);
+    await expect(page.getByRole('link', { name: 'View domain ideas (unverified)' }).first()).toHaveAttribute('href', /\/domains\?name=/);
     await expect(page.getByText(/free runs? left today/)).toBeVisible();
     // the same idea again: a saved answer, and the page says it was free
     await page.reload();

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_PRODUCTS } from '@/lib/apps';
 import { CONFIG, DAY_MS } from '@/lib/config';
+import { allowedAiBudget, reservedAiTokens } from '@/lib/ai/budget';
 import { FakeAiProvider, LocalAiProvider } from '@/lib/providers/ai';
 import { generateIdeas, matchProducts, words } from '@/lib/tools/siteIdeas';
 import { inputHash, normalise, runSiteIdeas, type Deps } from '@/lib/tools/run';
@@ -52,7 +53,7 @@ describe('ideas and names', () => {
 let n = 0;
 const who = () => ({ cookieId: `c-${Date.now()}-${++n}`, ip: `11.${n % 250}.${Math.floor(n / 250)}.9` });
 const idea = () => `a bakery number ${++n} in ${Date.now()}`;
-const deps = (over: Partial<Deps> = {}): Deps => ({ ai: new LocalAiProvider(), verify: async () => true, now: () => Date.now(), budget: () => 0, ...over });
+const deps = (over: Partial<Deps> = {}): Deps => ({ ai: new LocalAiProvider(), verify: async () => true, now: () => Date.now(), budget: () => 2_000_000, ...over });
 
 describe('the free tool and its cost controls', () => {
   it('gives ideas, names and products; names are marked "unknown" until a real registrar is connected', async () => {
@@ -65,6 +66,7 @@ describe('the free tool and its cost controls', () => {
     expect(r.data.products).toHaveLength(3);
     expect(r.data.cached).toBe(false);
     expect(r.data.left).toBe(CONFIG.ai.freeRunsPerDay - 1);
+    expect(r.data.source).toBe('templates');
   });
   it('refuses a missing or oversized idea', async () => {
     expect(await runSiteIdeas({ idea: 'ab', ...who() }, deps())).toMatchObject({ ok: false, status: 400 });
@@ -105,11 +107,52 @@ describe('the free tool and its cost controls', () => {
     const text = idea();
     const t0 = Date.now();
     await runSiteIdeas({ idea: text, ...w, token: 't' }, deps({ now: () => t0 }));
-    const fake = new FakeAiProvider();
-    const within = await runSiteIdeas({ idea: text, ...who(), token: 't' }, deps({ now: () => t0 + 29 * DAY_MS, ai: fake }));
+    // A cached response is reusable for the *same* provider for 30 days.
+    // Switching providers must use a separate cache key.
+    const same = new LocalAiProvider();
+    const within = await runSiteIdeas({ idea: text, ...who(), token: 't' }, deps({ now: () => t0 + 29 * DAY_MS, ai: same }));
     expect(within.ok && within.data.cached).toBe(true);
-    expect(fake.calls).toBe(0);
+    expect(same.calls).toBe(0);
   });
+  it('0, negative and invalid budgets turn the tool off before any model request or cached response', async () => {
+    const w = who();
+    const input = idea();
+    const ai = new FakeAiProvider();
+    expect(allowedAiBudget(0)).toBe(false);
+    expect(allowedAiBudget(-1)).toBe(false);
+    expect(allowedAiBudget(Number.NaN)).toBe(false);
+    expect(allowedAiBudget(2_000_000)).toBe(true);
+    expect(reservedAiTokens('bakery', 700)).toBeGreaterThan(700);
+    for (const amount of [0, -1, Number.NaN]) {
+      expect(await runSiteIdeas({ idea: input, ...w, token: 't' }, deps({ ai, budget: () => amount }))).toMatchObject({ ok: false, status: 503 });
+    }
+    expect(ai.calls).toBe(0);
+    // A disabled tool must refuse even a result already in the cache.
+    const cachedInput = idea();
+    expect((await runSiteIdeas({ idea: cachedInput, ...who(), token: 't' }, deps())).ok).toBe(true);
+    expect(await runSiteIdeas({ idea: cachedInput, ...who(), token: 't' }, deps({ budget: () => 0 }))).toMatchObject({ ok: false, status: 503 });
+  });
+
+  it('prevents near-cap calls from exceeding the monthly AI token budget', async () => {
+    const fake = new FakeAiProvider();
+    const before = fake.calls;
+    const r = await runSiteIdeas({ idea: idea(), ...who(), token: 't' }, deps({ ai: fake, budget: () => reservedAiTokens('a bakery', 700) - 1 }));
+    expect(r).toMatchObject({ ok: false, status: 503 });
+    expect(fake.calls).toBe(before);
+  });
+
+  it('keeps local template caches isolated from results produced by a different provider', async () => {
+    const input = idea();
+    const first = await runSiteIdeas({ idea: input, ...who(), token: 't' }, deps());
+    expect(first.ok && first.data.source).toBe('templates');
+    const custom = { name: 'verified-model', complete: async () => ({ text: JSON.stringify(generateIdeas(input)), tokensIn: 8, tokensOut: 75 }) };
+    const second = await runSiteIdeas({ idea: input, ...who(), token: 't' }, deps({ ai: custom }));
+    expect(second.ok && second.data.cached).toBe(false);
+    expect(second.ok && second.data.source).toBe('model');
+    const third = await runSiteIdeas({ idea: input, ...who(), token: 't' }, deps({ ai: custom }));
+    expect(third.ok && third.data.cached).toBe(true);
+  });
+
   it('the monthly budget switch turns the tool off when the tokens are used up', async () => {
     const w = who();
     const r = await runSiteIdeas({ idea: idea(), ...w, token: 't' }, deps({ budget: () => 1 }));

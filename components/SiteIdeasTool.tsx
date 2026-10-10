@@ -10,6 +10,7 @@ type Out = {
   cached: boolean;
   live: boolean;
   left: number;
+  source: 'templates' | 'model';
 };
 
 /* One line in, five site ideas, ten domain names and three ready-made sites out. The server does all the checking; this only shows it. */
@@ -25,15 +26,21 @@ export function SiteIdeasTool() {
     e.preventDefault();
     setBusy(true);
     setErr('');
-    const r = await fetch('/api/tools/site-ideas', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idea, token }) });
-    const j = await r.json().catch(() => ({}));
-    setBusy(false);
-    if (token) {
-      setToken('');
-      setRound((n) => n + 1); // a Turnstile token works once, so ask for a fresh one
+    setOut(null);
+    try {
+      const r = await fetch('/api/tools/site-ideas', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idea, token }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return setErr(j.error ?? 'Something went wrong. Try again.');
+      setOut(j);
+    } catch {
+      setErr('The idea helper is unavailable right now. Please try again later.');
+    } finally {
+      setBusy(false);
+      if (token) {
+        setToken('');
+        setRound((n) => n + 1); // a Turnstile token works once
+      }
     }
-    if (!r.ok) return setErr(j.error ?? 'Something went wrong. Try again.');
-    setOut(j);
   }
 
   return (
@@ -52,6 +59,7 @@ export function SiteIdeasTool() {
             autoComplete="off"
           />
           <small>No personal details needed. The same idea gives the same answer.</small>
+          <p className="muted" style={{ marginTop: 8 }}>Suggestions currently use predefined templates, not a live AI model. Domain names are unverified ideas, not available domains.</p>
         </div>
         <Turnstile key={round} onToken={setToken} />
         <button className="btn btn-blue" type="submit" disabled={busy || idea.trim().length < 3 || !token} style={{ marginTop: 12 }}>
@@ -72,6 +80,7 @@ export function SiteIdeasTool() {
       {out && (
         <div className="siteideas-out" aria-live="polite">
           <p className="muted">
+            {out.source === 'templates' ? 'Generated from predefined suggestion templates (not a live AI model). ' : 'Generated using an AI model. '}
             {out.cached ? 'Same idea as before, so this answer was free. ' : ''}
             {out.left} free {out.left === 1 ? 'run' : 'runs'} left today.
           </p>
@@ -93,7 +102,7 @@ export function SiteIdeasTool() {
                 {n.status === 'taken' && <span className="chip rose">Taken</span>}
                 {n.status === 'unknown' && (
                   <Link className="chip" href={`/domains?name=${encodeURIComponent(n.name)}`}>
-                    Check availability
+                    View domain ideas (unverified)
                   </Link>
                 )}
               </li>
