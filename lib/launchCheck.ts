@@ -28,7 +28,7 @@ export async function launchChecks(): Promise<Check[]> {
     c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
     c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
-    c('Email', emailProvider().name !== 'fake', 'No email provider is connected: nothing is emailed yet (notifications still show on the site).', 'warn'),
+    c('Email', emailProvider().name === 'resend', 'Optional Resend transport requires EMAIL_PROVIDER=resend, RESEND_API_KEY and a verified EMAIL_FROM sender. Configuration is not proof of delivery: send and confirm a staging email.', 'warn'),
     c('Domain registrar', domainProvider().name !== 'Demo registrar', 'No registrar: domain search shows made-up availability and nothing is registered.', 'warn'),
     c(
       'Virus scan',

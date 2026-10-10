@@ -29,23 +29,34 @@ async function addressOf(userId: string): Promise<string | null> {
   return data.user?.email ?? null;
 }
 
-/* Returns true if it was sent, false if it was a repeat or could not be sent. */
+/* Returns true once the in-app notification is stored; email delivery is best-effort and reported separately. */
 export async function notify(userId: string | null | undefined, kind: NotificationKind, payload: Payload = {}, opts: { dedupe?: string; email?: boolean } = {}): Promise<boolean> {
   if (!userId) return false;
   try {
     const { subject, text } = TEMPLATES[kind](payload);
+    let notificationId: string;
     if (await pg()) {
-      const { error } = await createAdminClient()
+      const { data, error } = await createAdminClient()
         .from('notifications')
-        .insert({ user_id: userId, kind, payload, dedupe: opts.dedupe ?? null });
-      if (error) return error.code === '23505' ? false : (console.error('notify:', error.message), false);
+        .insert({ user_id: userId, kind, payload, dedupe: opts.dedupe ?? null })
+        .select('id').single();
+      if (error || !data?.id) return error?.code === '23505' ? false : (console.error('notify: could not persist notification'), false);
+      notificationId = data.id;
     } else {
       if (opts.dedupe && mem.some((n) => n.userId === userId && n.kind === kind && n.payload.__dedupe === opts.dedupe)) return false;
-      mem.push({ id: crypto.randomUUID(), userId, kind, payload: { ...payload, __dedupe: opts.dedupe }, read: false, at: Date.now(), subject, text });
+      notificationId = crypto.randomUUID();
+      mem.push({ id: notificationId, userId, kind, payload: { ...payload, __dedupe: opts.dedupe }, read: false, at: Date.now(), subject, text });
     }
+    // The in-app notification is persisted independently. Email API failure
+    // must not turn a successfully committed notification into a failed action.
     if (opts.email !== false) {
-      const to = await addressOf(userId);
-      if (to) await emailProvider().send({ to, subject, text });
+      try {
+        const to = await addressOf(userId);
+        if (to) await emailProvider().send({ to, subject, text, idempotencyKey: `notification/${notificationId}` });
+      } catch {
+        // Never log recipient details, provider response bodies or credentials.
+        console.error('Notification email delivery failed:', kind);
+      }
     }
     return true;
   } catch (e) {

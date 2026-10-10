@@ -11,7 +11,7 @@ if (!fs.existsSync(dir)) {
   process.exit(2);
 }
 
-const SECRET_NAMES = ['SUPABASE_SERVICE_ROLE_KEY', 'DELIVERY_SECRET', 'PAYMENT_WEBHOOK_SECRET', 'CRON_SECRET', 'TURNSTILE_SECRET_KEY', 'GUARD_SALT'];
+const SECRET_NAMES = ['SUPABASE_SERVICE_ROLE_KEY', 'DELIVERY_SECRET', 'PAYMENT_WEBHOOK_SECRET', 'CRON_SECRET', 'TURNSTILE_SECRET_KEY', 'GUARD_SALT', 'RESEND_API_KEY'];
 const values = new Map();
 const envFile = path.join(root, '.env.local');
 const fromFile = fs.existsSync(envFile)
