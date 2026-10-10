@@ -100,7 +100,7 @@ describe('the seller publishes a version', () => {
     const r = await publishVersion(p.sellerId, p.slug, input(), clean);
     expect(r.ok).toBe(true);
     expect(r.ok && r.value.status).toBe('in_review');
-    expect((await latestScan(p.slug, p.id))?.flags.scanner).toBe('fake');
+    expect((await latestScan(p.slug, p.id))?.flags.scanner).toBe('clamav');
     expect((await reviewQueue()).some((v) => v.productSlug === p.slug)).toBe(true);
     expect(await versionsOf(p.slug, 'live')).toHaveLength(0);
   });
