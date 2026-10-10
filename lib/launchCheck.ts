@@ -4,6 +4,7 @@ import { paymentProvider } from './providers/payment';
 import { domainProvider } from './providers/domain';
 import { getSettings } from './settings';
 import { supabaseConfigured } from './supabase/env';
+import { hasNonTestTurnstileKeys } from './bot/turnstile';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -23,7 +24,7 @@ export async function launchChecks(): Promise<Check[]> {
     c('Payment webhook key', set('PAYMENT_WEBHOOK_SECRET', 32), 'PAYMENT_WEBHOOK_SECRET: a random value of 32 or more characters.'),
     c('Scheduled jobs', set('CRON_SECRET', 32), 'CRON_SECRET, and a scheduler calling POST /api/cron/orders every 5 to 10 minutes and /api/cron/payouts on Sundays.'),
     c('Abuse hashing salt', set('GUARD_SALT', 32), 'GUARD_SALT: a random value of 32 or more characters. Set it once; changing it later forgets blocks.'),
-    c('Bot check (Turnstile)', set('TURNSTILE_SECRET_KEY') && set('NEXT_PUBLIC_TURNSTILE_SITE_KEY'), 'Real Cloudflare Turnstile keys. Without them the test keys let every bot through.'),
+    c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
     c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
     c('Email', emailProvider().name !== 'fake', 'No email provider is connected: nothing is emailed yet (notifications still show on the site).', 'warn'),

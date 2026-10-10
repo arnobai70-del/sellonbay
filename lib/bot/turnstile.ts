@@ -7,11 +7,26 @@ import 'server-only';
  */
 export const TEST_SITE_KEY = '1x00000000000000000000AA';
 const TEST_SECRET = '1x0000000000000000000000000000000AA';
-export const usingTestKeys = () => !process.env.TURNSTILE_SECRET_KEY;
+// The official test keys (1x/2x/3x followed by zeroes) must not count
+// as bot protection even when somebody copies them into production .env.
+const TEST_KEY_PREFIX = /^[123]x0{10,}/;
+export function hasNonTestTurnstileKeys(
+  site = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '',
+  secret = process.env.TURNSTILE_SECRET_KEY ?? '',
+): boolean {
+  const a = site.trim();
+  const b = secret.trim();
+  return !!a && !!b && !TEST_KEY_PREFIX.test(a) && !TEST_KEY_PREFIX.test(b);
+}
+export const usingTestKeys = () => !hasNonTestTurnstileKeys();
 
 export async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
   if (!token || token.length > 2048) return false;
-  const body = new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY || TEST_SECRET, response: token });
+  const liveKeys = hasNonTestTurnstileKeys();
+  // Production must never pass verification using Cloudflare's universal test keys.
+  // A deliberately configured demo prototype is exempt so it stays explorable.
+  if (process.env.NODE_ENV === 'production' && process.env.LAUNCHBAY_DEMO !== '1' && !liveKeys) return false;
+  const body = new URLSearchParams({ secret: liveKeys ? process.env.TURNSTILE_SECRET_KEY! : TEST_SECRET, response: token });
   if (ip && ip !== 'unknown') body.set('remoteip', ip);
   try {
     const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body, signal: AbortSignal.timeout(8000) });
