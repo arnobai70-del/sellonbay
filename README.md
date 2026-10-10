@@ -1,6 +1,6 @@
 # SellOnBay
 
-A marketplace for ready-made, AI-built websites, apps and digital products. Buyers pick a product, give a domain (or buy one) and it goes live in 1 to 3 days. Next.js (App Router) + TypeScript + Tailwind v4, Supabase for accounts, listings and orders. Payments, the registrar and deployment run on **fake providers** until the owner decides on real ones (see `docs/DECISIONS.md`).
+A marketplace for ready-made, AI-built websites, apps and digital products. Buyers pick a product, give a domain (or buy one) and it goes live in 1 to 7 days. Next.js (App Router) + TypeScript + Tailwind v4, Supabase for accounts, listings and orders. Payments, the registrar and deployment run on **fake providers** until the owner decides on real ones (see `docs/DECISIONS.md`).
 
 Read `CLAUDE.md` for the rules of the project and `docs/BUILD_SPEC.pdf` for the product spec (where the code differs on purpose, `docs/DECISIONS.md` says so).
 

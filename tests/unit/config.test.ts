@@ -38,7 +38,7 @@ describe('rules in one place', () => {
     expect(CONFIG.notify).toEqual({ dueSoonHours: 6, reviewEndingHours: 12 });
     expect(CONFIG.extras).toEqual({ aiContentCents: 300, hostingMonthCents: 400, storeListingCents: 900, installerSetupCents: 1500 });
   });
-  it('fees: 15% on sales, a flat 20% on custom, extra and trial work', () => {
+  it('fees: 22% on sales (30% under $20), 20% on custom, extra and trial work', () => {
     expect(feeCents(10_000, 'sale')).toBe(2200);
     expect(feeCents(2000, 'sale')).toBe(440); // $20 and up: 22%
     expect(feeCents(1900, 'sale')).toBe(570); // under $20: 30%

@@ -9,16 +9,20 @@ export default function Terms() {
     <div className="wrap">
       <div className="page-head">
         <h1>Terms of service</h1>
-        <p className="stamp muted">Last updated October 2026</p>
+        <p className="stamp muted">[LAWYER REVIEW] Draft, last updated October 2026. Not final legal advice.</p>
       </div>
       <div className="prose">
         <p>These terms cover your use of SellOnBay, where buyers get ready-made websites and tools set up on their own domain, and sellers list and deliver them.</p>
+        <p>
+          <strong>Preview status:</strong> Only simulated example payments currently work. Real seller payments, actual escrow custody, seller bank payouts and domain registration are not yet available.
+          References below to these services describe the planned marketplace and require final provider integration and legal review before real transactions can begin.
+        </p>
 
         <h2>Buying a site</h2>
         <ul>
           <li>Delivery takes 1 to 7 days, as the seller states on the listing. An express option (24 hours) is available for an extra fee shown at checkout.</li>
-          <li>Your payment is held by SellOnBay until you accept the site. You have 48 hours after delivery to review it. If you do nothing, the order is accepted automatically.</li>
-          <li>Domains are registered in your name. Domains and hosting are extras and are priced separately.</li>
+          <li>Once verified payments are introduced, order funds will follow the approved payment-hold and payout terms. You have 48 hours after delivery to review the site. If you do nothing, the order is accepted automatically.</li>
+          <li>When a real registrar is connected and registration is completed, a purchased domain will be registered in your name. Domains and hosting are optional extras, priced separately; registration is not yet live.</li>
         </ul>
 
         <h2>Refunds</h2>
@@ -39,8 +43,8 @@ export default function Terms() {
 
         <h2>Review period and source files</h2>
         <p>
-          During the 48-hour review you check the live site on your own domain. The source files are released to you when you accept the site, or when the review period ends and the order is accepted
-          automatically.
+          The 48-hour review starts after delivery. For an eligible funded order, the buyer can request a signed download link to the seller&apos;s source files as soon as payment has been verified,
+          subject to any configured risk-related release delay. You do not need to wait for acceptance or the end of the review period to obtain these files. They are never public.
         </p>
 
         <h2>License</h2>
