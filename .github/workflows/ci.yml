@@ -21,7 +21,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run check:migrations
+      - run: node --test scripts/verify-staging-target.test.mjs
       - run: npm run build
         env:
           LAUNCHBAY_DEMO: '1'
           NEXT_PUBLIC_SITE_URL: https://example.com
+      - run: npm run check:bundle
+      - run: npm run smoke:demo

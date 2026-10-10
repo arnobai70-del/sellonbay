@@ -48,7 +48,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 
 ## Approving listings and developers
 
-`/dashboard/admin` lists new listings and developer profiles. Open the demo and the files first (the scan is only basic local checks; before launch connect ClamAV or VirusTotal and set `SCAN_REQUIRE_REAL=1`, then files cannot be approved without a real scan. For a digital product the page makes you tick that you opened the files in a sandbox). Approve, send back or reject, with a note the seller sees.
+`/dashboard/admin` lists new listings and developer profiles. Open the demo and the files first (production requires a connected ClamAV daemon and a fresh successful real scan before approving a file; it fails closed if ClamAV is unavailable. For a digital product the admin must also confirm sandbox inspection). Approve, send back or reject, with a note the seller sees.
 
 ## Restore a backup (test this once before launch)
 
@@ -76,7 +76,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - [x] Webhooks: signature checked, age checked, each event processed once
 - [x] Audit log for every admin action (`audit_log`, append-only, `/dashboard/admin/audit`)
 - [ ] Daily database backups, and a restore tested once (above)
-- [x] Dependency audit in CI, Dependabot enabled (`.github/`)
+- [ ] Automated dependency vulnerability audit with enforced patch thresholds; Dependabot is enabled (`.github/`) but `npm ci --no-audit` is not an audit.
 - [x] Privacy: cookie notice, data export and delete request flow (`/account/privacy`, admins process deletions under Accounts), retention note on the Privacy page
 - [ ] Real Turnstile keys set (the test keys check nothing)
 
@@ -89,7 +89,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 
 ## More operations
 
-- **Scan a listing again**: Admin > New listings > "Scan again". The scan is local heuristics only; open digital files in a sandbox before approving.
+- **Scan a listing again**: Admin > New listings > "Scan again". Production scans use a private-network ClamAV daemon. Admin approval also re-scans the exact current file URL, persists the result and requires sandbox inspection.
 - **Process a deletion request**: Admin > Accounts > Deletion requests. It is refused (and the person sees why) while an order, a dispute or a payout is open.
 - **Abuse reports**: three different reporters pause a listing by themselves. Look at it, then suspend, dismiss, or put it back.
 - **AI budget**: `AI_MONTHLY_TOKEN_BUDGET` stops the free tool for the rest of the month when used up. Watch `ai_usage` (subject `global`).

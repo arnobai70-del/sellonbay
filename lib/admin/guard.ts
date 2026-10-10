@@ -2,6 +2,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import { cannotAct } from '../accounts';
 import { supabaseConfigured } from '../supabase/env';
+import { mayUseDemoAdmin } from './mode';
 import { createClient } from '../supabase/server';
 
 /*
@@ -12,7 +13,12 @@ export type AdminCheck = { ok: true; id: string | null } | { ok: false; res: Nex
 const no = (error: string, status: number): AdminCheck => ({ ok: false, res: NextResponse.json({ error }, { status }) });
 
 export async function adminOnly(): Promise<AdminCheck> {
-  if (!supabaseConfigured) return { ok: true, id: null };
+  if (!supabaseConfigured) {
+    // Real deployment must never grant admin privileges because Supabase keys
+    // are missing or demo mode was not explicitly opted into.
+    if (!mayUseDemoAdmin(process.env)) return no('Admin authentication is unavailable.', 503);
+    return { ok: true, id: null };
+  }
   const sb = await createClient();
   const {
     data: { user },
