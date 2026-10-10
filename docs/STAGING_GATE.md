@@ -8,7 +8,7 @@
 
 ## Before clicking Run workflow
 
-1. Create a **separate Supabase staging project** and a disposable/staging Next.js deployment using Node.js 22 with migration files `0001` through `0041`, in order. Never use the production database or production auth accounts.
+1. Create a **separate Supabase staging project** and a disposable/staging Next.js deployment using Node.js 22 with migration files `0001` through `0042`, in order. Never use the production database or production auth accounts.
 2. Create a GitHub repository Environment named `staging`, with required reviewers if supported.
 3. Set environment Variables: `STAGING_APP_URL`, `PRODUCTION_APP_URL`, `STAGING_SUPABASE_URL`, `PRODUCTION_SUPABASE_URL` (HTTPS origins, without trailing paths). Staging app hostname and Supabase project must each differ from production.
 4. Set protected Environment Secrets: `STAGING_SUPABASE_ANON_KEY` and `STAGING_SUPABASE_SERVICE_ROLE_KEY`. Never put these in repository files, Issue comments, screenshots or logs.
@@ -21,3 +21,5 @@
 - It does not apply migrations or restore backups automatically.
 - It does not prove a real payment provider is integrated, a real EICAR sample was caught by a deployed ClamAV, or real HTTPS seller file downloads work from a live host.
 - Never treat the demo CI run as evidence of staging RLS, PSP money custody, production malware service or disaster recovery.
+
+- Apply migration `0042_ai_atomic_quotas.sql` in the isolated staging project and run two simultaneous model quota requests with shared IP and different cookies. Confirm only quota-eligible requests receive a reservation; test budget and idempotent settlement. Do **not** point this test at production or connect a billable model before cost/retry validation.

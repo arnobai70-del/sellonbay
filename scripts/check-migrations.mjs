@@ -164,4 +164,42 @@ if (!failed) {
     return one('select (select count(*) from order_events) as events, (select count(*) from order_consents) as consents');
   });
 }
+
+// Transactional AI quota smoke tests on the ephemeral PGlite database.
+// This is NOT a real Supabase staging test or a multi-session stress test.
+if (!failed) {
+  try {
+    const claim = async (cookie, ip, budget = 2100, limit = 2, reserve = 900) => {
+      const sql = 'select ai_reserve_run($1, $2, $3, $4::date, $5::integer, $6::bigint, $7::bigint) as value';
+      const x = await db.query(sql, ['site-ideas', cookie, ip, '2026-10-10', limit, budget, reserve]);
+      return x.rows[0].value;
+    };
+    const settle = async (id, tokens) =>
+      (await db.query('select ai_settle_run($1::uuid, $2::bigint) as ok', [id, tokens])).rows[0].ok;
+    const first = await claim('cookie:user-a', 'ip:same');
+    const second = await claim('cookie:user-a', 'ip:same');
+    if (!first.allowed || !second.allowed || first.left !== 1 || second.left !== 0) throw new Error('Did not reserve two daily claims');
+    const overDaily = await claim('cookie:different', 'ip:same');
+    if (overDaily.allowed || overDaily.reason !== 'daily') throw new Error('Parallel IP quota is not enforced');
+    const overBudget = await claim('cookie:user-b', 'ip:different');
+    if (overBudget.allowed || overBudget.reason !== 'budget') throw new Error('Pending reservations were not counted in global monthly budget');
+    if (!(await settle(first.id, 200))) throw new Error('First settlement did not persist');
+    if (!(await settle(first.id, 200))) throw new Error('Repeat settlement was not idempotent');
+    const spent = (await db.query("select tokens_in from ai_usage where subject='global' and tool='site-ideas' and day='2026-10-10'")).rows[0].tokens_in;
+    if (Number(spent) !== 200) throw new Error('Idempotent settlement charged twice');
+    const availableAfterSettlement = await claim('cookie:user-b', 'ip:different');
+    if (!availableAfterSettlement.allowed) throw new Error('Unused budget not returned after a successful settlement');
+    let rejectedTooMuch = false;
+    try { await settle(second.id, 901); } catch { rejectedTooMuch = true; }
+    if (!rejectedTooMuch) throw new Error('Over-reservation charge silently accepted');
+    if (!(await settle(second.id, 900))) throw new Error('Could not settle previous pending reservation');
+    const pending = (await db.query("select count(*) as total from ai_run_reservations where state='pending'")).rows[0].total;
+    if (Number(pending) !== 1) throw new Error('Unexpected reservation finalization');
+    console.log('ok   ai_reserve_run/ai_settle_run: daily counters, pending budget, idempotency and overrun guard');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL atomic AI reservation smoke:', e.message);
+  }
+}
+
 process.exit(failed ? 1 : 0);
