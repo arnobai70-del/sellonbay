@@ -22,3 +22,5 @@ This repository contains a simulated card payment provider, not a real marketpla
 - [ ] Verify domain registrar integration before selling registrations.
 
 No database migration, live hosting configuration or real-money integration is changed by this security patch.
+
+- Production Turnstile verification fails closed when only public Cloudflare test keys or missing keys are configured, except when explicitly running the demo prototype with `LAUNCHBAY_DEMO=1`.
