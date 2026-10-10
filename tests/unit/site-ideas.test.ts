@@ -107,10 +107,12 @@ describe('the free tool and its cost controls', () => {
     const text = idea();
     const t0 = Date.now();
     await runSiteIdeas({ idea: text, ...w, token: 't' }, deps({ now: () => t0 }));
-    const fake = new FakeAiProvider();
-    const within = await runSiteIdeas({ idea: text, ...who(), token: 't' }, deps({ now: () => t0 + 29 * DAY_MS, ai: fake }));
+    // A cached response is reusable for the *same* provider for 30 days.
+    // Switching providers must use a separate cache key.
+    const same = new LocalAiProvider();
+    const within = await runSiteIdeas({ idea: text, ...who(), token: 't' }, deps({ now: () => t0 + 29 * DAY_MS, ai: same }));
     expect(within.ok && within.data.cached).toBe(true);
-    expect(fake.calls).toBe(0);
+    expect(same.calls).toBe(0);
   });
   it('0, negative and invalid budgets turn the tool off before any model request or cached response', async () => {
     const w = who();
