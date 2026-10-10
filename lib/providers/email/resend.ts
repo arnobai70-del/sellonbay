@@ -1,6 +1,6 @@
 import type { EmailProvider, Mail } from './index';
 
-type EmailEnv = { EMAIL_PROVIDER?: string; RESEND_API_KEY?: string; EMAIL_FROM?: string };
+type EmailEnv = Record<string, string | undefined>;
 export const resendConfigured = (env: EmailEnv = process.env): boolean => {
   if (env.EMAIL_PROVIDER !== 'resend') return false;
   const key = env.RESEND_API_KEY?.trim() ?? '';
