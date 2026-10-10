@@ -176,10 +176,10 @@ if (!failed) {
     };
     const settle = async (id, tokens) =>
       (await db.query('select ai_settle_run($1::uuid, $2::bigint) as ok', [id, tokens])).rows[0].ok;
-    const first = await claim('cookie:user-a', 'ip:same');
-    const second = await claim('cookie:user-a', 'ip:same');
+    const first = await claim('cookie:user-a', 'ip:same-hash');
+    const second = await claim('cookie:user-a', 'ip:same-hash');
     if (!first.allowed || !second.allowed || first.left !== 1 || second.left !== 0) throw new Error('Did not reserve two daily claims');
-    const overDaily = await claim('cookie:different', 'ip:same');
+    const overDaily = await claim('cookie:different', 'ip:same-hash');
     if (overDaily.allowed || overDaily.reason !== 'daily') throw new Error('Parallel IP quota is not enforced');
     const overBudget = await claim('cookie:user-b', 'ip:different');
     if (overBudget.allowed || overBudget.reason !== 'budget') throw new Error('Pending reservations were not counted in global monthly budget');
