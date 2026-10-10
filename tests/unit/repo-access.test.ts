@@ -25,7 +25,7 @@ const order = async (invite = true) => {
     githubUsername: 'octocat',
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   if (invite) expect((await handoverSent(o.id, `repo-s${k}`)).ok).toBe(true);
   return { id: o.id, buyer: `repo-b${k}`, seller: `repo-s${k}` };
 };

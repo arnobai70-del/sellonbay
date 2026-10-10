@@ -7,7 +7,7 @@ let n = 0;
 const order = async (productKey: string, to: 'funded' | 'delivered' | 'accepted', kind: 'product' | 'custom' = 'product') => {
   const k = ++n;
   const o = await createOrder({ kind, pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 5000]], days: 1, buyerId: `rv-b${k}`, sellerId: `rv-s${k}`, productKey, demo: false });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   if (to !== 'funded') await deliver(o.id, `rv-s${k}`);
   if (to === 'accepted') await accept(o.id, `rv-b${k}`);
   return (await getOrder(o.id))!;

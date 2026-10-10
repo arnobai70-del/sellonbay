@@ -58,7 +58,7 @@ describe('24-hour express delivery', () => {
       [EXPRESS_LABEL, 1_500],
     ];
     const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines, days: 3, buyerId: 'ex-b', sellerId: 'ex-s', express: true, demo: false });
-    await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+    await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
     const f = (await getOrder(o.id))!;
     expect(f.dueAt! - f.fundedAt!).toBe(CONFIG.delivery.expressHours * HOUR_MS);
     await deliver(o.id, 'ex-s');

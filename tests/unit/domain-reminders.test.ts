@@ -43,7 +43,7 @@ const bought = async (expires: string, source: 'new' | 'own' = 'new') => {
     domain: { name: `shop${k}.com`, source, expires, ref: 'dom_test' }, // already registered, so the fake registrar does not set its own date
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return { o, buyer: `dm-b${k}` };
 };
 const count = async (u: string) => (await notificationsFor(u)).filter((x) => x.kind === 'domain_expiring').length;

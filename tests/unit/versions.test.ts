@@ -52,7 +52,7 @@ const buyer = async (slug: string, id = `ver-buyer-${++n}`) => {
     productKey: slug,
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   return { id, order: o };
 };
 afterEach(() => {

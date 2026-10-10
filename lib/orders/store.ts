@@ -277,6 +277,15 @@ async function ordersV2Ready() {
 }
 
 export async function orderStore(): Promise<OrderStore> {
-  if (!supabaseConfigured) return memoryStore;
-  return (await ordersV2Ready()) ? postgresStore : memoryStore;
+  if (!supabaseConfigured) {
+    // Explicit demo mode can use transient example orders; a production
+    // marketplace with missing Supabase credentials must never do so.
+    if (process.env.NODE_ENV === 'production' && process.env.LAUNCHBAY_DEMO !== '1')
+      throw new Error('The order database is not configured. Ordering is unavailable.');
+    return memoryStore;
+  }
+  // With Supabase configured, never silently create transient orders when required
+  // migrations are missing. A checkout must either persist or fail without funding.
+  if (!(await ordersV2Ready())) throw new Error('The order database is not ready. Apply the required migrations before accepting orders.');
+  return postgresStore;
 }

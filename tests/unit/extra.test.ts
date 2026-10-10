@@ -21,11 +21,11 @@ const order = async (sellerId = seller()) => {
     productKey: 'saffron-table',
     demo: false,
   });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'pay_' + o.id, at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'pay_' + o.id, at: Date.now() });
   return (await getOrder(o.id))!;
 };
 const payExtra = (orderId: string, requestId: string, amountCents: number, id = 'evt_x_' + requestId) =>
-  handlePaymentEvent('fake', { id, type: 'payment.succeeded', orderId, amountCents, ref: 'pay_' + requestId, at: Date.now(), changeRequestId: requestId });
+  handlePaymentEvent('verified-test-psp', { id, type: 'payment.succeeded', orderId, amountCents, ref: 'pay_' + requestId, at: Date.now(), changeRequestId: requestId });
 const ask = async (o: { id: string; sellerId: string | null }, over: Partial<{ title: string; priceCents: number; addDays: number }> = {}) => {
   const r = await createExtra(o.id, o.sellerId, { title: 'Add a gallery page', priceCents: 2_500, addDays: 2, ...over });
   if (!r.ok) throw new Error(r.error);

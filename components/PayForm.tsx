@@ -83,7 +83,7 @@ export function PayForm({ id, title, lines, totalCents, back }: { id: string; ti
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />
             </svg>
-            <span>Held in escrow until you accept. Paid to the seller 7 days after.</span>
+            <span>Example only: payment and escrow are simulated. No real money or seller payout occurs.</span>
           </div>
         </aside>
 

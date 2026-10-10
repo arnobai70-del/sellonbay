@@ -76,7 +76,7 @@ const seller = () => `lr-seller-${Date.now()}-${++n}`;
 /* A $100 order (the seller earns $85) funded, delivered and accepted. */
 const accepted = async (sellerId: string) => {
   const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 10_000]], days: 1, buyerId: `lr-b${++n}`, sellerId, demo: false });
-  await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+  await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
   await deliver(o.id, sellerId);
   await accept(o.id, o.buyerId);
   return o;
@@ -133,7 +133,7 @@ describe('debt and the dispute record', () => {
     const s = seller();
     const make = async () => {
       const o = await createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 10_000]], days: 1, buyerId: `lr-b${++n}`, sellerId: s, demo: false });
-      await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+      await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
       await deliver(o.id, s);
       const d = await openDispute(o.id, o.buyerId, { reason: 'not_working', detail: GOOD });
       if (!d.ok) throw new Error(d.error);

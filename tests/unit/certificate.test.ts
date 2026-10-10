@@ -87,7 +87,7 @@ describe('the certificate is made when an order is accepted', () => {
       productKey: 'n8n-leads',
       demo: false,
     });
-    await handlePaymentEvent('fake', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
+    await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
     return o;
   };
   it('not before acceptance; once at acceptance, with the delivered file hash; never made twice', async () => {

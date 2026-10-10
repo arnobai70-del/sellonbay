@@ -102,7 +102,9 @@ test.describe('buying a seller listing', () => {
     expect((await own.request.post(`${REAL}/api/demo/orders`, { data: { productId: slug, pkg: 'asis' } })).status()).toBe(400);
   });
 
-  test('the order carries the seller and the listing, the money goes into escrow and then to that seller, and the files come through the signed link', async () => {
+  // The real-provider happy path must be restored once D1 connects a verified PSP.
+  // Until then, no test-card payment may create seller credit or file access.
+  test.skip('real seller checkout via a verified provider (blocked until D1 is implemented)', async () => {
     const res = await order({});
     expect(res.status(), await res.text()).toBe(200);
     const id = (await res.json()).id as string;
@@ -134,6 +136,22 @@ test.describe('buying a seller listing', () => {
     expect((await buyer.request.post(`${REAL}/api/demo/orders/${id}/accept`, { data: { consent: true } })).status()).toBe(200);
     expect(await balance(`order_escrow:${id}`)).toBe(0);
     expect(await balance(`seller_pending:${sellerId}`)).toBe(2262);
+  });
+
+  test('fake cards cannot fund a real seller order or unlock its files', async () => {
+    const res = await order({});
+    expect(res.status(), await res.text()).toBe(200);
+    const id = (await res.json()).id as string;
+    orders.push(id);
+    const pay = await buyer.request.post(`${REAL}/api/demo/orders/${id}/pay`, { data: { card: CARD } });
+    expect(pay.status()).toBe(403);
+    expect((await pay.json()).error).toMatch(/only available for example products/i);
+    const { data: row } = await admin.from('orders').select('status, payment_ref').eq('id', id).single();
+    expect(row?.status).toBe('awaiting_payment');
+    expect(row?.payment_ref).toBeFalsy();
+    expect(await balance(`order_escrow:${id}`)).toBe(0);
+    const link = await buyer.request.post(`${REAL}/api/demo/orders/${id}/download`, { data: {} });
+    expect(link.status()).toBeGreaterThanOrEqual(400);
   });
 
   test('a listing that is not live, is above the price range, or does not offer that package cannot be bought', async () => {

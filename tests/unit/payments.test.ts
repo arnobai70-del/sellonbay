@@ -90,7 +90,7 @@ const newOrder = (over: object = {}) =>
     ...over,
   });
 const paid = (o: { id: string; priceCents: number }, id = 'evt_' + o.id, over: Partial<VerifiedEvent> = {}) =>
-  handlePaymentEvent('fake', ev({ id, orderId: o.id, amountCents: o.priceCents, ref: 'pay_' + o.id, ...over }));
+  handlePaymentEvent('verified-test-psp', ev({ id, orderId: o.id, amountCents: o.priceCents, ref: 'pay_' + o.id, ...over }));
 
 describe('payment events change orders and the ledger, once', () => {
   it('a payment event funds the order, posts the ledger and logs it; the same event again changes nothing', async () => {
@@ -114,7 +114,7 @@ describe('payment events change orders and the ledger, once', () => {
     const o = await newOrder();
     expect(await paid(o, 'evt_short', { amountCents: 1 })).toEqual({ status: 'rejected', reason: 'amount does not match the order' });
     expect((await getOrder(o.id))!.state).toBe('awaiting_payment');
-    expect((await handlePaymentEvent('fake', ev({ id: 'evt_ghost', orderId: '00000000-0000-4000-8000-000000000001' }))).status).toBe('rejected');
+    expect((await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_ghost', orderId: '00000000-0000-4000-8000-000000000001' }))).status).toBe('rejected');
     // a rejected event can be sent again once it is right (its claim was released)
     expect((await paid(o, 'evt_short', {})).status).toBe('applied');
   });
@@ -143,7 +143,7 @@ describe('payment events change orders and the ledger, once', () => {
   it('a refund event on an order that is still in escrow cancels it and returns the money', async () => {
     const o = await newOrder();
     await paid(o);
-    expect((await handlePaymentEvent('fake', ev({ id: 'evt_refund', type: 'refund.succeeded', orderId: o.id, amountCents: 10_000 }))).status).toBe('applied');
+    expect((await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_refund', type: 'refund.succeeded', orderId: o.id, amountCents: 10_000 }))).status).toBe('applied');
     expect((await getOrder(o.id))!.state).toBe('cancelled');
     expect(await (await ledgerStore()).balance(acct.escrow(o.id))).toBe(0);
   });
@@ -152,7 +152,7 @@ describe('payment events change orders and the ledger, once', () => {
     await paid(o);
     await deliver(o.id, 'seller-x');
     await accept(o.id, null);
-    expect((await handlePaymentEvent('fake', ev({ id: 'evt_late_refund', type: 'refund.succeeded', orderId: o.id }))).status).toBe('ignored');
+    expect((await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_late_refund', type: 'refund.succeeded', orderId: o.id }))).status).toBe('ignored');
   });
 });
 
@@ -169,13 +169,13 @@ describe('a lost chargeback', () => {
       sellerId: 'cb-seller-1',
       demo: false,
     });
-    await handlePaymentEvent('fake', ev({ id: 'evt_cb_pay', type: 'payment.succeeded', orderId: o.id, amountCents: 10_000 }));
+    await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_cb_pay', type: 'payment.succeeded', orderId: o.id, amountCents: 10_000 }));
     const before = (await series(1))[0].values.refunds;
-    const first = await handlePaymentEvent('fake', ev({ id: 'evt_cb_1', type: 'chargeback.lost', orderId: o.id, amountCents: 10_000 }));
+    const first = await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_cb_1', type: 'chargeback.lost', orderId: o.id, amountCents: 10_000 }));
     expect(first.status).toBe('applied');
-    expect((await handlePaymentEvent('fake', ev({ id: 'evt_cb_1', type: 'chargeback.lost', orderId: o.id, amountCents: 10_000 }))).status).toBe('duplicate');
+    expect((await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_cb_1', type: 'chargeback.lost', orderId: o.id, amountCents: 10_000 }))).status).toBe('duplicate');
     expect((await series(1))[0].values.refunds).toBe(before + 1);
     expect((await auditList(300)).filter((e) => e.action === 'chargeback_lost' && e.targetRef === o.id)).toHaveLength(1);
-    expect((await handlePaymentEvent('fake', ev({ id: 'evt_cb_2', type: 'chargeback.lost', orderId: '11111111-1111-4111-8111-111111111111' }))).status).toBe('rejected');
+    expect((await handlePaymentEvent('verified-test-psp', ev({ id: 'evt_cb_2', type: 'chargeback.lost', orderId: '11111111-1111-4111-8111-111111111111' }))).status).toBe('rejected');
   });
 });
