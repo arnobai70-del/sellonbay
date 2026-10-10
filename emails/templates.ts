@@ -38,7 +38,8 @@ export type NotificationKind =
   | 'abuse_alert';
 
 export type Payload = Record<string, string | number | boolean | null | undefined>;
-const t = (v: unknown, fallback = 'your order') => (typeof v === 'string' && v ? v : fallback);
+const t = (v: unknown, fallback = 'your order') =>
+  typeof v === 'string' && v ? v : typeof v === 'number' && Number.isFinite(v) ? String(v) : fallback;
 
 export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: string; text: string }> = {
   repo_invite_resent: (p) => ({
@@ -92,7 +93,7 @@ export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: stri
         ? 'The safety check is done. You can start now. The delivery time you had left when the check began starts again now.'
         : 'The buyer was refunded from escrow. You do not need to do anything for this order.',
   }),
-  order_funded: (p) => ({ subject: `Payment received for ${t(p.title)}`, text: `The payment is held safely in escrow. The seller can start now, and delivery is due in ${t(p.days, '1 to 3')} days.` }),
+  order_funded: (p) => ({ subject: `Payment received for ${t(p.title)}`, text: `The payment is held safely in escrow. The seller can start now, and delivery is due in ${t(p.days, `${CONFIG.delivery.minDays} to ${CONFIG.delivery.maxDays}`)} days.` }),
   order_due_soon: (p) => ({ subject: `Delivery of ${t(p.title)} is due soon`, text: `This order is due within ${t(p.hours, '6')} hours. Deliver it on time to keep the buyer's trust.` }),
   order_delivered: (p) => ({
     subject: `${t(p.title)} is ready to review`,
