@@ -71,5 +71,5 @@ export const lookup = (name: string): DomainResult[] =>
     available: !(tld === '.com' && name.length < 5) && hash(name + tld) >= 28,
   }));
 
-/* True only once a real registrar is wired in (set DOMAIN_API_KEY on the server). */
-export const registrarLive = () => !!process.env.DOMAIN_API_KEY;
+/* Legacy client-safe status: no live registrar is implemented yet. An env key is never proof of integration. */
+export const registrarLive = () => false;

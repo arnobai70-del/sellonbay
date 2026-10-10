@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cleanName, lookup, registrarLive } from '@/lib/domains';
+import { cleanName } from '@/lib/domains';
+import { domainProvider, isLiveRegistrar } from '@/lib/providers/domain';
 import { domainQuery } from '@/lib/schemas';
 import { parseWith } from '@/lib/validate';
 
@@ -11,5 +12,19 @@ export async function GET(req: Request) {
   if (!q.ok) return q.res;
   const name = cleanName(q.data);
   if (name.length < 2) return NextResponse.json({ error: 'Type at least 2 letters or numbers.' }, { status: 400 });
-  return NextResponse.json({ name, live: registrarLive(), results: lookup(name) }, { headers: { 'cache-control': 'no-store' } });
+  const provider = domainProvider();
+  if (provider.name === 'unconfigured') {
+    return NextResponse.json(
+      { error: 'Domain availability cannot be verified yet. No registrar is connected. Please use a domain you already own.', live: false, results: [] },
+      { status: 503, headers: { 'cache-control': 'no-store' } },
+    );
+  }
+  try {
+    return NextResponse.json(
+      { name, live: isLiveRegistrar(provider), results: await provider.search(name) },
+      { headers: { 'cache-control': 'no-store' } },
+    );
+  } catch {
+    return NextResponse.json({ error: 'Domain availability verification is temporarily unavailable.' }, { status: 503, headers: { 'cache-control': 'no-store' } });
+  }
 }

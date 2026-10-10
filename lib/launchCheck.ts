@@ -1,7 +1,7 @@
 import 'server-only';
 import { emailProvider } from './providers/email';
 import { paymentProvider } from './providers/payment';
-import { domainProvider } from './providers/domain';
+import { domainProvider, isLiveRegistrar } from './providers/domain';
 import { getSettings } from './settings';
 import { supabaseConfigured } from './supabase/env';
 import { hasNonTestTurnstileKeys } from './bot/turnstile';
@@ -29,7 +29,7 @@ export async function launchChecks(): Promise<Check[]> {
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
     c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
     c('Email', emailProvider().name === 'resend', 'Optional Resend transport requires EMAIL_PROVIDER=resend, RESEND_API_KEY and a verified EMAIL_FROM sender. Configuration is not proof of delivery: send and confirm a staging email.', 'warn'),
-    c('Domain registrar', domainProvider().name !== 'Demo registrar', 'No registrar: domain search shows made-up availability and nothing is registered.', 'warn'),
+    c('Domain registrar', isLiveRegistrar(domainProvider()), 'A verified registrar is required for real domain search, registration, renewal and customer ownership. Demo results are not real availability.'),
     c(
       'Virus scan',
       await clamavReady(),

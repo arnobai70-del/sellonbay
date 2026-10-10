@@ -7,7 +7,7 @@ type Answer = { name: string; live: boolean; results: DomainResult[] };
 const EXAMPLES = ['mariasbakery', 'northside-dental', 'folio-studio', 'greenleaf'];
 const TABS = ['All', 'Popular', 'Business', 'Tech', 'Shop'] as const;
 
-export function DomainSearch({ initial }: { initial: string }) {
+export function DomainSearch({ initial, registrarConnected }: { initial: string; registrarConnected: boolean }) {
   const [q, setQ] = useState(initial);
   const [ans, setAns] = useState<Answer | null>(null);
   const [busy, setBusy] = useState(false);
@@ -96,7 +96,7 @@ export function DomainSearch({ initial }: { initial: string }) {
         </b>
         {star && <em>Best pick</em>}
       </div>
-      <span className={'dm-state ' + (r.available ? 'ok' : 'no')}>{r.available ? 'Available' : 'Taken'}</span>
+      <span className={'dm-state ' + (r.available ? 'ok' : 'no')}>{ans?.live ? (r.available ? 'Available' : 'Taken') : 'Example only'}</span>
       <span className="dm-price">
         {r.available ? (
           <>
@@ -106,12 +106,12 @@ export function DomainSearch({ initial }: { initial: string }) {
           <small>Not for sale</small>
         )}
       </span>
-      {r.available ? (
+      {r.available && ans?.live ? (
         <Link className={'btn btn-sm ' + (star ? 'btn-gold' : 'btn-line')} href={`/browse?domain=${encodeURIComponent(r.domain)}`} aria-label={`Choose ${r.domain}`}>
           Choose
         </Link>
       ) : (
-        <span className="dm-na" aria-hidden="true" />
+        <span className="dm-na" aria-label={ans?.live ? 'Unavailable' : 'Not for sale'}>—</span>
       )}
     </li>
   );
@@ -120,7 +120,7 @@ export function DomainSearch({ initial }: { initial: string }) {
     <section className="dm-hero">
       <div className="wrap">
         <h1>Find a domain people remember</h1>
-        <p className="lead">Registered in your name. Pick your domain first, then a site, and it goes live on it in 1 to 7 days.</p>
+        <p className="lead">{registrarConnected ? 'Check a domain name before choosing your website.' : 'Explore example names. Live availability checks and new domain registration are not connected yet.'}</p>
         <form
           className="dm-form"
           onSubmit={(e) => {
@@ -184,7 +184,7 @@ export function DomainSearch({ initial }: { initial: string }) {
         {ans && (
           <div className="dm-res" aria-live="polite">
             <p className="dm-count">
-              <b>{avail.length}</b> of {all.length} endings are free for <b>{ans.name}</b>
+              <b>{avail.length}</b> of {all.length} {ans.live ? 'endings are currently shown as available' : 'simulated example results'} for <b>{ans.name}</b>
             </p>
             <div className="dm-bar">
               <div className="dm-tabs" role="group" aria-label="Kind of ending">
@@ -206,7 +206,7 @@ export function DomainSearch({ initial }: { initial: string }) {
             </ul>
             {!avail.length && (
               <div className="dm-none">
-                <b>Every ending is taken.</b>
+                <b>{ans.live ? 'All checked endings were unavailable.' : 'No sample results matched.'}</b>
                 <p>Try one of these instead.</p>
               </div>
             )}
@@ -227,11 +227,11 @@ export function DomainSearch({ initial }: { initial: string }) {
             </div>
             <p className="dm-note">
               {ans.live
-                ? 'Prices are per year and shown before you pay. Renewals cost the same.'
-                : 'Availability here is a preview. We check it again before you pay, and you are never charged for a name that is gone.'}
+                ? 'Domain availability can change until a registrar confirms registration. Confirm current prices and renewal terms before paying.'
+                : 'Example data only: names, availability and prices are simulated, not checked with a registrar. No domain can be purchased or registered from these results.'}
             </p>
             <p className="dm-own">
-              Already have a domain? <Link href={`/browse?domain=${encodeURIComponent(ans.name + '.com')}`}>Pick a site for it</Link>
+              Already have a domain? <Link href="/browse">Pick a site and enter your own domain</Link>
             </p>
           </div>
         )}

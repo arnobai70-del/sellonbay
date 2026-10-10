@@ -5,7 +5,7 @@ import { productRecord } from '../catalog';
 import { EXAMPLE_NOTE, examplesBuyable } from '../examples';
 import { getSettings } from '../settings';
 import { ALL_TLDS, cleanName } from '../domains';
-import { domainProvider } from '../providers/domain';
+import { domainProvider, mayOfferNewDomain } from '../providers/domain';
 import type { Line } from './types';
 import { CONFIG } from '../config';
 import { GITHUB_NAME, deliveryTypeOf, expressOf } from '../handover';
@@ -73,6 +73,9 @@ export async function quoteSite(i: SiteInput): Promise<Quote> {
 
   if (dv === null || dv === 'host') {
     if (i.domainMode === 'new') {
+      if (!mayOfferNewDomain(domainProvider())) {
+        return { error: 'Domain registration is not available yet. Use a domain you already own.' };
+      }
       const raw = String(i.domainName ?? '').toLowerCase();
       const dot = raw.indexOf('.');
       const name = cleanName(dot > 0 ? raw.slice(0, dot) : raw),
