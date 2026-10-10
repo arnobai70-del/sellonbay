@@ -5,6 +5,7 @@ import { domainProvider } from './providers/domain';
 import { getSettings } from './settings';
 import { supabaseConfigured } from './supabase/env';
 import { hasNonTestTurnstileKeys } from './bot/turnstile';
+import { clamavReady } from './scan/clamav';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -31,8 +32,8 @@ export async function launchChecks(): Promise<Check[]> {
     c('Domain registrar', domainProvider().name !== 'Demo registrar', 'No registrar: domain search shows made-up availability and nothing is registered.', 'warn'),
     c(
       'Virus scan',
-      false, // No real scanner is wired to defaultDeps yet; an env flag is not proof of protection.
-      'Only basic local checks run. Install and verify a real scanner, then require it for every submitted file.',
+      await clamavReady(),
+      'ClamAV must answer a real PING on the trusted internal connection. Also verify clean and EICAR test samples in staging before accepting real digital listings.',
     ),
     c('Example listings', !s.showExamples, s.showExamples ? 'Shown, marked Example and not for sale. Hide them in Settings when real sellers have listed enough.' : 'Hidden.', 'warn'),
   ];

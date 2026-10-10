@@ -4,7 +4,7 @@ import { notify } from '../notify';
 import { orderStore } from '../orders/store';
 import { unsuspend } from '../strikes';
 import { createAdminClient } from '../supabase/server';
-import { approvalBlock, latestScan, summarise } from '../scan';
+import { approvalBlock, latestScan, requireRealMalwareScanner, runScan, summarise } from '../scan';
 import { audit } from './audit';
 
 /*
@@ -107,21 +107,41 @@ export async function decideListing(adminId: string | null, slug: string, decisi
   if (problem) return fail(400, problem);
   if (decision !== 'approve' && note.trim().length < 5) return fail(400, 'Tell the seller what to fix or why (at least 5 characters).');
   const db = createAdminClient();
-  const { data: p } = await db.from('products').select('id, slug, name, seller_id, status, platform, code_url').eq('slug', slug).maybeSingle();
+  const { data: p } = await db.from('products').select('id, slug, name, seller_id, status, platform, code_url, description, demo_url, third_party').eq('slug', slug).maybeSingle();
   if (!p) return fail(404, 'Listing not found.');
   if (p.status !== 'in_review') return fail(409, `This listing is ${p.status}, not waiting for review.`);
   if (decision === 'approve' && p.platform === 'digital' && !filesChecked)
     return fail(400, 'Open the files in a sandbox and tick the box before approving a digital product. There is no automatic malware scan yet.');
+  const hasFiles = typeof p.code_url === 'string' && p.code_url !== '' && p.code_url !== 'about:blank';
   if (decision === 'approve') {
-    const blocked = approvalBlock(await latestScan(p.slug, p.id), !!p.code_url, process.env.SCAN_REQUIRE_REAL === '1');
-    if (blocked) return fail(400, blocked);
+    if (p.platform === 'digital' && !hasFiles) return fail(400, 'Digital products need a valid seller file link before approval.');
+    if (hasFiles) {
+      // Do not trust a previous scan of a possibly different file. Rescan this
+      // exact submitted URL before the transition to live.
+      let scan;
+      try {
+        scan = await runScan({
+          slug: p.slug, productId: p.id, description: p.description,
+          codeUrl: p.code_url,
+          demoUrl: typeof p.demo_url === 'string' && p.demo_url.startsWith('https://') ? p.demo_url : null,
+          thirdPartyDeclared: Array.isArray(p.third_party) && p.third_party.length > 0,
+          needsLicenceFile: p.platform === 'digital',
+        });
+      } catch {
+        return fail(503, 'Security scan could not be saved. Check antivirus and database readiness.');
+      }
+      const blocked = approvalBlock(scan, true, requireRealMalwareScanner());
+      if (blocked) return fail(400, blocked);
+    }
   }
-  const { data: upd } = await db
+  let update = db
     .from('products')
     .update({ status: STATUS[decision], review_note: note.trim() || null, reviewed_by: adminId, reviewed_at: new Date().toISOString() })
     .eq('id', p.id)
-    .eq('status', 'in_review')
-    .select('id');
+    .eq('status', 'in_review');
+  // A file URL changed during the scan cannot inherit the old scan's approval.
+  if (decision === 'approve' && hasFiles) update = update.eq('code_url', p.code_url);
+  const { data: upd } = await update.select('id');
   if (!upd?.length) return fail(409, 'This listing has just changed.');
   await audit(adminId, `listing_${decision}`, 'product', slug, { note: note.trim(), filesChecked, platform: p.platform });
   await notify(p.seller_id, 'listing_decision', { name: p.name, decision: WORD[decision], note: note.trim() || 'Your listing is live.' });

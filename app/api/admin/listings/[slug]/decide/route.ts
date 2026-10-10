@@ -5,6 +5,7 @@ import { decideListing } from '@/lib/admin/queue';
 import { idOf, readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60; // Fresh malware scan before approving an untrusted listing.
 const schema = z.object({ decision: z.enum(['approve', 'changes', 'reject']), note: z.string().max(700).default(''), filesChecked: z.boolean().default(false) });
 
 /* Approve, send back or reject a listing in review. A digital product needs the "I opened the files in a sandbox" tick. */

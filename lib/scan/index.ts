@@ -4,6 +4,7 @@ import { safeFetch } from '../delivery/ssrf';
 import { orderStore } from '../orders/store';
 import { createAdminClient } from '../supabase/server';
 import { SCAN_LIMITS, inspect, similarity, type MalwareResult, type SecretHit } from './engine';
+import { clamavSettings, scanWithClamav } from './clamav';
 
 /*
  * The listing scan (spec 8.2). Runs when a listing is submitted for review and again on request. It fetches the seller's private file link
@@ -15,6 +16,28 @@ export interface MalwareScanner {
   readonly name: string;
   scan(i: { bytes: Uint8Array; sha256: string; name: string }): Promise<MalwareResult & { extra?: { secrets: SecretHit[]; licenceFile: boolean; files: number } }>;
 }
+
+export function requireRealMalwareScanner(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.SCAN_REQUIRE_REAL === '1' || (env.NODE_ENV === 'production' && env.LAUNCHBAY_DEMO !== '1');
+}
+
+export const clamavScanner: MalwareScanner = {
+  name: 'clamav',
+  async scan({ bytes, name }) {
+    const local = inspect(bytes, name);
+    const real = await scanWithClamav(bytes);
+    // Antivirus is mandatory; heuristics cannot downgrade a real detection
+    // or turn scanner downtime into a "clean" result.
+    const malware = real.status === 'infected' || local.malware.status === 'infected'
+      ? { status: 'infected' as const, detail: [...real.detail, ...local.malware.detail] }
+      : real.status !== 'clean' || local.malware.status === 'unknown'
+        ? { status: 'unknown' as const, detail: [...real.detail, ...local.malware.detail] }
+        : local.malware.status === 'suspicious'
+          ? local.malware
+          : real;
+    return { ...malware, extra: { secrets: local.secrets, licenceFile: local.licenceFile, files: local.files } };
+  },
+};
 
 export const localScanner: MalwareScanner = {
   name: 'local',
@@ -55,7 +78,7 @@ const nameFromUrl = (u: string) => {
 };
 
 export const defaultDeps: Deps = {
-  scanner: localScanner,
+  scanner: clamavSettings() ? clamavScanner : localScanner,
   async fetchFile(url) {
     try {
       const res = await safeFetch(url, AbortSignal.timeout(20_000));
@@ -106,10 +129,15 @@ export async function runScan(input: ScanInput, deps: Deps = defaultDeps): Promi
     const sha = createHash('sha256').update(file.bytes).digest('hex');
     flags.fileSha256 = sha;
     flags.bytes = file.bytes.length;
-    const r = await deps.scanner.scan({ bytes: file.bytes, sha256: sha, name: file.name });
-    flags.malware = { status: r.status, detail: r.detail };
-    flags.secrets = r.extra?.secrets ?? [];
-    if (input.thirdPartyDeclared || input.needsLicenceFile) flags.licenceFile = r.extra?.licenceFile ?? null;
+    try {
+      const r = await deps.scanner.scan({ bytes: file.bytes, sha256: sha, name: file.name });
+      flags.malware = { status: r.status, detail: r.detail };
+      flags.secrets = r.extra?.secrets ?? [];
+      if (input.thirdPartyDeclared || input.needsLicenceFile) flags.licenceFile = r.extra?.licenceFile ?? null;
+    } catch {
+      // Scanner failures must never make a scanned listing eligible for approval.
+      flags.malware = { status: 'unknown', detail: ['Antivirus could not complete the scan.'] };
+    }
   }
   if (input.demoUrl) flags.demoReachable = await deps.checkDemo(input.demoUrl);
 
@@ -140,6 +168,7 @@ async function pg() {
     const { error } = await createAdminClient().from('scan_results').select('id').limit(1);
     ready = { ok: !error, at: Date.now() };
   }
+  if (!ready.ok && requireRealMalwareScanner()) throw new Error('Scan database tables are not ready.');
   return ready.ok;
 }
 
@@ -160,7 +189,8 @@ async function recordVersion(input: ScanInput, flags: ScanFlags): Promise<number
       } catch {
         /* no host to record */
       }
-      await db.from('product_files').insert({ product_id: input.productId, version, sha256: sha, size_bytes: flags.bytes ?? 0, source_host: host });
+      const { error } = await db.from('product_files').insert({ product_id: input.productId, version, sha256: sha, size_bytes: flags.bytes ?? 0, source_host: host });
+      if (error && requireRealMalwareScanner()) throw new Error('Unable to record the inspected file.');
     }
     return sha ? version : Math.max(1, version - 1);
   }
@@ -174,9 +204,10 @@ async function recordVersion(input: ScanInput, flags: ScanFlags): Promise<number
 async function saveResult(input: ScanInput, r: ScanResult) {
   if (await pg()) {
     if (!input.productId) return;
-    await createAdminClient()
+    const { error } = await createAdminClient()
       .from('scan_results')
       .insert({ product_id: input.productId, version: r.version, malware_status: r.flags.malware.status, originality_score: r.originality, flags: r.flags, scanner: r.flags.scanner });
+    if (error && requireRealMalwareScanner()) throw new Error('Unable to persist the antivirus scan result.');
     return;
   }
   mem.results.set(input.slug, [...(mem.results.get(input.slug) ?? []), r]);
@@ -243,12 +274,19 @@ export function summarise(r: ScanResult): { tone: 'mint' | 'amber' | 'rose'; tex
 }
 
 /*
- * Can this listing be approved, given its latest scan? Known malware always blocks. With SCAN_REQUIRE_REAL=1 (set it before launch) a listing that
- * has files for buyers (a download or repo) also needs a scan by a real scanner (ClamAV, VirusTotal), not the local heuristics. Returns the reason, or null.
+ * No buyer-facing file may be approved on a missing, stale, unreadable or
+ * suspicious scan. In real production, a clean ClamAV scan is mandatory,
+ * regardless of SCAN_REQUIRE_REAL being omitted or set to 0.
  */
 export function approvalBlock(scan: ScanResult | null, hasFiles: boolean, requireReal: boolean): string | null {
-  if (scan?.flags.malware.status === 'infected') return 'The scan found malware in the files. Send the listing back or reject it.';
-  if (requireReal && hasFiles && (!scan || scan.flags.scanner === 'local'))
-    return 'Files for buyers need a scan by a real scanner (ClamAV or VirusTotal) before approval. Only the basic local checks have run.';
+  if (scan?.flags.malware.status === 'infected')
+    return 'The scan found malware in the files. Send the listing back or reject it.';
+  if (!hasFiles) return null;
+  if (!scan || !scan.flags.fileSha256 || scan.flags.fileNote || scan.flags.malware.status === 'unknown')
+    return 'Files for buyers need a complete readable antivirus scan before approval. Rescan after fixing the file link.';
+  if (scan.flags.malware.status === 'suspicious')
+    return 'The scan marked this file suspicious. Investigate it before approval.';
+  if (requireReal && scan.flags.scanner !== 'clamav')
+    return 'Files for buyers need a scan by a real scanner (ClamAV) before approval. Only the basic local checks have run.';
   return null;
 }

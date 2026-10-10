@@ -7,7 +7,7 @@ import { notify, notifyAdmins } from './notify';
 import { FUNDED_STATES } from './orders/machine';
 import { orderStore } from './orders/store';
 import { endsAt, isActive } from './productInfo';
-import { approvalBlock, defaultDeps, runScan, type Deps } from './scan';
+import { approvalBlock, defaultDeps, requireRealMalwareScanner, runScan, type Deps } from './scan';
 import { createAdminClient } from './supabase/server';
 
 /*
@@ -202,8 +202,13 @@ export async function decideVersion(
 
   if (decision === 'approve') {
     if (!filesChecked) return fail(400, 'Open the files in a sandbox and tick the box before approving a version. There is no real malware scanner yet.');
-    const scan = await runScan({ slug: p.slug, productId: p.id, description: p.description, codeUrl: v.fileUrl, demoUrl: null, thirdPartyDeclared: false, needsLicenceFile: true }, deps);
-    const blocked = approvalBlock(scan, true, process.env.SCAN_REQUIRE_REAL === '1');
+    let scan;
+    try {
+      scan = await runScan({ slug: p.slug, productId: p.id, description: p.description, codeUrl: v.fileUrl, demoUrl: null, thirdPartyDeclared: false, needsLicenceFile: true }, deps);
+    } catch {
+      return fail(503, 'Security scan could not be saved. Check antivirus and database readiness.');
+    }
+    const blocked = approvalBlock(scan, true, requireRealMalwareScanner());
     if (blocked) return fail(400, blocked);
   }
 
