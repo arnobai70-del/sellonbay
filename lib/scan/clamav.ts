@@ -11,7 +11,7 @@ export type ClamavSettings = { host: string; port: number };
 const MAX_SCAN_BYTES = 50 * 1024 * 1024;
 const BLOCK_BYTES = 512 * 1024;
 
-export function clamavSettings(env: { CLAMAV_HOST?: string; CLAMAV_PORT?: string } = process.env): ClamavSettings | null {
+export function clamavSettings(env: Record<string, string | undefined> = process.env): ClamavSettings | null {
   const host = (env.CLAMAV_HOST ?? '').trim();
   const port = Number(env.CLAMAV_PORT || '3310');
   if (!host || /[\/\s@]/.test(host) || !Number.isInteger(port) || port < 1 || port > 65535) return null;
