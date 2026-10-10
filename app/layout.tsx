@@ -1,18 +1,23 @@
 import type { Metadata } from 'next';
-import { Poppins, Plus_Jakarta_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { CookieNotice } from '@/components/CookieNotice';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
-const bricolage = Poppins({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+// Bundled OFL fonts keep production builds independent of Google Fonts availability.
+const bricolage = localFont({
+  src: [
+    { path: '../public/fonts/Poppins-Medium.ttf', weight: '500', style: 'normal' },
+    { path: '../public/fonts/Poppins-SemiBold.ttf', weight: '600', style: 'normal' },
+    { path: '../public/fonts/Poppins-Bold.ttf', weight: '700', style: 'normal' },
+    { path: '../public/fonts/Poppins-ExtraBold.ttf', weight: '800', style: 'normal' },
+  ],
   variable: '--font-bricolage',
   display: 'swap',
 });
-const instrument = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+const instrument = localFont({
+  src: '../public/fonts/PlusJakartaSans[wght].ttf',
+  weight: '400 800',
   variable: '--font-instrument',
   display: 'swap',
 });
