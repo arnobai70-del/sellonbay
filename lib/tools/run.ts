@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { ALL_PRODUCTS } from '../apps';
+import { allowedAiBudget, reservedAiTokens } from '../ai/budget';
 import { cacheGet, cachePut, monthTokens, recordRun, runsToday } from '../ai/usage';
 import { verifyTurnstile } from '../bot/turnstile';
 import { CONFIG, DAY_MS } from '../config';
@@ -35,6 +36,7 @@ export type Output = {
   cached: boolean;
   live: boolean;
   left: number;
+  source: 'templates' | 'model';
 };
 export type Result = { ok: true; data: Output } | { ok: false; status: number; error: string };
 
@@ -52,7 +54,7 @@ export const ipSubject = (ip: string) => 'ip:' + createHash('sha256').update(ip)
 
 type Core = { ideas: Output['ideas']; names: string[] };
 
-async function finish(core: Core, cached: boolean, idea: string, left: number): Promise<Result> {
+async function finish(core: Core, cached: boolean, idea: string, left: number, source: Output['source']): Promise<Result> {
   const live = registrarLive();
   const names: NameCheck[] = await Promise.all(
     core.names.map(async (name) => {
@@ -66,25 +68,44 @@ async function finish(core: Core, cached: boolean, idea: string, left: number): 
     }),
   );
   const products = matchProducts(idea, ALL_PRODUCTS).map((p) => ({ id: p.id, name: p.name, price: p.price, tag: p.tag }));
-  return { ok: true, data: { ideas: core.ideas, names, products, cached, live, left } };
+  return { ok: true, data: { ideas: core.ideas, names, products, cached, live, left, source } };
 }
 
 export async function runSiteIdeas(i: { idea: string; cookieId: string; ip: string; token?: string }, deps: Deps = defaultDeps): Promise<Result> {
   const idea = normalise(i.idea);
   if (idea.length < 3 || idea.length > 140) return fail(400, 'Describe your business in one line, 3 to 140 characters.');
+  const budget = deps.budget();
+  // 0 is the emergency OFF switch (docs/DECISIONS.md), not unlimited spending.
+  // A non-integer/negative/NaN budget must fail closed as well.
+  if (!allowedAiBudget(budget)) return fail(503, 'This free tool is currently disabled. Browse ready-made sites instead.');
   const now = deps.now();
   const subjects = [`cookie:${i.cookieId}`, ipSubject(i.ip)];
-  const used = Math.max(...(await Promise.all(subjects.map((s) => runsToday(s, TOOL, now)))));
+  const source: Output['source'] = ['local', 'fake'].includes(deps.ai.name) ? 'templates' : 'model';
+  let used: number;
+  let hit: Core | null;
+  // A cache for template results must never masquerade as an actual model result
+  // if a real AI provider is enabled later.
+  const hash = inputHash(`${deps.ai.name}\0${idea}`);
+  try {
+    used = Math.max(...(await Promise.all(subjects.map((s) => runsToday(s, TOOL, now)))));
+    hit = await cacheGet<Core>(TOOL, hash, CONFIG.ai.cacheDays * DAY_MS, now);
+  } catch {
+    return fail(503, 'Usage verification is unavailable. Please try again later.');
+  }
   const left = Math.max(0, CONFIG.ai.freeRunsPerDay - used);
-
-  const hash = inputHash(idea);
-  const hit = await cacheGet<Core>(TOOL, hash, CONFIG.ai.cacheDays * DAY_MS, now);
-  if (hit) return finish(hit, true, idea, left);
+  if (hit) return finish(hit, true, idea, left, source);
 
   if (!(await deps.verify(i.token, i.ip))) return fail(400, 'Please finish the bot check and try again.');
   if (left <= 0) return fail(429, `You used your ${CONFIG.ai.freeRunsPerDay} free runs for today. Come back tomorrow, or browse the ready-made sites now.`);
-  const budget = deps.budget();
-  if (budget > 0 && (await monthTokens(now, TOOL)) >= budget) return fail(503, 'This free tool is resting for the rest of the month. Browse the ready-made sites instead.');
+  try {
+    const spent = await monthTokens(now, TOOL);
+    // Reserve an upper bound for the forthcoming request before spending on
+    // a model. Additional concurrency controls need a DB-side reservation RPC.
+    if (spent + reservedAiTokens(idea, 700) > budget)
+      return fail(503, 'This free tool is resting for the rest of the month. Browse ready-made sites instead.');
+  } catch {
+    return fail(503, 'Usage verification is unavailable. Please try again later.');
+  }
 
   let out;
   try {
@@ -99,8 +120,13 @@ export async function runSiteIdeas(i: { idea: string; cookieId: string; ip: stri
     parsed = null;
   }
   if (!parsed?.success) return fail(502, 'The idea helper gave an answer we could not use. Nothing was used, try again.');
-
-  await recordRun(subjects, TOOL, out.tokensIn, out.tokensOut, now);
-  await cachePut(TOOL, hash, parsed.data, now);
-  return finish(parsed.data, false, idea, left - 1);
+  if (![out.tokensIn, out.tokensOut].every((n) => Number.isSafeInteger(n) && n >= 0))
+    return fail(502, 'The idea helper returned invalid usage details.');
+  try {
+    await recordRun(subjects, TOOL, out.tokensIn, out.tokensOut, now);
+    await cachePut(TOOL, hash, parsed.data, now);
+  } catch {
+    return fail(503, 'Usage recording is unavailable. Please try again later.');
+  }
+  return finish(parsed.data, false, idea, left - 1, source);
 }

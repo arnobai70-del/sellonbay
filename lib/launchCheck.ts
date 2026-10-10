@@ -6,6 +6,8 @@ import { getSettings } from './settings';
 import { supabaseConfigured } from './supabase/env';
 import { hasNonTestTurnstileKeys } from './bot/turnstile';
 import { clamavReady } from './scan/clamav';
+import { aiProvider } from './providers/ai';
+import { allowedAiBudget } from './ai/budget';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -30,6 +32,8 @@ export async function launchChecks(): Promise<Check[]> {
     c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
     c('Email', emailProvider().name === 'resend', 'Optional Resend transport requires EMAIL_PROVIDER=resend, RESEND_API_KEY and a verified EMAIL_FROM sender. Configuration is not proof of delivery: send and confirm a staging email.', 'warn'),
     c('Domain registrar', isLiveRegistrar(domainProvider()), 'A verified registrar is required for real domain search, registration, renewal and customer ownership. Demo results are not real availability.'),
+    c('AI model', !['local', 'fake'].includes(aiProvider().name), 'Only predefined site-ideas templates are currently connected. A real AI provider and staging cost validation are still required for model-backed features.', 'warn'),
+    c('AI monthly budget', allowedAiBudget(Number(process.env.AI_MONTHLY_TOKEN_BUDGET ?? 2_000_000)), 'AI_MONTHLY_TOKEN_BUDGET must be a positive integer. Zero is the emergency OFF switch.', 'warn'),
     c(
       'Virus scan',
       await clamavReady(),

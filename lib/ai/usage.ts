@@ -14,12 +14,16 @@ async function pg() {
     const { error } = await createAdminClient().from('ai_usage').select('subject').limit(1);
     ready = { ok: !error, at: Date.now() };
   }
-  return ready.ok;
+  // AI quotas must never silently turn into per-process memory quotas when
+  // a real database exists but the required migration is absent.
+  if (!ready.ok) throw new Error('AI usage database is not ready.');
+  return true;
 }
 
 export async function runsToday(subject: string, tool: string, now = Date.now()): Promise<number> {
   if (await pg()) {
-    const { data } = await createAdminClient().from('ai_usage').select('count').eq('subject', subject).eq('day', day(now)).eq('tool', tool).maybeSingle();
+    const { data, error } = await createAdminClient().from('ai_usage').select('count').eq('subject', subject).eq('day', day(now)).eq('tool', tool).maybeSingle();
+    if (error) throw new Error('AI usage count is unavailable.');
     return data?.count ?? 0;
   }
   return mem.usage.get(key(subject, day(now), tool))?.count ?? 0;
@@ -32,13 +36,15 @@ export async function recordRun(subjects: string[], tool: string, tokensIn: numb
     const add = s === 'global' ? { c: 0, i: tokensIn, o: tokensOut } : { c: 1, i: 0, o: 0 };
     if (await pg()) {
       const db = createAdminClient();
-      const { data } = await db.from('ai_usage').select('count, tokens_in, tokens_out').eq('subject', s).eq('day', d).eq('tool', tool).maybeSingle();
-      await db
+      const { data, error: readError } = await db.from('ai_usage').select('count, tokens_in, tokens_out').eq('subject', s).eq('day', d).eq('tool', tool).maybeSingle();
+      if (readError) throw new Error('AI usage record cannot be read.');
+      const { error: writeError } = await db
         .from('ai_usage')
         .upsert(
           { subject: s, day: d, tool, count: (data?.count ?? 0) + add.c, tokens_in: Number(data?.tokens_in ?? 0) + add.i, tokens_out: Number(data?.tokens_out ?? 0) + add.o },
           { onConflict: 'subject,day,tool' },
         );
+      if (writeError) throw new Error('AI usage record cannot be saved.');
     } else {
       const k = key(s, d, tool);
       const cur = mem.usage.get(k) ?? { count: 0, tin: 0, tout: 0 };
@@ -58,7 +64,8 @@ export async function monthTokens(now = Date.now(), tool?: string): Promise<numb
       .gte('day', prefix + '-01')
       .lte('day', prefix + '-31');
     if (tool) q = q.eq('tool', tool);
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) throw new Error('AI monthly usage is unavailable.');
     return (data ?? []).reduce((s, r) => s + Number(r.tokens_in) + Number(r.tokens_out), 0);
   }
   let total = 0;
@@ -71,16 +78,20 @@ export async function monthTokens(now = Date.now(), tool?: string): Promise<numb
 
 export async function cacheGet<T>(tool: string, hash: string, maxAgeMs: number, now = Date.now()): Promise<T | null> {
   if (await pg()) {
-    const { data } = await createAdminClient().from('free_tool_cache').select('output, created_at').eq('tool', tool).eq('input_hash', hash).maybeSingle();
+    const { data, error } = await createAdminClient().from('free_tool_cache').select('output, created_at').eq('tool', tool).eq('input_hash', hash).maybeSingle();
+    if (error) throw new Error('AI cache is unavailable.');
     return data && now - Date.parse(data.created_at) <= maxAgeMs ? (data.output as T) : null;
   }
   const hit = mem.cache.get(`${tool}|${hash}`);
   return hit && now - hit.at <= maxAgeMs ? (hit.output as T) : null;
 }
 export async function cachePut(tool: string, hash: string, output: unknown, now = Date.now()): Promise<void> {
-  if (await pg())
-    await createAdminClient()
+  if (await pg()) {
+    const { error } = await createAdminClient()
       .from('free_tool_cache')
       .upsert({ tool, input_hash: hash, output, created_at: new Date(now).toISOString() }, { onConflict: 'tool,input_hash' });
-  else mem.cache.set(`${tool}|${hash}`, { output, at: now });
+    if (error) throw new Error('AI cache could not be saved.');
+  } else {
+    mem.cache.set(`${tool}|${hash}`, { output, at: now });
+  }
 }

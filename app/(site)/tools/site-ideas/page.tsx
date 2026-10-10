@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 const FAQ: [string, string][] = [
   ['Is it really free?', `Yes. You get ${CONFIG.ai.freeRunsPerDay} free runs a day without signing up. The same idea twice gives the same answer and does not use a run.`],
-  ['Does it tell me if a domain name is free?', 'When a domain registrar is connected it shows Available or Taken. Until then it shows a Check availability link that opens our domain search.'],
+  ['Does it tell me if a domain name is free?', 'Not yet. Suggested domain names are unchecked examples. The domain ideas page does not verify real availability without a connected registrar.'],
   ['Do I have to buy a site from you?', 'No. The ideas are yours to use anywhere. If a ready-made site fits, we show you a few, live on your own domain in 1 to 7 days.'],
   ['What do you do with what I type?', 'We use it to make your answer and keep it for 30 days so the same question is not paid for twice. Please do not type personal details.'],
 ];
@@ -29,7 +29,7 @@ export default function SiteIdeas() {
       <JsonLd data={{ ...jsonLd, url: `${SITE_URL}/tools/site-ideas` }} />
       <div className="page-head">
         <h1>Website ideas and domain names, free</h1>
-        <p>Tell us what your business does in one line. We give you five pages your site should have, ten domain names to try, and ready-made sites that fit.</p>
+        <p>Tell us what your business does in one line. We give you five pages your site should have, ten domain names to try, and ready-made sites that fit. Suggestions currently come from predefined templates, not a live AI model.</p>
       </div>
       <SiteIdeasTool />
       <div className="prose" style={{ marginTop: 40, paddingBottom: 80 }}>
