@@ -39,9 +39,12 @@ try {
         throw new Error('Demo root missing nosniff header');
       if (res.headers.has('x-powered-by')) throw new Error('Unexpected powered-by header');
     }
-    if (page !== '/robots.txt' && !(await res.text()).includes('<html'))
-      throw new Error(`Demo smoke ${page} did not render HTML`);
-    await res.body?.cancel();
+    if (page !== '/robots.txt') {
+      if (!(await res.text()).includes('<html'))
+        throw new Error(`Demo smoke ${page} did not render HTML`);
+    } else {
+      await res.body?.cancel();
+    }
     console.log(`Demo smoke passed: GET ${page}`);
   }
 } catch (error) {
