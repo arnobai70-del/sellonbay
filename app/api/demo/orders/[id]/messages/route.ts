@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { orderFor } from '@/lib/commerce/access';
 import { clientIp } from '@/lib/delivery/service';
 import { listMessages, roleIn, sendMessage } from '@/lib/chat';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
 import { idOf, readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
@@ -22,6 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const viewer = (await getViewerId()) ?? null;
   const role = o ? roleIn(o, viewer) : null;
   if (!o || !role) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+  // A banned account, or one suspended for chat strikes, cannot write until the suspension ends (reading stays open).
+  if (await viewerBlocked(viewer)) return NextResponse.json({ error: 'This account cannot send messages right now.' }, { status: 403 });
   const body = await readJson(req, schema);
   if (!body.ok) return body.res;
   const r = await sendMessage(o, role, viewer, clientIp(req), body.data.body);

@@ -41,6 +41,14 @@ export async function requireViewer(opts: { path: string; roles?: ViewerRole[] }
   return { name: p.full_name || user.email || 'You', role };
 }
 
+/* Is this signed-in account banned or suspended right now? Signed out (or demo mode) is not: those routes check their own access. */
+export async function viewerBlocked(id: string | null | undefined): Promise<boolean> {
+  if (!supabaseConfigured || !id) return false;
+  const sb = await createClient();
+  const { data: p } = await sb.from('profiles').select('banned, suspended_until').eq('id', id).single();
+  return cannotAct(p);
+}
+
 /* Just the signed-in user's id (or undefined), for pages that show a draft only to its owner. */
 export async function getViewerId(): Promise<string | undefined> {
   if (!supabaseConfigured) return undefined;

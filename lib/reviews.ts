@@ -41,7 +41,8 @@ export async function addReview(orderId: string, buyerId: string | null, i: { ra
   if (await reviewOfOrder(orderId)) return fail(409, 'You already reviewed this order.');
   const r: Review = { orderId, productKey: o.productKey!, buyerId: o.buyerId ?? buyerId, rating: i.rating, body, at: Date.now(), who: 'Verified buyer' };
   if (await pg()) {
-    if (!r.buyerId) return fail(401, 'Sign in to leave a review.');
+    // A verified review comes from the account that paid: an order placed signed out cannot be reviewed by whoever holds its id.
+    if (!o.buyerId) return fail(401, 'Only the account that bought this can review it.');
     const { error } = await createAdminClient().from('reviews').insert({ order_id: orderId, product_id: o.productId, product_key: r.productKey, buyer_id: r.buyerId, rating: r.rating, body });
     if (error) return fail(error.code === '23505' ? 409 : 500, error.code === '23505' ? 'You already reviewed this order.' : 'Could not save the review.');
   } else mem.push(r);
