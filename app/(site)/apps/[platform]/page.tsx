@@ -12,7 +12,7 @@ const DESC = {
   ios: 'Ready-made iPhone and iPad apps, rebranded and sent to your own App Store account in 1 to 7 days.',
   webapp: 'Ready-made web apps, rebranded and deployed on your own domain in 1 to 7 days.',
   desktop: 'Ready-made desktop apps for Windows, Mac and Linux, rebranded and sent as installers in 1 to 7 days.',
-  digital: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, AI prompts and video templates. Files right after payment, money held in escrow for 48 hours.',
+  digital: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, AI prompts and video templates. Files right after payment, money held in escrow until you accept.',
 } as const;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

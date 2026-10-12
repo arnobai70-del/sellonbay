@@ -8,6 +8,7 @@ import { TallCard } from '@/components/TallCard';
 import { TrackView } from '@/components/TrackView';
 import { AskSeller } from '@/components/AskSeller';
 import { TrialCopy } from '@/components/TrialCopy';
+import { BUGFIX_DAYS, PAYOUT_HOLD_DAYS, REVIEW_HOURS } from '@/lib/config';
 import { flags } from '@/lib/flags';
 import { JsonLd } from '@/components/JsonLd';
 import { ratingOf, reviewsFor } from '@/lib/reviews';
@@ -212,10 +213,10 @@ export default async function Product({ params }: Props) {
               <h2>Your protection</h2>
               <ul className="prot">
                 <li>
-                  <b>Escrow.</b> Your money is held for 48 hours. The seller is only paid after you accept.
+                  <b>Escrow.</b> Your money is held until you accept. The seller is only paid after that.
                 </li>
                 <li>
-                  <b>Check before you commit.</b> You have 48 hours with the files, and you can ask the seller anything first.
+                  <b>Check before you commit.</b> You have {REVIEW_HOURS} hours with the files, and you can ask the seller anything first.
                 </li>
                 <li>
                   <b>Fair disputes.</b> Not as described, does not work, or harmful code? The seller gets a chance to fix it, and if they cannot, you are refunded.
@@ -291,7 +292,7 @@ export default async function Product({ params }: Props) {
               <>
                 <li>You get the files as soon as your payment is held in escrow</li>
                 <li>No domain needed: you use it where you work</li>
-                <li>If it is not as described or has harmful code, you can dispute it within 48 hours</li>
+                <li>If it is not as described or has harmful code, you can dispute it while you check it or in the {BUGFIX_DAYS} days after you accept</li>
                 <li>Personal or business use for you, no reselling</li>
               </>
             ) : dv === 'host' ? (
@@ -317,7 +318,7 @@ export default async function Product({ params }: Props) {
               : dv === 'installer'
                 ? 'After you pay, the seller rebrands the app and sends you installers to try on your own computer. You have 48 hours to try them. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'
                 : dv === 'download'
-                  ? 'After you pay, your files are ready at once through a secure link that lasts 24 hours (you can get a new one any time) with your own licence key. Your payment stays with SellOnBay for 48 hours while you check them. Accept, or open a dispute (not as described, does not work, harmful code). If you do nothing, it is accepted after 48 hours. The seller is paid 7 days after acceptance. If you picked setup help or customisation, the seller works on it first.'
+                  ? `After you pay, your files are ready at once through a secure link that lasts 24 hours (you can get a new one any time) with your own licence key. You have ${REVIEW_HOURS} hours to check them, and your payment stays with SellOnBay until you accept. Accept, or open a dispute (not as described, does not work, harmful code). If you do nothing, it is accepted after ${REVIEW_HOURS} hours. The seller is paid ${PAYOUT_HOLD_DAYS} days after acceptance. If you picked setup help or customisation, the seller works on it first.`
                   : dv === 'host'
                     ? 'After you pay, the seller rebrands the app, deploys it on your domain and sends you a private test link. You have 48 hours to try it. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'
                     : 'After you pay, the seller sets the site up on your domain and sends it for review. You have 48 hours to check the live site. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'}
