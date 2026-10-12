@@ -58,15 +58,16 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - Set `SUPABASE_DB_URL` (Supabase > Connect > Session pooler, port 5432; not the transaction pooler 6543) and `BACKUP_PASSPHRASE` (16 characters or more, kept in a password manager: a lost passphrase means a backup nobody can open). `BACKUP_DIR` and `BACKUP_KEEP` (default 14) are optional.
 - Run it every day from a machine you trust (your computer or a small VPS cron job), and copy the file somewhere else too (a cloud drive). Never commit backups: the repository is public. `backups/` is in `.gitignore`.
 - pg_dump may warn about "circular foreign-key constraints" on `orders`. That is expected; the restore handles it.
-- Uploaded files (Storage buckets: demos, product files, pictures) are not in this backup. Copy them separately from Supabase Storage before launch.
+- Uploaded files (Storage buckets: hosted demos, pictures, trial copies, certificates) are not in the database backup. `npm run storage:backup` saves them into `backups/sellonbay-files-<date>-<time>.zip.enc` (needs `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and the same `BACKUP_PASSPHRASE`; every file is checked against its fingerprint before the zip is kept). Run it with the database backup. The service role key reads every private file: only on a machine you trust.
 
 ## Restore a backup (test this once before launch)
 
 1. Create a new Supabase project (never restore into the live one), and apply every file in `supabase/migrations` to it in number order.
 2. `RESTORE_DB_URL=<new project> BACKUP_PASSPHRASE=... npm run db:restore -- backups/<file>.dump.enc --yes`. It refuses a database without the SellOnBay tables or one that already has accounts, runs as one transaction (all or nothing), and prints the number of accounts, listings, orders and ledger entries: compare them with the live site.
-3. Re-set the environment variables of the app to the new project's keys. Everybody signs in again (sessions are not copied).
-4. Run `npm run test:e2e` against it, and open one order and one listing by hand.
-5. Write the date of the test here: ______
+3. Files: `RESTORE_SUPABASE_URL=<new project> RESTORE_SERVICE_ROLE_KEY=<its service key> BACKUP_PASSPHRASE=... npm run storage:restore -- backups/<files>.zip.enc --yes`. It refuses a bucket that already has files (add `--merge` only if you mean it).
+4. Re-set the environment variables of the app to the new project's keys. Everybody signs in again (sessions are not copied).
+5. Run `npm run test:e2e` against it, and open one order and one listing (with its demo) by hand.
+6. Write the date of the test here: ______
 
 ## Cloudflare (put it in front before launch)
 
