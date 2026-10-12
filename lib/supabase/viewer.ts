@@ -1,7 +1,7 @@
 import 'server-only';
 import { notFound, redirect } from 'next/navigation';
 import { mayUseDemoAdmin } from '@/lib/admin/mode';
-import { createClient } from './server';
+import { createAdminClient, createClient } from './server';
 import { supabaseConfigured } from './env';
 import { cannotAct } from '@/lib/accounts';
 
@@ -51,6 +51,13 @@ export async function viewerBlocked(id: string | null | undefined): Promise<bool
   if (!supabaseConfigured || !id) return false;
   const sb = await createClient();
   const { data: p } = await sb.from('profiles').select('banned, suspended_until').eq('id', id).single();
+  return cannotAct(p);
+}
+
+/* Someone else's account (the seller of a listing, a developer to hire): true when it is banned or suspended, so it cannot be bought from. */
+export async function accountLockedOut(id: string | null | undefined): Promise<boolean> {
+  if (!supabaseConfigured || !id) return false;
+  const { data: p } = await createAdminClient().from('profiles').select('banned, suspended_until').eq('id', id).maybeSingle();
   return cannotAct(p);
 }
 

@@ -8,7 +8,7 @@ import { deliveryTypeOf, licenceOf } from '@/lib/handover';
 import { infoOf } from '@/lib/productInfo';
 import { createOrder } from '@/lib/orders/service';
 import { orderCreateSchema } from '@/lib/schemas';
-import { getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
+import { accountLockedOut, getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
 import { examplesBuyable } from '@/lib/examples';
 import { readJson } from '@/lib/validate';
 import { isPkg } from '@/lib/data';
@@ -40,6 +40,7 @@ export async function POST(req: Request) {
     // The made-up starter profiles use the demo seller and can be paid for only where examples can (never on the live site).
     if (!r.userId && !examplesBuyable()) return fail('This is an example profile. We made it to show how hiring works, so it cannot be hired.', 400);
     if (r.userId) {
+      if (await accountLockedOut(r.userId)) return fail('That developer is not available.', 404);
       if (!buyerId) return fail('Sign in to hire a developer. Developers are paid into their account, so every buyer needs one too.', 401);
       if (buyerId === r.userId) return fail('This is your own profile.', 400);
     }

@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { audit } from '@/lib/admin/audit';
 import { adminOnly } from '@/lib/admin/guard';
 import { decide, getDispute } from '@/lib/disputes';
-import { listExtras } from '@/lib/orders/extra';
-import { fakePayments } from '@/lib/providers/payment';
+import { refundAtProvider } from '@/lib/orders/service';
+import { paymentProvider } from '@/lib/providers/payment';
 import { idOf, readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
@@ -27,10 +27,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const r = await decide(id, a.id, body.data);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
   const { order, dispute } = r.value;
-  const extras = (await listExtras(order.id)).filter((c) => c.state === 'funded').reduce((s, c) => s + c.priceCents, 0);
   // A full refund after an earlier partial one gives back only the rest (the order keeps the earlier amount in refundedCents).
-  if (dispute.decision === 'refund_full') await fakePayments.refund(order.id, order.priceCents + extras - order.refundedCents);
-  if (dispute.decision === 'refund_partial' && dispute.refundCents) await fakePayments.refund(order.id, dispute.refundCents);
+  if (dispute.decision === 'refund_full') await refundAtProvider(order);
+  if (dispute.decision === 'refund_partial' && dispute.refundCents) await paymentProvider().refund(order.id, dispute.refundCents);
   await audit(a.id, `dispute_${dispute.decision}`, 'dispute', id, {
     orderId: order.id,
     refundCents: dispute.refundCents ?? null,

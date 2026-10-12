@@ -2,6 +2,7 @@ import 'server-only';
 import { isPkg, pkgCost, pkgOffered, type Pkg, type Product } from '../data';
 import { deliveryOf, platformOf, storeOf } from '../apps';
 import { productRecord } from '../catalog';
+import { accountLockedOut } from '../supabase/viewer';
 import { EXAMPLE_NOTE, examplesBuyable } from '../examples';
 import { getSettings } from '../settings';
 import { ALL_TLDS, cleanName } from '../domains';
@@ -58,6 +59,8 @@ export async function quoteSite(i: SiteInput): Promise<Quote> {
   const p = rec.product;
   if (p.example && !examplesBuyable()) return { error: EXAMPLE_NOTE };
   const real = !!p.sellerId; // a seller's own listing, not a starter
+  // A banned or suspended seller cannot take new orders: they could not deliver them (they are locked out) and must not be paid for them.
+  if (real && (await accountLockedOut(p.sellerId))) return { error: 'That product is not available.' };
   if (real) {
     const max = (await getSettings()).priceMaxCents;
     if ((p.price + pkgCost(p, isPkg(i.pkg) ? i.pkg : 'asis')) * 100 > max) return { error: 'This listing is above the price limit for now. Ask the seller to lower the price.' };

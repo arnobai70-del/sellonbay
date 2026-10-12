@@ -2,7 +2,7 @@ import 'server-only';
 import { audit } from './admin/audit';
 import { HELD_TEXT, heldReason, heldSince, holdReasonFor, listHolds, markDecided, maybeHold, type Hold } from './holdStore';
 import { notify } from './notify';
-import { cancel, getOrder } from './orders/service';
+import { cancel, getOrder, refundAtProvider } from './orders/service';
 import { orderStore } from './orders/store';
 
 export { HELD_TEXT, heldReason, heldSince, holdReasonFor, listHolds, maybeHold, type Hold };
@@ -25,6 +25,7 @@ export async function decideHold(adminId: string | null, orderId: string, decisi
   if (decision === 'cancel') {
     const r = await cancel(orderId, adminId, `safety check: ${why}`);
     if (!r.ok) return fail(r.status, r.error);
+    if (o?.fundedAt) await refundAtProvider(o); // the ledger gives the escrow back; the card is refunded here
   }
   if (!(await markDecided(orderId, outcome, adminId, why))) return fail(409, 'This hold was just decided.');
   const pausedMs = Math.max(0, now - since);
