@@ -3,7 +3,8 @@ import { getSettings } from './settings';
 import { THEMES, type Product, type ThemeKey } from './data';
 import { ALL_PRODUCTS, type Platform } from './apps';
 import { supabaseConfigured } from './supabase/env';
-import { createAdminClient, createClient } from './supabase/server';
+import { createAdminClient } from './supabase/server';
+import { mayViewUnreleased } from './supabase/viewer';
 import { isLicenceType } from './licences';
 import { thirdPartySchema } from './schemas';
 
@@ -175,19 +176,7 @@ export async function visibleProduct(slug: string): Promise<{ product: Product; 
     const { data } = await admin.from('products').select(COLS).eq('slug', slug).maybeSingle();
     const r = data as Row | null;
     if (!r) return null;
-    if (r.status !== 'live') {
-      const sb = await createClient();
-      const {
-        data: { user },
-      } = await sb.auth.getUser();
-      if (!user) return null;
-      let allowed = user.id === r.seller_id;
-      if (!allowed) {
-        const { data: me } = await sb.from('profiles').select('role').eq('id', user.id).single();
-        allowed = me?.role === 'admin';
-      }
-      if (!allowed) return null;
-    }
+    if (r.status !== 'live' && !(await mayViewUnreleased(r.seller_id as string))) return null;
     const who = await names(admin, [r.seller_id]);
     return { product: toProduct(r, who.get(r.seller_id) ?? 'Seller'), status: r.status };
   } catch (e) {

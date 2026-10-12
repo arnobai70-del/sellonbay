@@ -1,6 +1,7 @@
 import { readDemoFile, typeOf } from '@/lib/demoStore';
 import { supabaseConfigured } from '@/lib/supabase/env';
-import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { mayViewUnreleased } from '@/lib/supabase/viewer';
 
 /*
  * Serves a seller's uploaded demo site. The files are untrusted, so every response carries
@@ -19,19 +20,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!p || !p.demo_path) return nf();
 
   const live = p.status === 'live';
-  if (!live) {
-    const sb = await createClient();
-    const {
-      data: { user },
-    } = await sb.auth.getUser();
-    if (!user) return nf();
-    let ok = user.id === p.seller_id;
-    if (!ok) {
-      const { data: me } = await sb.from('profiles').select('role').eq('id', user.id).single();
-      ok = me?.role === 'admin';
-    }
-    if (!ok) return nf();
-  }
+  if (!live && !(await mayViewUnreleased(p.seller_id))) return nf();
 
   let rel = (path ?? []).join('/');
   if (rel.includes('\0') || rel.split('/').some((s) => s === '..' || s.startsWith('.'))) return nf();

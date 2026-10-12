@@ -73,6 +73,25 @@ export async function staffNeedsCode(): Promise<boolean> {
   return aal?.currentLevel !== 'aal2';
 }
 
+/*
+ * A listing that is not live (in review, rejected, paused): only its seller and admins may open it, and, like every seller and admin page,
+ * only after the authenticator code. Used by the product, preview, checkout and hosted demo routes.
+ */
+export async function mayViewUnreleased(sellerId: string | null | undefined): Promise<boolean> {
+  if (!supabaseConfigured) return false;
+  const sb = await createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  if (user.id !== sellerId) {
+    const { data: me } = await sb.from('profiles').select('role').eq('id', user.id).single();
+    if (me?.role !== 'admin') return false;
+  }
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  return aal?.currentLevel === 'aal2';
+}
+
 /* Just the signed-in user's id (or undefined), for pages that show a draft only to its owner. */
 export async function getViewerId(): Promise<string | undefined> {
   if (!supabaseConfigured) return undefined;
