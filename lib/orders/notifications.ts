@@ -17,6 +17,7 @@ export async function notifyOrderEvent(o: Order, e: OrderEvent): Promise<void> {
     case 'auto_delivered':
     case 'demo_seller_delivered':
     case 'access_confirmed':
+    case 'access_auto_confirmed':
       await notify(o.buyerId, 'order_delivered', base);
       break;
     case 'accepted':

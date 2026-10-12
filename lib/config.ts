@@ -10,7 +10,7 @@ export const CONFIG = {
   // ready-made sales: 30% when the seller's price is under $20, else 22%; custom, extra and trial work 20%
   fees: { saleBps: 2200, saleLowBps: 3000, saleLowBelowCents: 2000, customBps: 2000 },
   dispute: { sellerReplyHours: 48, adminDecisionDays: 5, flagAfterRejected: 3 },
-  extraWork: { titleMax: 80, minCents: 500, minDays: 1, maxDays: 3, maxPending: 3 },
+  extraWork: { titleMax: 80, minCents: 500, maxCents: 50000, minDays: 1, maxDays: 3, maxPending: 3 }, // max $500 (owner, 2026-10-12)
   trial: { minDays: 3, maxDays: 5, maxPriceCents: 15000, creditWindowDays: 30 }, // starter trial package
   download: { linkHours: 24, linksPerHourPerOrder: 5, ipPerHour: 30 },
   trialCopy: { linkMinutes: 60, perBuyerProductDays: 7, requestsPerDay: 3, maxFileMb: 25 }, // limited copy before purchase (feature flag)
@@ -34,7 +34,9 @@ export const CONFIG = {
     cluster: { accounts: 4, hours: 24 }, // this many accounts on one connection or device raises an alert
     burst: { hits: 10, hours: 1 }, // this many refused requests from one connection raises an alert
   },
-  repo: { inviteDays: 7, reminderHours: 24, maxResends: 5 }, // a GitHub invitation runs out after 7 days; remind the buyer a day before
+  // a GitHub invitation runs out after 7 days; remind the buyer a day before. If the buyer never confirms access, it counts as confirmed
+  // autoConfirmDays after the last invite and the review starts (owner, 2026-10-12).
+  repo: { inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 7 },
   // What a seller may charge on top of the price for "with setup help" and "with customisation" (0 = not offered). The defaults are what every listing had before sellers chose.
   packages: {
     setupCents: [0, 1000, 2000, 3000, 5000, 7500, 10000, 15000] as readonly number[],

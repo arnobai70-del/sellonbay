@@ -10,7 +10,7 @@ describe('rules in one place', () => {
     expect(CONFIG.bugFixDays).toBe(7);
     expect(CONFIG.fees).toEqual({ saleBps: 2200, saleLowBps: 3000, saleLowBelowCents: 2000, customBps: 2000 });
     expect(CONFIG.dispute).toMatchObject({ sellerReplyHours: 48, adminDecisionDays: 5 });
-    expect(CONFIG.extraWork).toEqual({ titleMax: 80, minCents: 500, minDays: 1, maxDays: 3, maxPending: 3 });
+    expect(CONFIG.extraWork).toEqual({ titleMax: 80, minCents: 500, maxCents: 50000, minDays: 1, maxDays: 3, maxPending: 3 });
     expect(CONFIG.trial).toMatchObject({ minDays: 3, maxDays: 5, maxPriceCents: 15000, creditWindowDays: 30 });
     expect(CONFIG.download.linkHours).toBe(24);
     expect(CONFIG.chat).toMatchObject({ warnAtBlocks: 3, suspendAtBlocks: 5, windowDays: 30, suspendDays: 7, maxChars: 2000, perUserBurst: [20, 1] });
@@ -19,7 +19,7 @@ describe('rules in one place', () => {
     expect(CONFIG.abuse).toEqual({ autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 });
     expect(CONFIG.listing.periodDays).toEqual([0, 30, 90, 180, 365]);
     expect(CONFIG.listing.requirementsMax).toBe(600);
-    expect(CONFIG.repo).toEqual({ inviteDays: 7, reminderHours: 24, maxResends: 5 });
+    expect(CONFIG.repo).toEqual({ inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 7 });
     expect(CONFIG.packages).toEqual({
       setupCents: [0, 1000, 2000, 3000, 5000, 7500, 10000, 15000],
       customCents: [0, 5000, 10000, 15000, 25000, 50000, 100000],
