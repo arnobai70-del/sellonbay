@@ -35,6 +35,8 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
   const starter = DEVS.find((d) => d.id === body?.dev);
   if (starter && !examplesBuyable()) return fail('This is an example profile. We made it to show how hiring works, so it cannot be hired.', 400);
+  // The profile page hides the hire button for a fully booked developer; the server keeps to the same rule.
+  if (starter?.avail === 'Booked') return fail('This developer is fully booked right now. Try again later or pick another developer.', 409);
   let packs = starter?.packs;
   let devUser: string | null = null;
   let ownTrial: { price: number; days: number } | undefined;
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
       .eq('handle', String(body?.dev ?? ''))
       .maybeSingle();
     if (!data || data.status !== 'live') return fail('That developer is not available.', 404);
+    if (data.avail === 'Booked') return fail('This developer is fully booked right now. Try again later or pick another developer.', 409);
     packs = data.packs;
     devUser = data.user_id;
     ownTrial = data.trial_price_cents && data.trial_days ? { price: Math.round(data.trial_price_cents / 100), days: data.trial_days } : undefined;

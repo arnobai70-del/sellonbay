@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     if (isBlocked(brief)) return fail('Keep emails, phone numbers and outside payment talk out of the brief.');
     const r = await getDev(String(b.dev ?? ''), buyerId ?? undefined);
     if (!r || r.status !== 'live') return fail('That developer is not available.', 404);
+    if (r.dev.avail === 'Booked') return fail('This developer is fully booked right now. Try again later or pick another developer.', 409);
     // A real developer's profile is a real order: the developer delivers it and is paid through the ledger, so both sides need an account.
     // The made-up starter profiles use the demo seller and can be paid for only where examples can (never on the live site).
     if (!r.userId && !examplesBuyable()) return fail('This is an example profile. We made it to show how hiring works, so it cannot be hired.', 400);

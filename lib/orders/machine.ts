@@ -164,7 +164,10 @@ export function dueSteps(o: Order, now: number): { order: Order; event: OrderEve
       else if (cur.state === 'in_delivery' && now >= cur.fundedAt + DEMO.startMs + DEMO.buildMs) step('delivered', cur.fundedAt + DEMO.startMs + DEMO.buildMs, 'demo_seller_delivered');
     }
     if (cur.state === 'delivered' && cur.reviewEndsAt !== undefined && now >= cur.reviewEndsAt) step('accepted', cur.reviewEndsAt, 'auto_accepted');
-    if (['funded', 'in_delivery'].includes(cur.state) && cur.dueAt !== undefined && now >= cur.dueAt) step('overdue', cur.dueAt, 'overdue');
+    // A repository order is in_delivery once the invite is sent: the buyer already has the code, so the clock cannot turn it overdue (and cancellable
+    // for a full refund) just because the buyer never confirmed access.
+    const invited = cur.deliveryType === 'repo_access' && cur.state === 'in_delivery';
+    if (['funded', 'in_delivery'].includes(cur.state) && !invited && cur.dueAt !== undefined && now >= cur.dueAt) step('overdue', cur.dueAt, 'overdue');
     if (cur.state === 'accepted' && cur.payoutAfter !== undefined && now >= cur.payoutAfter) step('payout_pending', cur.payoutAfter, 'hold_ended');
     if (cur.state === before) break;
   }
