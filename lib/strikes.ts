@@ -31,6 +31,28 @@ async function log(a: AccountAction) {
 }
 
 /*
+ * Blocked messages are counted from this time on: the start of the window, or the last suspension or lift if that is later.
+ * Without this, the old blocks would still be in the window after a suspension ends and the next block would suspend again at once.
+ */
+export async function strikesSince(userId: string, now = Date.now()): Promise<number> {
+  const windowStart = now - CONFIG.chat.windowDays * DAY_MS;
+  let last = 0;
+  if ((await pg()) && UUID.test(userId)) {
+    const { data } = await createAdminClient()
+      .from('account_actions')
+      .select('created_at')
+      .eq('user_id', userId)
+      .in('action', ['suspended', 'unsuspended'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+    last = data?.[0] ? Date.parse(data[0].created_at) : 0;
+  } else {
+    for (const a of mem.actions) if (a.userId === userId && a.action !== 'warning') last = Math.max(last, a.at);
+  }
+  return Math.max(windowStart, last);
+}
+
+/*
  * Called right after a blocked message was stored. `blocksInWindow` includes the one just stored.
  * Returns what happened, so callers and tests can see it.
  */

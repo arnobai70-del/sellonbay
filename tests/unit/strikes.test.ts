@@ -41,6 +41,18 @@ describe('strikes for blocked messages', () => {
     expect(isSuspended(u)).toBe(false);
     expect(actionsFor(u).at(-1)?.action).toBe('unsuspended');
   });
+  it('after a suspension is lifted the old blocks do not count again', async () => {
+    const u = 'strike-user-3';
+    for (let i = 0; i < CONFIG.chat.suspendAtBlocks; i++) await block(u);
+    expect(isSuspended(u)).toBe(true);
+    await unsuspend(u, 'admin-1');
+    await new Promise((r) => setTimeout(r, 2));
+    await block(u);
+    expect(isSuspended(u)).toBe(false);
+    expect(actionsFor(u).filter((a) => a.action === 'suspended')).toHaveLength(1);
+    for (let i = 1; i < CONFIG.chat.suspendAtBlocks; i++) await block(u);
+    expect(isSuspended(u)).toBe(true);
+  });
   it('blocks of different people are counted separately', async () => {
     await block('strike-a');
     await block('strike-a');

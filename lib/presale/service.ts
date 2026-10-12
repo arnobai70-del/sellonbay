@@ -3,7 +3,7 @@ import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
 import { allow } from '../delivery/service';
 import { CONFIG } from '../config';
-import { applyStrikes } from '../strikes';
+import { applyStrikes, strikesSince } from '../strikes';
 
 /* Pre-sale questions. Stored in presale_messages (or in memory when Supabase is off). Blocked attempts are kept in blocked_messages with a reason. */
 const { presale } = CONFIG;
@@ -99,14 +99,14 @@ export async function saveBlocked(b: { senderId: string; sellerId: string | null
       ip: b.ip,
       created_at: new Date().toISOString(),
     });
-    const since = Date.now() - CONFIG.chat.windowDays * 86_400_000;
+    const since = await strikesSince(b.senderId);
     await applyStrikes(b.senderId, memBlocked().filter((m) => m.sender_id === b.senderId && Date.parse(m.created_at) > since).length);
     return;
   }
   const db = createAdminClient();
   await db.from('blocked_messages').insert({ sender_id: b.senderId, seller_id: b.sellerId, product_key: b.productKey, body: b.body, reason: b.reason, context, ip: b.ip });
   if (/^[0-9a-f-]{36}$/i.test(b.senderId)) {
-    const since = new Date(Date.now() - CONFIG.chat.windowDays * 86_400_000).toISOString();
+    const since = new Date(await strikesSince(b.senderId)).toISOString();
     const { count } = await db.from('blocked_messages').select('id', { count: 'exact', head: true }).eq('sender_id', b.senderId).gte('created_at', since);
     await applyStrikes(b.senderId, count ?? 0);
   }
