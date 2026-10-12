@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CrystalLogo } from './CrystalLogo';
 import { OAuthButtons } from './OAuthButtons';
+import { Turnstile } from './Turnstile';
 import { authenticate, requestReset } from '@/app/(bare)/login/actions';
 
 const ROLES = [
@@ -11,12 +12,23 @@ const ROLES = [
 ] as const;
 
 /* Real sign-in when Supabase keys are set, otherwise the old demo redirect. */
-export function AuthClient({ live, error, next, sent }: { live: boolean; error?: string; next?: string; sent?: boolean }) {
+export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boolean; error?: string; next?: string; sent?: boolean; botKey?: string }) {
   const router = useRouter();
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(sent ? 'forgot' : 'signin');
   const [show, setShow] = useState(false);
   const signup = mode === 'signup';
+  // The bot check shows only when the server has real Turnstile keys. A token works once, so every send gets a fresh widget.
+  const bot = live && !!botKey;
+  const [token, setToken] = useState('');
+  const [round, setRound] = useState(0);
+  const afterSend = () => setTimeout(() => (setToken(''), setRound((r) => r + 1)), 0);
+  const botCheck = bot && (
+    <>
+      <Turnstile key={round} siteKey={botKey} onToken={setToken} />
+      <input type="hidden" name="turnstile" value={token} />
+    </>
+  );
 
   return (
     <div className="auth" data-auth>
@@ -56,12 +68,13 @@ export function AuthClient({ live, error, next, sent }: { live: boolean; error?:
                 <span>If that email has an account, a reset link is on its way. Check your inbox and spam folder.</span>
               </div>
             ) : (
-              <form action={requestReset}>
+              <form action={requestReset} onSubmit={bot ? afterSend : undefined}>
                 <div className="field">
                   <label htmlFor="f-mail">Email</label>
                   <input id="f-mail" name="email" type="email" required autoComplete="email" />
                 </div>
-                <button className="btn btn-blue btn-lg" type="submit" style={{ width: '100%', marginTop: 24 }}>
+                {botCheck}
+                <button className="btn btn-blue btn-lg" type="submit" disabled={bot && !token} style={{ width: '100%', marginTop: 24 }}>
                   Send reset link
                 </button>
               </form>
@@ -107,7 +120,7 @@ export function AuthClient({ live, error, next, sent }: { live: boolean; error?:
 
             <form
               {...(live
-                ? { action: authenticate }
+                ? { action: authenticate, onSubmit: bot ? afterSend : undefined }
                 : {
                     onSubmit: (e: React.FormEvent) => {
                       e.preventDefault();
@@ -177,7 +190,8 @@ export function AuthClient({ live, error, next, sent }: { live: boolean; error?:
                   {error}
                 </p>
               )}
-              <button className="btn btn-blue btn-lg" type="submit" style={{ width: '100%', marginTop: 24 }}>
+              {botCheck}
+              <button className="btn btn-blue btn-lg" type="submit" disabled={bot && !token} style={{ width: '100%', marginTop: 24 }}>
                 {signup ? 'Create account' : 'Sign in'}
               </button>
               {signup && (

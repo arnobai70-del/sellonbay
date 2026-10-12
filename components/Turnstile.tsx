@@ -23,7 +23,7 @@ const load = () =>
   }));
 
 /* The Cloudflare Turnstile bot check. Calls onToken with a one-time token the server verifies; calls it with '' when the token expires. */
-export function Turnstile({ onToken }: { onToken: (t: string) => void }) {
+export function Turnstile({ onToken, siteKey = SITE_KEY }: { onToken: (t: string) => void; siteKey?: string }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let id: string | undefined;
@@ -31,13 +31,13 @@ export function Turnstile({ onToken }: { onToken: (t: string) => void }) {
     load()
       .then(() => {
         if (dead || !box.current || !window.turnstile) return;
-        id = window.turnstile.render(box.current, { sitekey: SITE_KEY, callback: onToken, 'expired-callback': () => onToken(''), 'error-callback': () => onToken('') });
+        id = window.turnstile.render(box.current, { sitekey: siteKey, callback: onToken, 'expired-callback': () => onToken(''), 'error-callback': () => onToken('') });
       })
       .catch(() => onToken(''));
     return () => {
       dead = true;
       if (id && window.turnstile) window.turnstile.remove(id);
     };
-  }, [onToken]);
+  }, [onToken, siteKey]);
   return <div ref={box} className="turnstile" />;
 }

@@ -62,7 +62,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - Proxy DNS (orange cloud), SSL mode Full (strict).
 - WAF managed rules on, Bot Fight Mode on.
 - Rate limits on `/login`, `/api/*`, the chat and the free tools.
-- Turnstile on sign-up, sign-in, chat send and free tools (the app already has the widget on the pre-sale question form; set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`).
+- Turnstile on sign-up, sign-in, chat send and free tools. The app has the widget on the pre-sale question form, the free site-ideas tool, and sign in, sign up and password reset; set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. Sign in, sign up and reset turn the check on by themselves once real keys are set (no rebuild needed) and stay open without them, so a host without keys never locks people out. Chat send has no widget yet.
 - Do not cache `/api/*`, `/orders/*`, `/pay/*`, `/dashboard/*`.
 
 ## Security checklist (spec section 9). Tick when done and tested.

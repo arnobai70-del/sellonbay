@@ -1,6 +1,7 @@
 'use server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { authBotCheck } from '@/lib/bot/turnstile';
 import { guard, noteAccount } from '@/lib/guard';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
@@ -14,6 +15,12 @@ function friendly(msg: string) {
   return 'Something went wrong. Please try again.';
 }
 const safeNext = (n: FormDataEntryValue | null) => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') ? n : '');
+const BOT_FAILED = 'The bot check did not pass. Wait for it to finish, then try again.';
+async function passesBotCheck(formData: FormData) {
+  const h = await headers();
+  const ip = (h.get('x-forwarded-for')?.split(',')[0].trim() || h.get('x-real-ip') || 'unknown').slice(0, 64);
+  return authBotCheck(String(formData.get('turnstile') ?? ''), ip);
+}
 
 /* Explicit sign in or sign up, chosen by the form's mode field. */
 export async function authenticate(formData: FormData) {
@@ -26,6 +33,7 @@ export async function authenticate(formData: FormData) {
   if (!email || password.length < 8) return back('Use a valid email and a password of at least 8 characters.');
 
   if (signup && !name) return back('Enter your name.');
+  if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
   const g = await guard(signup ? 'signup' : 'login', null, { email });
   if (!g.ok) return back(g.error);
 
@@ -63,6 +71,7 @@ export async function signOut() {
 export async function requestReset(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim();
   if (!email) return back('Enter your email.');
+  if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
   const h = await headers();
   const origin = h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
   await (await createClient()).auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/callback?next=/reset-password` });
