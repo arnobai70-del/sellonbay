@@ -17,6 +17,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const order = await getOrder(id);
   if (!order || order.sellerId !== user.id) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
   if (await heldReason(id)) return NextResponse.json({ error: HELD_TEXT }, { status: 409 });
+  // A repository order is delivered when the buyer confirms the invite works, never by the seller's word alone.
+  if (order.deliveryType === 'repo_access' && order.state !== 'fix_requested')
+    return NextResponse.json({ error: 'This order is delivered through a repository. Send the invite; the review starts when the buyer confirms access.' }, { status: 409 });
   const r = await deliver(id, user.id);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
   return NextResponse.json({ ok: true });

@@ -4,7 +4,7 @@ import { canUseDemoPayment } from '../commerce/demoPaymentPolicy';
 import type { VerifiedEvent } from '../providers/payment/types';
 import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
-import { fundExtra } from './extra';
+import { fundExtra, getExtra } from './extra';
 import { cancel, ensureLedger, fund, getOrder, move } from './service';
 import { bump } from '../metrics';
 import { audit } from '../admin/audit';
@@ -39,6 +39,11 @@ async function release(provider: string, ev: VerifiedEvent) {
   if (supabaseConfigured) await createAdminClient().from('webhook_events').delete().eq('provider', provider).eq('event_id', ev.id);
 }
 
+async function moneyNeedsAdmin(order: { id: string; title: string }, ev: VerifiedEvent, what: string) {
+  await audit(null, 'payment_needs_admin', 'order', order.id, { type: ev.type, amountCents: ev.amountCents, ref: ev.ref, what });
+  await notifyAdmins('abuse_alert', { what: 'a payment needs a look', detail: `${order.title}: ${(ev.amountCents / 100).toFixed(2)} USD, ${what}` }, `payment:${ev.id}`);
+}
+
 async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   const order = await getOrder(ev.orderId);
   if (!order) return { status: 'rejected', reason: 'unknown order' };
@@ -47,6 +52,8 @@ async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   if (provider === 'fake' && !canUseDemoPayment(order)) return { status: 'rejected', reason: 'test gateway cannot modify a real order' };
 
   if (ev.type === 'payment.succeeded' && ev.changeRequestId) {
+    // The extra must belong to the order the event names: otherwise a demo order's event could fund a real order's extra.
+    if ((await getExtra(ev.changeRequestId))?.orderId !== order.id) return { status: 'rejected', reason: 'the extra work belongs to another order' };
     const r = await fundExtra(ev.changeRequestId, ev.amountCents, ev.ref);
     if (!r.ok) return r.status === 422 ? { status: 'rejected', reason: r.error } : { status: 'ignored', reason: r.error };
     await ensureLedger((await getOrder(order.id)) ?? order);
@@ -54,7 +61,11 @@ async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   }
 
   if (ev.type === 'payment.succeeded') {
-    if (order.state !== 'awaiting_payment') return { status: 'ignored', reason: `order is ${order.state}` };
+    if (order.state !== 'awaiting_payment') {
+      // Money arrived for an order that was cancelled or already paid: it must go back, or the buyer is charged with nothing in escrow.
+      if (ev.ref !== order.payment?.ref) await moneyNeedsAdmin(order, ev, `a payment arrived but the order is ${order.state}. Refund it at the provider.`);
+      return { status: 'ignored', reason: `order is ${order.state}` };
+    }
     if (ev.amountCents !== order.priceCents) return { status: 'rejected', reason: 'amount does not match the order' };
     let domain = order.domain;
     // Never fund a new-domain purchase with an unverified registrar, even if
@@ -92,6 +103,11 @@ async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   }
 
   if (ev.type === 'refund.succeeded') {
+    // Only a refund of everything still paid ends the order. A smaller refund made at the provider is for an admin to record, not a full refund.
+    if (ev.amountCents < order.priceCents - order.refundedCents) {
+      await moneyNeedsAdmin(order, ev, 'a partial refund was made at the payment provider. The order was not changed.');
+      return { status: 'ignored', reason: 'partial refund' };
+    }
     if (order.state === 'disputed') {
       const r = await move(order.id, 'refunded', { actorId: null, event: 'refunded', meta: { ref: ev.ref, amountCents: ev.amountCents } });
       return r.ok ? { status: 'applied' } : { status: 'ignored', reason: r.error };

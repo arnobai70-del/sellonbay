@@ -82,7 +82,8 @@ async function decide(c: ChangeRequest, next: ExtraState, extra: Partial<ChangeR
 export type ExtraResult = { ok: true; request: ChangeRequest } | { ok: false; status: number; error: string };
 const fail = (status: number, error: string): ExtraResult => ({ ok: false, status, error });
 
-const OPEN_FOR_EXTRA: readonly OrderState[] = ['funded', 'in_delivery', 'delivered', 'overdue'];
+// Not while the buyer reviews a delivery: the review would end (and pay out the extra) before the extra work is done.
+const OPEN_FOR_EXTRA: readonly OrderState[] = ['funded', 'in_delivery', 'overdue'];
 
 export async function createExtra(orderId: string, sellerId: string | null, i: { title: string; priceCents: number; addDays: number }): Promise<ExtraResult> {
   const o = await getOrder(orderId);

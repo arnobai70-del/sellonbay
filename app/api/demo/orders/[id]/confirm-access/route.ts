@@ -3,6 +3,7 @@ import { orderFor } from '@/lib/commerce/access';
 import { confirmAccess } from '@/lib/orders/service';
 import { getViewerId } from '@/lib/supabase/viewer';
 import { idOf } from '@/lib/validate';
+import { HELD_TEXT, heldReason } from '@/lib/holds';
 
 export const runtime = 'nodejs';
 
@@ -10,6 +11,7 @@ export const runtime = 'nodejs';
 export async function POST(_r: Request, { params }: { params: Promise<{ id: string }> }) {
   const o = await orderFor(await idOf(params));
   if (!o) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+  if (await heldReason(o.id)) return NextResponse.json({ error: HELD_TEXT }, { status: 409 });
   const r = await confirmAccess(o.id, (await getViewerId()) ?? null);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
   return NextResponse.json({ ok: true });

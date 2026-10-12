@@ -568,7 +568,7 @@ export function OrderView({ initial, kind, paidNow, files = [], realtime = false
                 <b>Demo controls</b>
                 <span>Real {hire ? 'developers' : 'sellers'} take 1 to 7 days and you get 48 hours to review. Here you can jump ahead.</span>
               </div>
-              {['funded', 'in_delivery', 'delivered', 'overdue'].includes(o.state) && o.kind === 'site' && (
+              {['funded', 'in_delivery', 'overdue'].includes(o.state) && o.kind === 'site' && (
                 <button className="btn btn-line btn-sm" disabled={busy === 'demo-extra'} onClick={demoExtra}>
                   Pretend the seller asks for extra work
                 </button>
