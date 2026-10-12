@@ -13,8 +13,9 @@ const db = new PGlite();
 
 await db.exec(`
   create role anon; create role authenticated; create role service_role;
-  create schema auth; create table auth.users (id uuid primary key default gen_random_uuid(), email text);
+  create schema auth; create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
   create schema storage; create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint);
   create schema cron; create table cron.job (jobid serial, jobname text);
   create function cron.unschedule(j int) returns boolean language sql as $$ select true $$;
@@ -199,6 +200,25 @@ if (!failed) {
   } catch (e) {
     failed = true;
     console.log('FAIL atomic AI reservation smoke:', e.message);
+  }
+}
+
+if (!failed) {
+  // Admin rights in the database need the authenticator code (0045): a password-only admin session is not an admin to RLS.
+  try {
+    const admin = '22222222-2222-4222-8222-222222222222';
+    await db.exec(`insert into auth.users (id, email) values ('${admin}', 'admin@example.test'); update profiles set role = 'admin' where id = '${admin}'`);
+    const isAdmin = async (aal) => {
+      await db.exec(`select set_config('request.jwt.claim.sub', '${admin}', false), set_config('request.jwt.claims', '${JSON.stringify({ sub: admin, aal })}', false)`);
+      return (await db.query('select is_admin() as a')).rows[0].a;
+    };
+    if ((await isAdmin('aal1')) !== false) throw new Error('an aal1 admin session counts as admin');
+    if ((await isAdmin('aal2')) !== true) throw new Error('an aal2 admin session does not count as admin');
+    await db.exec("select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claims', '', false)");
+    console.log('ok   is_admin: needs the authenticator code (aal2)');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL is_admin aal2 smoke:', e.message);
   }
 }
 

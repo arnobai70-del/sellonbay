@@ -4,8 +4,11 @@ import { exportPayouts, payoutsCsv, weekStartOf } from '@/lib/payouts';
 
 export const runtime = 'nodejs';
 
-/* The week's payouts as a CSV for sending money by hand. Downloading locks the scheduled ones as "exported". Payout details are the sellers' own and stay admin-only. */
-export async function GET(req: Request) {
+/*
+ * The week's payouts as a CSV for sending money by hand. Downloading locks the scheduled ones as "exported", so it is a POST (a form button):
+ * a GET could be fired by a link or an image on another page. Payout details are the sellers' own and stay admin-only.
+ */
+export async function POST(req: Request) {
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const week = new URL(req.url).searchParams.get('week') ?? weekStartOf(Date.now());

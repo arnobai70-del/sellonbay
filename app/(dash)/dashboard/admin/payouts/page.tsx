@@ -33,9 +33,11 @@ export default async function Payouts() {
           <p>
             Waiting weeks:{' '}
             {[...new Set(toExport.map((p) => p.weekStart))].map((w) => (
-              <a key={w} className="btn btn-gold btn-sm" href={`/api/admin/payouts/csv?week=${w}`} style={{ marginRight: 8 }}>
-                Download CSV for {w}
-              </a>
+              <form key={w} method="post" action={`/api/admin/payouts/csv?week=${w}`} style={{ display: 'inline' }}>
+                <button type="submit" className="btn btn-gold btn-sm" style={{ marginRight: 8 }}>
+                  Download CSV for {w}
+                </button>
+              </form>
             ))}
           </p>
         )}

@@ -1,5 +1,6 @@
 import 'server-only';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { mayUseDemoAdmin } from '@/lib/admin/mode';
 import { createClient } from './server';
 import { supabaseConfigured } from './env';
 import { cannotAct } from '@/lib/accounts';
@@ -19,11 +20,15 @@ export async function getViewer() {
 /*
  * Server-side page guard. proxy.ts also checks this, but a Server Action redirect (for example right after sign in)
  * renders the next page without going through the proxy, so every protected page must check for itself.
- * Demo mode (no Supabase keys) lets everything through.
+ * Demo mode (no Supabase keys) lets everything through, except seller and admin pages on a production server not marked as a demo
+ * (missing keys there must never open the admin pages to everybody).
  * roles: who may open this page. Sellers and admins must also have passed the authenticator code (aal2).
  */
 export async function requireViewer(opts: { path: string; roles?: ViewerRole[] }) {
-  if (!supabaseConfigured) return null;
+  if (!supabaseConfigured) {
+    if (opts.roles && !opts.roles.includes('buyer') && !mayUseDemoAdmin(process.env)) notFound();
+    return null;
+  }
   const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(opts.path));
@@ -47,6 +52,18 @@ export async function viewerBlocked(id: string | null | undefined): Promise<bool
   const sb = await createClient();
   const { data: p } = await sb.from('profiles').select('banned, suspended_until').eq('id', id).single();
   return cannotAct(p);
+}
+
+/* Sellers and admins need the authenticator code (aal2) for anything about their account; true means this session has not passed it. */
+export async function staffNeedsCode(): Promise<boolean> {
+  if (!supabaseConfigured) return false;
+  const sb = await createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+  const { data: p } = await sb.from('profiles').select('role').eq('id', user.id).single();
+  if ((p?.role ?? 'buyer') === 'buyer') return false;
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  return aal?.currentLevel !== 'aal2';
 }
 
 /* Just the signed-in user's id (or undefined), for pages that show a draft only to its owner. */
