@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { addEvidenceTo, getDispute } from '@/lib/disputes';
 import { getOrder } from '@/lib/orders/service';
 import { supabaseConfigured } from '@/lib/supabase/env';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { createClient } from '@/lib/supabase/server';
+import { cannotAct } from '@/lib/accounts';
 import { idOf, readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
@@ -15,9 +16,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const d = await getDispute(id);
   const o = d ? await getOrder(d.orderId) : null;
   if (!d || !o) return NextResponse.json({ error: 'Dispute not found.' }, { status: 404 });
-  const me = (await getViewerId()) ?? null;
-  // Signed in: only the two parties. Demo mode has no accounts, so the order id is the key (the dispute id is unguessable).
-  if (supabaseConfigured && (!me || (me !== o.buyerId && me !== o.sellerId))) return NextResponse.json({ error: 'Dispute not found.' }, { status: 404 });
+  let me: string | null = null;
+  // Signed in: only the two parties, not banned or suspended, and the seller with the authenticator code. Demo mode has no accounts, so the
+  // dispute id is the key (it is unguessable).
+  if (supabaseConfigured) {
+    const sb = await createClient();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    if (!user || (user.id !== o.buyerId && user.id !== o.sellerId)) return NextResponse.json({ error: 'Dispute not found.' }, { status: 404 });
+    const { data: p } = await sb.from('profiles').select('banned, suspended_until').eq('id', user.id).single();
+    if (!p || cannotAct(p)) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 });
+    if (user.id === o.sellerId && user.id !== o.buyerId) {
+      const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== 'aal2') return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });
+    }
+    me = user.id;
+  }
   const body = await readJson(req, schema);
   if (!body.ok) return body.res;
   const r = await addEvidenceTo(id, me, body.data.text);
