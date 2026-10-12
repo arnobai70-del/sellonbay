@@ -29,7 +29,7 @@ async function waitUntilReady() {
 }
 try {
   await waitUntilReady();
-  for (const page of ['/', '/browse', '/login', '/robots.txt']) {
+  for (const page of ['/', '/browse', '/login', '/robots.txt', '/api/health']) {
     const res = await response(page);
     if (res.status !== 200) throw new Error(`Demo smoke ${page} returned ${res.status}`);
     if (page === '/') {
@@ -39,7 +39,9 @@ try {
         throw new Error('Demo root missing nosniff header');
       if (res.headers.has('x-powered-by')) throw new Error('Unexpected powered-by header');
     }
-    if (page !== '/robots.txt') {
+    if (page === '/api/health') {
+      if ((await res.json()).ok !== true) throw new Error('Demo health check did not answer ok');
+    } else if (page !== '/robots.txt') {
       if (!(await res.text()).includes('<html'))
         throw new Error(`Demo smoke ${page} did not render HTML`);
     } else {
