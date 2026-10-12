@@ -1,5 +1,6 @@
 import { createConnection } from 'node:net';
 import { once } from 'node:events';
+import { CONFIG } from '../config';
 import type { MalwareResult } from './engine';
 
 /**
@@ -8,7 +9,7 @@ import type { MalwareResult } from './engine';
  * Product files are streamed with zINSTREAM, never executed or unpacked here.
  */
 export type ClamavSettings = { host: string; port: number };
-const MAX_SCAN_BYTES = 50 * 1024 * 1024;
+const MAX_SCAN_BYTES = CONFIG.download.maxFileMb * 1024 * 1024;
 const BLOCK_BYTES = 512 * 1024;
 
 export function clamavSettings(env: Record<string, string | undefined> = process.env): ClamavSettings | null {

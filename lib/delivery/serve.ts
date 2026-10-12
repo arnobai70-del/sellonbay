@@ -1,9 +1,11 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { CONFIG } from '../config';
 import { type DownloadEvent, clientIp, logDownload } from './service';
 
-export const MAX_FILE_BYTES = 500 * 1024 * 1024;
+// Only a scanned file is delivered (see cleanFileHashes), and nothing larger than the scan limit can be scanned.
+export const MAX_FILE_BYTES = CONFIG.download.maxFileMb * 1024 * 1024;
 
 /*
  * Pass a file through unchanged while counting its bytes and hashing it. The log row is written once: when the last byte has gone out (complete), or
