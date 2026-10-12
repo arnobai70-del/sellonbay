@@ -3,7 +3,7 @@ import { visibleProduct } from '../catalog';
 import { disputeSummary } from '../disputes';
 import { heldReason } from '../holdStore';
 import type { Order } from '../orders/machine';
-import { endsAt, infoOf } from '../productInfo';
+import { endsAt, infoOf, promisedDays } from '../productInfo';
 import { inviteState, taskOf } from '../repoAccess';
 import { reviewSummary } from '../reviews';
 import { versionsForOrder } from '../versions';
@@ -17,6 +17,8 @@ async function repoView(o: Order) {
 export async function viewExtras(o: Order) {
   const prod = o.productKey ? (await visibleProduct(o.productKey))?.product : undefined;
   const i = prod ? infoOf(prod) : null;
+  const supportDays = i ? promisedDays(o.supportDays, i.supportDays) : 0;
+  const updateDays = i ? promisedDays(o.updateDays, i.updateDays) : 0;
   return {
     ...(await disputeSummary(o)),
     ...(await reviewSummary(o)),
@@ -24,13 +26,13 @@ export async function viewExtras(o: Order) {
     repo: o.deliveryType === 'repo_access' ? await repoView(o) : null,
     info: i
       ? {
-          versions: await versionsForOrder(prod!.id, o.fundedAt ?? o.createdAt, i.updateDays),
+          versions: await versionsForOrder(prod!.id, o.fundedAt ?? o.createdAt, updateDays),
           requirements: i.requirements ?? null,
           docsUrl: i.docsUrl ?? null,
-          supportDays: i.supportDays,
-          updateDays: i.updateDays,
-          supportUntil: endsAt(o.fundedAt, i.supportDays),
-          updateUntil: endsAt(o.fundedAt, i.updateDays),
+          supportDays,
+          updateDays,
+          supportUntil: endsAt(o.fundedAt, supportDays),
+          updateUntil: endsAt(o.fundedAt, updateDays),
         }
       : null,
   };

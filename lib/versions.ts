@@ -6,7 +6,7 @@ import { allow } from './delivery/service';
 import { notify, notifyAdmins } from './notify';
 import { FUNDED_STATES } from './orders/machine';
 import { orderStore } from './orders/store';
-import { endsAt, isActive } from './productInfo';
+import { endsAt, isActive, promisedDays } from './productInfo';
 import { approvalBlock, defaultDeps, requireRealMalwareScanner, runScan, type Deps } from './scan';
 import { createAdminClient } from './supabase/server';
 
@@ -237,10 +237,12 @@ export async function decideVersion(
 
 /* Everyone who paid for this product and whose update period is still running hears about the new version, once each. */
 async function notifyBuyers(p: ProductRef, v: Version, now: number): Promise<number> {
-  const orders = (await (await orderStore()).byState([...FUNDED_STATES])).filter((o) => o.productKey === p.slug && !!o.buyerId && o.fundedAt !== undefined && isActive(o.fundedAt, p.updateDays, now));
+  const orders = (await (await orderStore()).byState([...FUNDED_STATES])).filter(
+    (o) => o.productKey === p.slug && !!o.buyerId && o.fundedAt !== undefined && isActive(o.fundedAt, promisedDays(o.updateDays, p.updateDays), now),
+  );
   let n = 0;
   for (const o of orders) {
-    const until = endsAt(o.fundedAt, p.updateDays)!;
+    const until = endsAt(o.fundedAt, promisedDays(o.updateDays, p.updateDays))!;
     await notify(
       o.buyerId,
       'product_update',
@@ -253,15 +255,16 @@ async function notifyBuyers(p: ProductRef, v: Version, now: number): Promise<num
 }
 
 /* ---------- what a buyer gets ---------- */
-/* The file for an order: the newest version the buyer is entitled to, or the first file. Never throws: if versions cannot be read the first file is used. */
-export async function fileForOrder(productId: string, baseUrl: string, fundedAt: number, now = Date.now()): Promise<{ url: string; version: string | null }> {
+/* The file for an order: the newest version the buyer is entitled to, or the first file. Never throws: if versions cannot be read the first file is used.
+   `orderDays` is the update period kept on the order when it was bought (null on older orders). */
+export async function fileForOrder(productId: string, baseUrl: string, fundedAt: number, orderDays: number | null = null, now = Date.now()): Promise<{ url: string; version: string | null }> {
   try {
     if (!(await pg())) return { url: baseUrl, version: null };
     const db = createAdminClient();
     const { data: prod } = await db.from('products').select('update_days').eq('id', productId).maybeSingle();
     const { data } = await db.from('product_versions').select('version, file_url, published_at').eq('product_id', productId).eq('status', 'live');
     const live = (data ?? []).map((r) => ({ version: r.version as string, url: r.file_url as string, publishedAt: Date.parse(r.published_at as string) }));
-    const pick = eligibleVersion(live, fundedAt, prod?.update_days ?? 0, now);
+    const pick = eligibleVersion(live, fundedAt, promisedDays(orderDays, prod?.update_days ?? 0), now);
     return pick ? { url: pick.url, version: pick.version } : { url: baseUrl, version: null };
   } catch {
     return { url: baseUrl, version: null };

@@ -61,7 +61,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   if (!userId || userId !== (await getViewerId())) return no('Sign in with the account that bought this.', 403);
   const admin = createAdminClient();
-  const { data: order } = await admin.from('orders').select('id, product_id, buyer_id, status, price_cents, created_at, funded_at').eq('id', orderId).single();
+  // All columns: update_days only exists once migration 0046 is applied, and naming it would fail the read before that.
+  const { data: order } = await admin.from('orders').select('*').eq('id', orderId).single();
   if (!order || order.buyer_id !== userId) return no('Order not found.', 404);
   if (await heldReason(orderId)) return no(HELD_TEXT, 403);
   const { data: profile } = await admin.from('profiles').select('created_at, flagged').eq('id', userId).single();
@@ -80,7 +81,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   const { data: product } = await admin.from('products').select('code_url, slug').eq('id', order.product_id).single();
   if (!product?.code_url) return no('No files on this listing.', 404);
   // The newest version this buyer is entitled to (their update period), or the first file.
-  const file = await fileForOrder(order.product_id, product.code_url, Date.parse(order.funded_at ?? order.created_at));
+  const file = await fileForOrder(order.product_id, product.code_url, Date.parse(order.funded_at ?? order.created_at), typeof order.update_days === 'number' ? order.update_days : null);
 
   // Only a file that passed the scan is delivered (see cleanFileHashes). Without any clean scan on record, a production server delivers nothing.
   let hashes: Set<string> | null;

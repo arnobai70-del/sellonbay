@@ -151,6 +151,8 @@ const toRow = (o: Order): Row => ({
   oses: o.oses ?? null,
   github_username: o.githubUsername ?? null,
   licence: o.licence ?? null,
+  support_days: o.supportDays ?? null,
+  update_days: o.updateDays ?? null,
   payment_ref: o.payment?.ref ?? null,
   payment_brand: o.payment?.brand ?? null,
   payment_last4: o.payment?.last4 ?? null,
@@ -167,6 +169,7 @@ const toRow = (o: Order): Row => ({
   cancelled_at: iso(o.cancelledAt),
 });
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
 const fromRow = (r: Row): Order => ({
   id: r.id as string,
   kind: r.kind as Order['kind'],
@@ -194,6 +197,8 @@ const fromRow = (r: Row): Order => ({
   oses: (r.oses as string[]) ?? undefined,
   githubUsername: str(r.github_username),
   licence: str(r.licence),
+  supportDays: num(r.support_days),
+  updateDays: num(r.update_days),
   payment: r.payment_ref ? { ref: r.payment_ref as string, brand: (r.payment_brand as string) ?? '', last4: (r.payment_last4 as string) ?? '' } : undefined,
   attempts: (r.attempts as number) ?? 0,
   trialCreditFor: str(r.trial_credit_for),
@@ -213,7 +218,14 @@ export const postgresStore: OrderStore = {
   kind: 'postgres',
   async insert(o, created) {
     const db = createAdminClient();
-    const { error } = await db.from('orders').insert(toRow(o));
+    const row = toRow(o);
+    let { error } = await db.from('orders').insert(row);
+    // Before migration 0046 the two promise columns do not exist yet: save the order without them rather than refuse it.
+    if (error && /support_days|update_days/.test(error.message)) {
+      console.warn('orders: apply migration 0046 to keep what a listing promised on each order');
+      const { support_days: _s, update_days: _u, ...older } = row;
+      ({ error } = await db.from('orders').insert(older));
+    }
     if (error) throw new Error('Could not save the order: ' + error.message);
     const ev = await db.from('order_events').insert(eventRow(created));
     if (ev.error) throw new Error('Could not log the order: ' + ev.error.message);
