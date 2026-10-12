@@ -59,6 +59,8 @@ export type NewOrder = {
   oses?: string[];
   githubUsername?: string;
   licence?: string;
+  supportDays?: number;
+  updateDays?: number;
   trialCreditFor?: string;
   instant?: boolean;
   express?: boolean;
@@ -168,6 +170,8 @@ export async function createOrder(i: NewOrder, now = Date.now()): Promise<Order>
     oses: i.oses,
     githubUsername: i.githubUsername,
     licence: i.licence,
+    supportDays: i.supportDays,
+    updateDays: i.updateDays,
     trialCreditFor: i.trialCreditFor,
     attempts: 0,
     createdAt: now,

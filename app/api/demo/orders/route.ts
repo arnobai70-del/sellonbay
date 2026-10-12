@@ -5,6 +5,7 @@ import { getDev } from '@/lib/devsDb';
 import { creditsTrial, trialOf } from '@/lib/developers';
 import { findTrialCredit } from '@/lib/orders/trial';
 import { deliveryTypeOf, licenceOf } from '@/lib/handover';
+import { infoOf } from '@/lib/productInfo';
 import { createOrder } from '@/lib/orders/service';
 import { orderCreateSchema } from '@/lib/schemas';
 import { getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
@@ -86,6 +87,9 @@ export async function POST(req: Request) {
     pkg: isPkg(b.pkg) ? b.pkg : 'asis',
     deliveryType: p ? deliveryTypeOf(p) : 'live_site',
     licence: p ? licenceOf(p) : undefined,
+    // What a digital listing promises from the purchase (support, new versions), kept on the order so a later edit cannot shorten it.
+    supportDays: p ? infoOf(p)?.supportDays : undefined,
+    updateDays: p ? infoOf(p)?.updateDays : undefined,
     githubUsername: q.github,
     title: q.title,
     productKey: q.productId,

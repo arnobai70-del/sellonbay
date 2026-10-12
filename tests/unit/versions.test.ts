@@ -39,7 +39,7 @@ const input = (over: Partial<{ version: string; changelog: string; fileUrl: stri
   ...over,
 });
 /* A buyer who paid for the product (real money path, as in the other tests). */
-const buyer = async (slug: string, id = `ver-buyer-${++n}`) => {
+const buyer = async (slug: string, id = `ver-buyer-${++n}`, updateDays?: number) => {
   const o = await createOrder({
     kind: 'product',
     pkg: 'asis',
@@ -50,6 +50,7 @@ const buyer = async (slug: string, id = `ver-buyer-${++n}`) => {
     buyerId: id,
     sellerId: 'x',
     productKey: slug,
+    updateDays,
     demo: false,
   });
   await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'p', at: Date.now() });
@@ -186,5 +187,16 @@ describe('the admin decides', () => {
     expect(view.current).toBe('1.1');
     expect(view.isNew).toBe(true);
     expect(view.list[0]).toMatchObject({ version: '1.1' });
+  });
+  it('a seller who shortens the update period later does not cut off a buyer who paid while it was longer', async () => {
+    const p = product({ updateDays: 0 }); // the listing now says no updates
+    const kept = await buyer(p.slug, undefined, 30); // bought while it promised 30 days
+    const older = await buyer(p.slug); // an order from before the promise was kept on orders: the listing's value applies
+    const v = await publishVersion(p.sellerId, p.slug, input(), clean);
+    if (!v.ok) throw new Error(v.error);
+    const done = await decideVersion('admin-1', v.value.id, 'approve', '', true, clean);
+    expect(done.ok && done.value.notified).toBe(1);
+    expect((await notificationsFor(kept.id)).some((x) => x.kind === 'product_update')).toBe(true);
+    expect((await notificationsFor(older.id)).some((x) => x.kind === 'product_update')).toBe(false);
   });
 });

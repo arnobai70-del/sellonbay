@@ -78,6 +78,8 @@ export type Order = {
   oses?: string[];
   githubUsername?: string;
   licence?: string;
+  supportDays?: number; // digital products: what the listing promised when ordered (undefined on older orders)
+  updateDays?: number;
   payment?: { ref: string; brand: string; last4: string };
   trialCreditFor?: string; // the finished trial whose fee was taken off this order's price
   attempts: number;

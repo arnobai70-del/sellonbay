@@ -19,6 +19,10 @@ export const isActive = (fundedAt: number | undefined, days: number, now = Date.
   return end !== null && now <= end;
 };
 
+/* The period a buyer gets: what the listing promised when they ordered, or more if the seller has since made it longer. A seller who shortens it
+   later never cuts off an earlier buyer. Orders made before the promise was kept on the order (undefined) use the listing's current value. */
+export const promisedDays = (onOrder: number | null | undefined, onListing: number) => Math.max(onOrder ?? 0, onListing);
+
 /* Made-up details for the starter digital products, so the page shows what a real listing will show. */
 export const STARTER_INFO: Record<string, Omit<ProductInfo, 'docsUrl'> & { docsUrl?: string }> = {
   'saas-ui-kit': { requirements: 'Figma (free account is enough). Works with any recent Figma desktop or web version.', supportDays: 30, updateDays: 0 },
