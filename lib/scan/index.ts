@@ -47,6 +47,24 @@ export const localScanner: MalwareScanner = {
   },
 };
 
+/*
+ * The trial copy (FEATURE_TRIAL_COPY) is handed to signed-in visitors BEFORE they pay and without an admin opening it, so it must scan clean:
+ * checked when the seller uploads it and again before every download (new signatures, files stored before this check existed).
+ * Returns why it is refused, or null when it may be served. Same bar as approving files: nothing unknown, and a real scanner where one is required.
+ */
+export async function trialCopyRefusal(bytes: Uint8Array, name: string, scanner: MalwareScanner = defaultDeps.scanner, requireReal = requireRealMalwareScanner()): Promise<string | null> {
+  if (requireReal && scanner.name !== 'clamav') return 'Trial copies cannot be checked for viruses on this server yet.';
+  let status: MalwareResult['status'];
+  try {
+    status = (await scanner.scan({ bytes, sha256: createHash('sha256').update(bytes).digest('hex'), name })).status;
+  } catch {
+    status = 'unknown';
+  }
+  if (status === 'clean') return null;
+  if (status === 'unknown') return 'The trial copy could not be checked for viruses. Try again later.';
+  return 'The trial copy did not pass the virus check.';
+}
+
 export type Fingerprint = { slug: string; description: string; sha256?: string };
 export type ScanFlags = {
   malware: MalwareResult;
