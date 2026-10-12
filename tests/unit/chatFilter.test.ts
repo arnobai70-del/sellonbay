@@ -64,3 +64,82 @@ describe('pre-sale messages: allowed', () => {
     expect(isBlocked(text)).toBe(false);
   });
 });
+
+describe('tricks that used to get through', () => {
+  const cases: [string, string][] = [
+    ['johnsmith99 at gmail', 'email'],
+    ['john@gmail', 'email'],
+    ['john [at] mysite [dot] com', 'email'],
+    ['john@gmail[.]com', 'email'],
+    ['john_at_gmail_dot_com', 'email'],
+    ['my gmail: john', 'contact_channel'],
+    ['jоhn@gmаil.com', 'email'], // Cyrillic о and а
+    ['01712 three45678', 'phone'],
+    ['tg: @john', 'contact_channel'],
+    ['IG @john', 'contact_channel'],
+    ['insta: john_99', 'contact_channel'],
+    ['add me on wa', 'contact_channel'],
+    ['message me on watsapp', 'contact_channel'],
+    ['find me on tele gram', 'contact_channel'],
+    ['lets chat on telegrm', 'contact_channel'],
+    ['wаtsapp me', 'contact_channel'], // Cyrillic а
+    ['bank transfer is cheaper', 'outside_payment'],
+    ['i accept paypal', 'outside_payment'],
+    ['use paypal instead', 'outside_payment'],
+    ['payment via paypal', 'outside_payment'],
+    ['paypal: john', 'outside_payment'],
+    ['i can take crypto', 'outside_payment'],
+    ['pay with ethereum', 'outside_payment'],
+    ['btc wallet bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', 'outside_payment'],
+    ['send to 0x52908400098527886e0f7030069857d2e4169ee7', 'outside_payment'],
+    ['b.kash please', 'outside_payment'],
+    ['b k a s h', 'outside_payment'],
+    ['pay me back on whatsapp', 'outside_payment'],
+  ];
+  it.each(cases)('blocks %s', (text, why) => {
+    expect(reason(text)).toBe(why);
+  });
+});
+
+describe('normal project talk is not blocked', () => {
+  const fine = [
+    'Point the site at mybakery.com when it is ready',
+    'Look at index.html for the menu',
+    'I am at home now. The dot is red.',
+    'Please add a WhatsApp button to the contact page',
+    'Put the telegram link in the footer',
+    'Show my Instagram feed on the home page',
+    'Show my number in the header',
+    'Call me Bob',
+    'I build WhatsApp chatbots and Telegram bots',
+    'The launch is on 12/10/2026 at 10:30',
+    'We had 1,250,000 visitors last year',
+    'The site should support bank transfer payments for my customers',
+    'Does it work with Wise and Payoneer?',
+    'Will you pay me back if it does not work?',
+    'Can customers pay with PayPal on the checkout page?',
+    'Connect my PayPal account to the store',
+    'Can you log in at gmail and check the form emails arrive?',
+    'Is that wise?',
+  ];
+  it.each(fine)('allows %s', (text) => {
+    expect(isBlocked(text)).toBe(false);
+  });
+});
+
+describe('more normal talk', () => {
+  it.each([
+    'Can the form email me the new orders?',
+    'My email is set up already, the form can use it',
+    'My WhatsApp is not connected to the chatbot yet',
+    'My phone is an old Android, will the app run?',
+  ])('allows %s', (text) => {
+    expect(isBlocked(text)).toBe(false);
+  });
+  it.each([
+    ['my number: 0171', 'contact_channel'],
+    ['my whatsapp is john99', 'contact_channel'],
+  ])('blocks %s', (text, why) => {
+    expect(reason(text)).toBe(why);
+  });
+});
