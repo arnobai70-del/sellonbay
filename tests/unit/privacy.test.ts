@@ -17,6 +17,9 @@ describe('your data', () => {
     expect(all).toHaveLength(3);
     expect(all.join(' ')).toMatch(/dispute/);
     expect(all.join(' ')).toMatch(/payout/);
+    // a seller with earnings still held, or a debt, cannot be anonymised: the payout details would be gone
+    expect(deletionBlockers({ openOrders: 0, openDisputes: 0, pendingPayouts: 0, moneyHeldCents: 1200 })[0]).toMatch(/earnings/);
+    expect(deletionBlockers({ openOrders: 0, openDisputes: 0, pendingPayouts: 0, debtCents: 500 })[0]).toMatch(/owes/);
   });
   it('in demo mode there is no account data to export or delete', async () => {
     expect(await exportData('demo:1.1.1.1')).toMatchObject({ note: expect.stringMatching(/demo/) });

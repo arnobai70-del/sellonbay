@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { allow } from '@/lib/delivery/service';
 import { requestDeletion } from '@/lib/privacy';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { getViewerId, staffNeedsCode } from '@/lib/supabase/viewer';
 import { readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
@@ -12,6 +12,7 @@ const schema = z.object({ confirm: z.literal('DELETE') });
 export async function POST(req: Request) {
   const id = await getViewerId();
   if (!id) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
+  if (await staffNeedsCode()) return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });
   const body = await readJson(req, schema);
   if (!body.ok) return NextResponse.json({ error: 'Type DELETE to confirm.' }, { status: 400 });
   if (!allow(`delete-req:${id}`, 3, 24 * 3_600_000)) return NextResponse.json({ error: 'Too many tries today.' }, { status: 429 });

@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { safeNext } from '@/lib/safeNext';
 
 /* OAuth return point: swap the code for a session, then send the user to their dashboard. */
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl;
   const code = searchParams.get('code');
-  const n = searchParams.get('next') ?? '';
-  const next = n.startsWith('/') && !n.startsWith('//') ? n : '';
+  const next = safeNext(searchParams.get('next'));
   if (!code) return NextResponse.redirect(`${origin}/login?error=Sign-in failed. Try again.`);
 
   const supabase = await createClient();

@@ -4,6 +4,7 @@ import { SiteNav } from '@/components/SiteNav';
 import { MfaClient } from '@/components/MfaClient';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { safeNext } from '@/lib/safeNext';
 
 export const metadata: Metadata = { title: 'Two-step sign in' };
 
@@ -18,7 +19,7 @@ export default async function Mfa({ searchParams }: { searchParams: Promise<{ ne
   return (
     <>
       <SiteNav />
-      <MfaClient next={next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard/seller'} />
+      <MfaClient next={safeNext(next, '/dashboard/seller')} />
     </>
   );
 }

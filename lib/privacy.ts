@@ -1,5 +1,7 @@
 import 'server-only';
 import { audit } from './admin/audit';
+import { acct, sellerKey } from './ledger';
+import { ledgerStore } from './ledgerStore';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
 
@@ -24,13 +26,16 @@ export function stripSecrets<T>(value: T): T {
   return value;
 }
 
-export type Snapshot = { openOrders: number; openDisputes: number; pendingPayouts: number };
+export type Snapshot = { openOrders: number; openDisputes: number; pendingPayouts: number; moneyHeldCents?: number; debtCents?: number };
 /* Why a deletion cannot go ahead yet, in plain words. Empty means it can. */
 export function deletionBlockers(s: Snapshot): string[] {
   const out: string[] = [];
   if (s.openOrders > 0) out.push(`${s.openOrders} order(s) are still open. Finish or cancel them first.`);
   if (s.openDisputes > 0) out.push(`${s.openDisputes} dispute(s) are still open.`);
   if (s.pendingPayouts > 0) out.push(`${s.pendingPayouts} payout(s) are still on their way to you.`);
+  // Deleting the account removes the payout details, so money still held for a seller (pending, available or kept back) could never be paid.
+  if ((s.moneyHeldCents ?? 0) > 0) out.push('You still have earnings with us. They must be paid out first.');
+  if ((s.debtCents ?? 0) > 0) out.push('Your seller account owes a balance from a refund. It must be settled first.');
   return out;
 }
 
@@ -47,7 +52,11 @@ async function snapshot(userId: string): Promise<Snapshot> {
     db.from('payouts').select('id, status').eq('seller_id', userId).in('status', ['scheduled', 'exported']),
   ]);
   const open = [...(asBuyer.data ?? []), ...(asSeller.data ?? [])].filter((o) => !CLOSED.includes(o.status)).length;
-  return { openOrders: open, openDisputes: disputes.data?.length ?? 0, pendingPayouts: payouts.data?.length ?? 0 };
+  const L = await ledgerStore();
+  const k = sellerKey(userId);
+  const held = (await L.balance(acct.pending(k))) + (await L.balance(acct.available(k))) + (await L.balance(acct.reserve(k)));
+  const debt = await L.balance(acct.debt(k));
+  return { openOrders: open, openDisputes: disputes.data?.length ?? 0, pendingPayouts: payouts.data?.length ?? 0, moneyHeldCents: held, debtCents: debt };
 }
 
 /* Everything we hold about this person. Own rows only; other people appear only as ids. */

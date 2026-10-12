@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { allow } from '@/lib/delivery/service';
 import { exportData, logExport } from '@/lib/privacy';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { getViewerId, staffNeedsCode } from '@/lib/supabase/viewer';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   const id = await getViewerId();
   if (!id) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
+  if (await staffNeedsCode()) return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });
   if (!allow(`export:${id}`, 3, 24 * 3_600_000)) return NextResponse.json({ error: 'You already downloaded your data a few times today. Try again tomorrow.' }, { status: 429 });
   const data = await exportData(id);
   await logExport(id);

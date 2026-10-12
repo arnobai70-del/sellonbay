@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { authBotCheck } from '@/lib/bot/turnstile';
 import { guard, noteAccount } from '@/lib/guard';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { safeNext } from '@/lib/safeNext';
 
 const back = (msg: string): never => redirect('/login?error=' + encodeURIComponent(msg));
 /* Turns provider errors into plain sentences. */
@@ -14,7 +15,6 @@ function friendly(msg: string) {
   if (/invalid/i.test(msg) && /email/i.test(msg)) return 'That email address does not look right.';
   return 'Something went wrong. Please try again.';
 }
-const safeNext = (n: FormDataEntryValue | null) => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') ? n : '');
 const BOT_FAILED = 'The bot check did not pass. Wait for it to finish, then try again.';
 async function passesBotCheck(formData: FormData) {
   const h = await headers();

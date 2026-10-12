@@ -98,8 +98,8 @@ test.describe('admin pages (demo mode)', () => {
     await expect(page.getByText('Problem reported')).toBeVisible();
   });
   test('the payout CSV says so when there is nothing to export; a bad week is refused', async ({ request }) => {
-    expect((await request.get(`${DEMO}/api/admin/payouts/csv?week=2020-01-05`)).status()).toBe(404);
-    expect((await request.get(`${DEMO}/api/admin/payouts/csv?week=yesterday`)).status()).toBe(400);
+    expect((await request.post(`${DEMO}/api/admin/payouts/csv?week=2020-01-05`)).status()).toBe(404);
+    expect((await request.post(`${DEMO}/api/admin/payouts/csv?week=yesterday`)).status()).toBe(400);
     const plan = await post(request, '/api/admin/payouts/plan');
     expect(plan.status()).toBe(200);
     expect((await plan.json()).created).toBeGreaterThanOrEqual(0);
@@ -135,7 +135,7 @@ test.describe('who may call what (real server)', () => {
     ['POST', '/api/admin/developers/x/decide'],
     ['POST', '/api/admin/disputes/00000000-0000-4000-8000-000000000000/decide'],
     ['POST', '/api/admin/payouts/plan'],
-    ['GET', '/api/admin/payouts/csv'],
+    ['POST', '/api/admin/payouts/csv'],
     ['POST', '/api/admin/payouts/00000000-0000-4000-8000-000000000000/paid'],
     ['POST', '/api/admin/payouts/00000000-0000-4000-8000-000000000000/fail'],
     ['POST', '/api/admin/users/00000000-0000-4000-8000-000000000000/action'],
