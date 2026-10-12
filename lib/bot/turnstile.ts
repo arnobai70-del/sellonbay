@@ -36,3 +36,15 @@ export async function verifyTurnstile(token: string | undefined, ip: string): Pr
     return false; // if we cannot check, we do not let it through
   }
 }
+
+/* The real site key for the browser, read at request time (so keys set on the host after a build still work), or '' while only test keys exist. */
+export const liveSiteKey = () => (hasNonTestTurnstileKeys() ? (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '').trim() : '');
+
+/*
+ * The bot check on sign in, sign up and password reset. It runs only once real keys are set: unlike the question form, these pages must keep
+ * working on a host where the owner has not added Turnstile yet (the launch check lists the missing keys). The rate limits in lib/guard.ts apply either way.
+ */
+export async function authBotCheck(token: string | undefined, ip: string): Promise<boolean> {
+  if (!hasNonTestTurnstileKeys()) return true;
+  return verifyTurnstile(token, ip);
+}
