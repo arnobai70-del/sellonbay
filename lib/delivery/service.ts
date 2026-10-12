@@ -4,6 +4,7 @@ import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
 import { generateLicenseKey } from './token';
 import { CONFIG } from '../config';
+import { clientAddress } from '../clientIp';
 
 /* Server-side helpers for delivering files: the signing secret, rate limits, licence keys and the download log. */
 
@@ -33,7 +34,7 @@ export function allow(key: string, max: number, windowMs: number, nowMs = Date.n
   return true;
 }
 
-export const clientIp = (req: Request) => (req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown').slice(0, 64);
+export const clientIp = (req: Request) => clientAddress(req.headers);
 
 /* One licence key per order, created the first time it is needed and never changed. */
 export async function ensureLicense(orderId: string): Promise<string> {

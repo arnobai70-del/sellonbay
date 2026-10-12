@@ -5,6 +5,7 @@ import { authBotCheck } from '@/lib/bot/turnstile';
 import { guard, noteAccount } from '@/lib/guard';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { safeNext } from '@/lib/safeNext';
+import { clientAddress } from '@/lib/clientIp';
 
 const back = (msg: string): never => redirect('/login?error=' + encodeURIComponent(msg));
 /* Turns provider errors into plain sentences. */
@@ -18,7 +19,7 @@ function friendly(msg: string) {
 const BOT_FAILED = 'The bot check did not pass. Wait for it to finish, then try again.';
 async function passesBotCheck(formData: FormData) {
   const h = await headers();
-  const ip = (h.get('x-forwarded-for')?.split(',')[0].trim() || h.get('x-real-ip') || 'unknown').slice(0, 64);
+  const ip = clientAddress(h);
   return authBotCheck(String(formData.get('turnstile') ?? ''), ip);
 }
 

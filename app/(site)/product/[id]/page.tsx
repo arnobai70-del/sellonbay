@@ -75,7 +75,8 @@ export default async function Product({ params }: Props) {
     description: p.desc,
     category: p.cat,
     url: `${SITE_URL}/product/${p.id}`,
-    offers: { '@type': 'Offer', price: p.price, priceCurrency: 'USD', availability: 'https://schema.org/InStock', url: `${SITE_URL}/product/${p.id}` },
+    // An example that cannot be bought is not offered to search engines (a Product claim we could not keep).
+    ...(p.example && !examplesBuyable() ? {} : { offers: { '@type': 'Offer', price: p.price, priceCurrency: 'USD', availability: 'https://schema.org/InStock', url: `${SITE_URL}/product/${p.id}` } }),
     ...(real.count > 0
       ? {
           aggregateRating: { '@type': 'AggregateRating', ratingValue: real.avg, reviewCount: real.count, bestRating: 5, worstRating: 1 },

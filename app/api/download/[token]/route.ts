@@ -13,6 +13,9 @@ import { CONFIG, HOUR_MS } from '@/lib/config';
 import { tokenParam } from '@/lib/validate';
 import { HELD_TEXT, heldReason } from '@/lib/holds';
 import { fileForOrder } from '@/lib/versions';
+import { cleanFileHashes, requireRealMalwareScanner } from '@/lib/scan';
+import { audit } from '@/lib/admin/audit';
+import { notifyAdmins } from '@/lib/notify';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -79,6 +82,32 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   // The newest version this buyer is entitled to (their update period), or the first file.
   const file = await fileForOrder(order.product_id, product.code_url, Date.parse(order.funded_at ?? order.created_at));
 
+  // Only a file that passed the scan is delivered (see cleanFileHashes). Without any clean scan on record, a production server delivers nothing.
+  let hashes: Set<string> | null;
+  try {
+    hashes = await cleanFileHashes(order.product_id);
+  } catch {
+    return no('The files could not be checked right now. Try again soon.', 503);
+  }
+  if (hashes && hashes.size === 0 && requireRealMalwareScanner()) return no('These files are waiting for a security check. Try again later, or message the seller.', 409);
+  const pinned =
+    hashes && hashes.size > 0
+      ? {
+          hashes,
+          onChanged: (hash: string) => {
+            void audit(null, 'delivered_file_changed', 'product', product.slug ?? order.product_id, { orderId, sha256: hash });
+            void notifyAdmins(
+              'abuse_alert',
+              {
+                what: 'a seller file changed after its scan',
+                detail: `Listing ${product.slug}: the file behind the seller's link is not the one that was scanned. The download was stopped. Pause the listing and check it.`,
+              },
+              `file-changed:${order.product_id}:${hash}`,
+            );
+          },
+        }
+      : undefined;
+
   let upstream: Response;
   try {
     upstream = await safeFetch(file.url, AbortSignal.timeout(20_000));
@@ -86,5 +115,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     return no('The seller file could not be reached. Try again soon, or message the seller.', 502);
   }
   if (!upstream.ok || !upstream.body) return no('The seller file could not be reached. Try again soon, or message the seller.', 502);
-  return sendUpstream(upstream, filenameFromUrl(file.url, `${product.slug ?? 'download'}${file.version ? '-' + file.version : ''}.zip`), baseEvent(req, orderId, 'real', userId));
+  return sendUpstream(upstream, filenameFromUrl(file.url, `${product.slug ?? 'download'}${file.version ? '-' + file.version : ''}.zip`), baseEvent(req, orderId, 'real', userId), pinned);
 }

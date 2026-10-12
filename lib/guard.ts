@@ -7,6 +7,7 @@ import { bump } from './metrics';
 import { notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
+import { clientAddress } from './clientIp';
 
 /*
  * Abuse hardening in one place. Every write that can be spammed calls guard(action) first, and the answer is one of:
@@ -315,7 +316,6 @@ export async function purgeSecurityEvents(now = Date.now()): Promise<number> {
 }
 
 /* ---------- the door used by routes and server actions ---------- */
-const clientAddress = (h: Headers) => (h.get('x-forwarded-for')?.split(',')[0].trim() || h.get('x-real-ip') || 'unknown').slice(0, 64);
 
 /*
  * Call at the top of a write route or server action: `const g = await guard('order', userId); if (!g.ok) return fail(g.status, g.error)`.
