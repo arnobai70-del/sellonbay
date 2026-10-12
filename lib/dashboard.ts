@@ -98,7 +98,7 @@ export type SellerView = {
 export async function sellerDashboard(userId: string, now = Date.now()): Promise<SellerView> {
   const orders = (await (await orderStore()).forUser(userId)).filter((o) => o.sellerId === userId);
   const L = await ledgerStore();
-  const bal = async (account: string) => (await L.balances(account)).find((b) => b.account === account)?.holds ?? 0;
+  const bal = (account: string) => L.balance(account); // one exact account: an equality lookup, no LIKE pattern
   const live = orders.filter((o) => IN_PROGRESS.includes(o.state));
   let escrow = 0;
   for (const o of live) escrow += Math.max(0, await L.balance(acct.escrow(o.id)));

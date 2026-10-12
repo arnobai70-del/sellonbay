@@ -152,18 +152,22 @@ export const partialRefundAfterAccept = (o: OrderMoney, amountCents: number, hav
     lines: [...(have ? takeFromSeller(sellerKey(o.sellerId), amountCents, have) : [debit(acct.pending(sellerKey(o.sellerId)), amountCents)]), credit(acct.cash, amountCents)],
   };
 };
-export const fullRefundAfterAccept = (o: OrderMoney, extras: { priceCents: number; feeCents: number }[], have?: SellerHolds): EntrySet => {
+/* `refundedCents` is a partial refund already given back on this order: a full refund after it only gives back the rest. */
+export const fullRefundAfterAccept = (o: OrderMoney, extras: { priceCents: number; feeCents: number }[], have?: SellerHolds, refundedCents = 0): EntrySet => {
   const { total, sellerNet, platform } = split(o.lines, o.feeCents);
   const extraTotal = extras.reduce((s, c) => s + c.priceCents, 0);
   const extraFees = extras.reduce((s, c) => s + c.feeCents, 0);
+  if (!Number.isInteger(refundedCents) || refundedCents < 0 || refundedCents > sellerNet) throw new LedgerError('The earlier refund cannot be more than the seller earns on the order.');
   return {
     key: `refund-accepted:${o.id}`,
     orderId: o.id,
     memo: 'Full refund decided in a dispute: the release is reversed',
     lines: sum(
-      ...(have ? takeFromSeller(sellerKey(o.sellerId), sellerNet + extraTotal - extraFees, have) : [debit(acct.pending(sellerKey(o.sellerId)), sellerNet + extraTotal - extraFees)]),
+      ...(have
+        ? takeFromSeller(sellerKey(o.sellerId), sellerNet + extraTotal - extraFees - refundedCents, have)
+        : [debit(acct.pending(sellerKey(o.sellerId)), sellerNet + extraTotal - extraFees - refundedCents)]),
       debit(acct.revenue, platform + extraFees),
-      credit(acct.cash, total + extraTotal),
+      credit(acct.cash, total + extraTotal - refundedCents),
     ),
   };
 };

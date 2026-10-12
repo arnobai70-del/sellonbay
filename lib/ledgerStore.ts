@@ -1,5 +1,5 @@
 import 'server-only';
-import { Ledger, checkEntry, type EntrySet } from './ledger';
+import { Ledger, checkEntry, type EntrySet, type LedgerLine } from './ledger';
 import { supabaseConfigured } from './supabase/env';
 import { createAdminClient } from './supabase/server';
 
@@ -10,6 +10,8 @@ export interface LedgerStore {
   balance(account: string): Promise<number>; // in the account's normal direction
   /* Every account that starts with a prefix, with what it holds (for example all seller_available:). */
   balances(prefix: string): Promise<{ account: string; holds: number }[]>;
+  /* The lines of one posted entry, or [] when that key was never posted. */
+  lines(key: string): Promise<LedgerLine[]>;
 }
 
 const mem: Ledger = ((globalThis as { __ledgerMem?: Ledger }).__ledgerMem ??= new Ledger());
@@ -21,6 +23,9 @@ export const memoryLedger: LedgerStore = {
   },
   async balance(account) {
     return mem.balance(account);
+  },
+  async lines(key) {
+    return mem.entries.find((e) => e.key === key)?.lines ?? [];
   },
   async balances(prefix) {
     return [...new Set(mem.entries.flatMap((e) => e.lines.map((l) => l.account)))].filter((a) => a.startsWith(prefix)).map((account) => ({ account, holds: mem.balance(account) }));
@@ -39,8 +44,15 @@ export const postgresLedger: LedgerStore = {
     const { data } = await createAdminClient()
       .from('ledger_balances')
       .select('account, net_cents')
-      .like('account', prefix.replace(/[%_]/g, '') + '%');
-    return (data ?? []).map((r) => ({ account: r.account as string, holds: (r.account as string).startsWith('seller_debt:') ? -Number(r.net_cents) : Number(r.net_cents) }));
+      .like('account', prefix.replace(/[\\%_]/g, (c) => '\\' + c) + '%'); // escape LIKE's wildcards: seller_available has an underscore
+    return (data ?? [])
+      .filter((r) => (r.account as string).startsWith(prefix))
+      .map((r) => ({ account: r.account as string, holds: (r.account as string).startsWith('seller_debt:') ? -Number(r.net_cents) : Number(r.net_cents) }));
+  },
+  async lines(key) {
+    const { data, error } = await createAdminClient().from('ledger_entries').select('account, amount_cents, side').eq('entry_key', key);
+    if (error) throw new Error('Could not read the ledger: ' + error.message);
+    return (data ?? []).map((r) => ({ account: r.account as string, amountCents: Number(r.amount_cents), side: r.side as LedgerLine['side'] }));
   },
   async balance(account) {
     const { data } = await createAdminClient().from('ledger_balances').select('net_cents').eq('account', account).maybeSingle();

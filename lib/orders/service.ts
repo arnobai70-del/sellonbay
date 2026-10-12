@@ -102,8 +102,9 @@ export async function ensureLedger(o: Order): Promise<void> {
         if (settle > 0) await L.post(debtSettled(o, settle));
       }
       // After a dispute the release is reversed, in full or in part. It comes out of pending, then the reserve, then available, then becomes debt.
-      if (o.state === 'refunded') await L.post(fullRefundAfterAccept(money, extras, await holdsOf(L, o.sellerId)));
-      else if (o.refundedCents > 0) await L.post(partialRefundAfterAccept(money, o.refundedCents, await holdsOf(L, o.sellerId)));
+      // A partial refund is posted once; a full refund decided later on the same order gives back only the rest.
+      if (o.refundedCents > 0) await L.post(partialRefundAfterAccept(money, o.refundedCents, await holdsOf(L, o.sellerId)));
+      if (o.state === 'refunded') await L.post(fullRefundAfterAccept(money, extras, await holdsOf(L, o.sellerId), o.refundedCents));
     }
     if (o.state === 'payout_pending' || o.state === 'paid_out') {
       const extraNet = extras.reduce((s, c) => s + c.priceCents - c.feeCents, 0);
