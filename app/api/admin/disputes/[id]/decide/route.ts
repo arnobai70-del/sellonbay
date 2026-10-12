@@ -28,7 +28,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
   const { order, dispute } = r.value;
   const extras = (await listExtras(order.id)).filter((c) => c.state === 'funded').reduce((s, c) => s + c.priceCents, 0);
-  if (dispute.decision === 'refund_full') await fakePayments.refund(order.id, order.priceCents + extras);
+  // A full refund after an earlier partial one gives back only the rest (the order keeps the earlier amount in refundedCents).
+  if (dispute.decision === 'refund_full') await fakePayments.refund(order.id, order.priceCents + extras - order.refundedCents);
   if (dispute.decision === 'refund_partial' && dispute.refundCents) await fakePayments.refund(order.id, dispute.refundCents);
   await audit(a.id, `dispute_${dispute.decision}`, 'dispute', id, {
     orderId: order.id,

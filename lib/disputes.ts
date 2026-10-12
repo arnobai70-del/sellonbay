@@ -252,6 +252,9 @@ export async function decide(
   if (i.liability && !['seller', 'buyer_fraud', 'platform'].includes(i.liability)) return fail(400, 'Pick whose fault it was.');
 
   let refund: number | undefined;
+  // One partial refund per order: a later dispute can still give back the rest (refund_full), never a second part on top.
+  if (i.decision === 'refund_partial' && o.refundedCents > 0)
+    return fail(409, `This order already had a partial refund of $${(o.refundedCents / 100).toFixed(2)}. Refund in full (it gives back the rest) or release.`);
   if (i.decision === 'refund_partial') {
     const { sellerNet } = split(o.lines, o.feeCents);
     refund = i.refundCents;
@@ -264,7 +267,7 @@ export async function decide(
       ? await move(o.id, 'refunded', { actorId: adminId, event: 'dispute_decided', meta, now })
       : i.decision === 'fix_requested'
         ? await move(o.id, 'fix_requested', { actorId: adminId, event: 'dispute_decided', meta, now })
-        : await move(o.id, 'accepted', { actorId: adminId, event: 'dispute_decided', meta, now, patch: (x) => ({ ...x, refundedCents: refund ?? 0 }) });
+        : await move(o.id, 'accepted', { actorId: adminId, event: 'dispute_decided', meta, now, patch: (x) => ({ ...x, refundedCents: refund ?? x.refundedCents }) });
   if (!moved.ok) return fail(moved.status, moved.error);
 
   // A fee the seller is at fault for is taken from the seller straight away (pending, reserve, available, then debt). Nobody else pays it.

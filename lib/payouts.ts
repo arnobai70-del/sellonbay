@@ -2,14 +2,14 @@ import 'server-only';
 import { audit } from './admin/audit';
 import { DAY_MS } from './config';
 import { acct, payoutBatch, sellerKey, split } from './ledger';
-import { ledgerStore } from './ledgerStore';
+import { ledgerStore, type LedgerStore } from './ledgerStore';
 import { notify } from './notify';
 import { listExtras } from './orders/extra';
 import { move } from './orders/service';
 import { orderStore } from './orders/store';
 import type { Order } from './orders/machine';
 import { createAdminClient } from './supabase/server';
-import { claimReserves, releasedUnpaid, reservesOutstanding, unclaimReserves } from './reserve';
+import { claimReserves, releasedUnpaid, unclaimReserves } from './reserve';
 
 /*
  * Weekly payouts, paid by hand. The batch (one per seller per week, Sunday) lists what each seller is owed from orders whose 7-day hold has ended.
@@ -47,6 +47,12 @@ export async function sellerEarnings(o: Order): Promise<number> {
   const { sellerNet } = split(o.lines, o.feeCents);
   const extras = (await listExtras(o.id)).filter((c) => c.state === 'funded');
   return sellerNet + extras.reduce((s, c) => s + c.priceCents - c.feeCents, 0) - o.refundedCents;
+}
+
+/* What the end of an order's payout hold moved into the seller's available balance (0 if it has not happened yet). */
+async function madeAvailable(L: LedgerStore, o: Order): Promise<number> {
+  const to = acct.available(sellerKey(o.sellerId));
+  return (await L.lines(`hold:${o.id}`)).filter((l) => l.account === to && l.side === 'credit').reduce((s, l) => s + l.amountCents, 0);
 }
 
 /* ---------- storage ---------- */
@@ -165,7 +171,6 @@ export async function planPayouts(now = Date.now(), adminId: string | null = nul
   // A seller whose reserve was let go has money to be paid even when no new order is ready.
   const released = await releasedUnpaid();
   for (const r of released) if (!bySeller.has(r.sellerId)) bySeller.set(r.sellerId, []);
-  const held = await reservesOutstanding(ready.map((o) => o.id)); // the part of an order still kept in reserve is not paid yet
 
   const info = await sellerInfo([...bySeller.keys()]);
   const L = await ledgerStore();
@@ -173,9 +178,10 @@ export async function planPayouts(now = Date.now(), adminId: string | null = nul
   const skipped: Skipped[] = [];
   const existing = await listPayouts({ weekStart });
   for (const [sellerId, allOrders] of bySeller) {
-    // What each order pays now: its earnings less the part still in reserve. An order that is all reserve waits for the release.
-    const earned = await Promise.all(allOrders.map(sellerEarnings));
-    const items = allOrders.map((o, k) => ({ o, cents: earned[k] - (held.get(o.id) ?? 0) })).filter((x) => x.cents > 0);
+    // What each order pays now: what the end of its hold really made available, read from the ledger. That is already less any debt the earnings
+    // paid off, any claw-back, and the part kept in reserve (a released reserve is paid through `mine` below, once). Nothing made available yet: it waits.
+    const made = await Promise.all(allOrders.map((o) => madeAvailable(L, o)));
+    const items = allOrders.map((o, k) => ({ o, cents: made[k] })).filter((x) => x.cents > 0);
     const orders = items.map((x) => x.o);
     const amounts = items.map((x) => x.cents);
     const mine = released.filter((r) => r.sellerId === sellerId);
@@ -191,7 +197,7 @@ export async function planPayouts(now = Date.now(), adminId: string | null = nul
       continue;
     }
     // The ledger must agree: what we are about to pay cannot be more than the seller has available.
-    const available = (await L.balances(acct.available(sellerId))).find((b) => b.account === acct.available(sellerId))?.holds ?? 0;
+    const available = await L.balance(acct.available(sellerId));
     const open = (await listPayouts()).filter((p) => p.sellerId === sellerId && (p.status === 'scheduled' || p.status === 'exported')).reduce((s, p) => s + p.amountCents, 0);
     if (total > available - open) {
       skipped.push({ sellerId, reason: 'ledger does not cover it, check this seller', amountCents: total });
