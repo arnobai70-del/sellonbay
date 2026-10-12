@@ -176,16 +176,34 @@ export async function processDeletion(adminId: string | null, requestId: string)
     await audit(adminId, 'deletion_refused', 'profile', userId, { blockers });
     return fail(409, 'Refused for now: ' + blockers.join(' '));
   }
-  await db.from('profiles').update({ full_name: 'Deleted user', banned: true }).eq('id', userId);
-  await db.from('seller_profiles').delete().eq('user_id', userId);
-  await db.from('dev_profiles').delete().eq('user_id', userId);
-  await db.from('notifications').delete().eq('user_id', userId);
-  await db.from('presale_messages').update({ body: '[deleted]', ip: null }).eq('buyer_id', userId);
-  await db.from('presale_messages').update({ reply: '[deleted]' }).eq('seller_id', userId).not('reply', 'is', null);
-  await db.from('blocked_messages').update({ body: '[deleted]', ip: null }).eq('sender_id', userId);
-  await db.from('products').update({ status: 'paused' }).eq('seller_id', userId).eq('status', 'live');
-  await db.from('products').delete().eq('seller_id', userId).in('status', ['draft', 'in_review', 'rejected']);
-  await db.auth.admin.updateUserById(userId, { email: `deleted-${userId}@deleted.invalid`, ban_duration: '876000h', user_metadata: {} });
+  // Every step is checked. If one fails the request stays pending (it can be run again: every step is safe to repeat) and the admin sees which step.
+  const failed: string[] = [];
+  const step = async (name: string, run: PromiseLike<{ error: { message: string } | null }>) => {
+    const { error } = await run;
+    if (error) failed.push(`${name}: ${error.message}`);
+  };
+  await step('profile', db.from('profiles').update({ full_name: 'Deleted user', banned: true }).eq('id', userId));
+  await step('seller profile', db.from('seller_profiles').delete().eq('user_id', userId));
+  await step('developer profile', db.from('dev_profiles').delete().eq('user_id', userId));
+  await step('notifications', db.from('notifications').delete().eq('user_id', userId));
+  await step('questions asked', db.from('presale_messages').update({ body: '[deleted]', ip: null }).eq('buyer_id', userId));
+  await step('answers given', db.from('presale_messages').update({ reply: '[deleted]' }).eq('seller_id', userId).not('reply', 'is', null));
+  await step('blocked messages', db.from('blocked_messages').update({ body: '[deleted]', ip: null }).eq('sender_id', userId));
+  await step('hire briefs', db.from('hire_requests').update({ brief: "[deleted at the person's request]" }).eq('buyer_id', userId));
+  await step('live listings', db.from('products').update({ status: 'paused', review_note: 'Paused: the seller deleted their account.' }).eq('seller_id', userId).eq('status', 'live'));
+  // Unpublished listings go, except those that past orders or reviews point to: those are kept as rejected so the records stay whole.
+  const { data: unpublished, error: listErr } = await db.from('products').select('id').eq('seller_id', userId).in('status', ['draft', 'in_review', 'rejected']);
+  if (listErr) failed.push(`unpublished listings: ${listErr.message}`);
+  for (const l of unpublished ?? []) {
+    const { error } = await db.from('products').delete().eq('id', l.id);
+    if (error) await step('unpublished listing', db.from('products').update({ status: 'rejected', review_note: 'The seller deleted their account.' }).eq('id', l.id));
+  }
+  const { error: authErr } = await db.auth.admin.updateUserById(userId, { email: `deleted-${userId}@deleted.invalid`, ban_duration: '876000h', user_metadata: {} });
+  if (authErr) failed.push(`sign-in account: ${authErr.message}`);
+  if (failed.length) {
+    await audit(adminId, 'deletion_incomplete', 'profile', userId, { requestId, failed });
+    return fail(500, 'Not finished, the request is still pending. Run it again. Failed: ' + failed.join('; '));
+  }
   await db.from('data_requests').update({ status: 'done', done_at: new Date().toISOString(), done_by: adminId }).eq('id', requestId);
   await audit(adminId, 'account_anonymised', 'profile', userId, { requestId });
   return { ok: true, value: true };

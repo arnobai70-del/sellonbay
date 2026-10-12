@@ -3,6 +3,7 @@ import { createExtra } from '@/lib/orders/extra';
 import { getOrder } from '@/lib/orders/service';
 import { extraSchema } from '@/lib/schemas';
 import { createClient } from '@/lib/supabase/server';
+import { viewerBlocked } from '@/lib/supabase/viewer';
 import { idOf, readJson } from '@/lib/validate';
 import { guard } from '@/lib/guard';
 
@@ -16,6 +17,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!user) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
   const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal?.currentLevel !== 'aal2') return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });
+  if (await viewerBlocked(user.id)) return NextResponse.json({ error: 'This account cannot ask for extra work right now.' }, { status: 403 });
   const g = await guard('extra', user.id);
   if (!g.ok) return NextResponse.json({ error: g.error }, { status: g.status });
   const order = await getOrder(id);

@@ -222,4 +222,24 @@ if (!failed) {
   }
 }
 
+if (!failed) {
+  // 0047: abuse reports are written and reviews are read only by the server.
+  try {
+    const priv = async (role, what) => (await db.query(`select has_table_privilege('${role}', '${what.split(' ')[1]}', '${what.split(' ')[0]}') as p`)).rows[0].p;
+    const anyCol = async (role, table, mode) =>
+      (
+        await db.query(
+          `select bool_or(has_column_privilege('${role}', '${table}', attname, '${mode}')) as p from pg_attribute where attrelid = '${table}'::regclass and attnum > 0 and not attisdropped`,
+        )
+      ).rows[0].p;
+    if ((await priv('authenticated', 'insert abuse_reports')) || (await anyCol('authenticated', 'abuse_reports', 'insert'))) throw new Error('clients can still insert abuse reports');
+    if ((await priv('anon', 'select reviews')) || (await priv('authenticated', 'select reviews'))) throw new Error('clients can still read reviews (buyer_id, order_id)');
+    if (!(await priv('service_role', 'select reviews')) || !(await priv('service_role', 'insert abuse_reports'))) throw new Error('the server lost its access');
+    console.log('ok   abuse reports and reviews: server only');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL server-only grants:', e.message);
+  }
+}
+
 process.exit(failed ? 1 : 0);
