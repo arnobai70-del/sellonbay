@@ -25,7 +25,7 @@ test.describe('site ideas tool', () => {
     const r = await request.post(`${DEMO}/api/tools/site-ideas`, { data: { idea: `a flower shop ${Date.now()}` } });
     expect(r.status()).toBe(400);
     expect((await r.json()).error).toMatch(/bot check/);
-    expect(r.headers()['cache-control']).toBe('no-store');
+    expect(r.headers()['cache-control']).toContain('no-store');
   });
   test('typing an idea gives five pages, ten domain names and three products; the same idea again is free', async ({ page }) => {
     const idea = `a bakery in Dhaka that sells cakes ${Date.now()}`;

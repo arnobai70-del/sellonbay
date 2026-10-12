@@ -54,7 +54,7 @@ async function demoFlow(base, label) {
   const text = await file.text();
   ok(file.status === 200 && text.includes(dl.j.licenseKey), 'demo: link downloads the dummy file with the licence key inside');
   ok(
-    /attachment/.test(file.headers.get('content-disposition') ?? '') && file.headers.get('content-type') === 'application/octet-stream' && file.headers.get('cache-control') === 'no-store',
+    /attachment/.test(file.headers.get('content-disposition') ?? '') && file.headers.get('content-type') === 'application/octet-stream' && /no-store/.test(file.headers.get('cache-control') ?? ''),
     'demo: served as a download, never cached',
   );
   const bad = dl.j.url.slice(0, -3) + (dl.j.url.endsWith('aaa') ? 'bbb' : 'aaa');

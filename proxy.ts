@@ -2,12 +2,17 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { supabaseAnonKey, supabaseConfigured, supabaseUrl } from '@/lib/supabase/env';
 import { cannotAct } from './lib/accounts';
+import { crossSiteWrite } from './lib/sameOrigin';
+import { SITE_URL } from './lib/site';
 
 const SIGNED_IN = ['/dashboard', '/messages', '/checkout', '/sell/new'];
 const STAFF = ['/dashboard/seller', '/dashboard/admin', '/sell/new']; // sellers and admins need 2FA
 
 /* Every visitor gets a random device id once. It is only used to spot many accounts on one device (lib/guard.ts) and is stored as a hash. */
 export async function proxy(req: NextRequest) {
+  const h = req.headers;
+  if (crossSiteWrite(req.method, req.nextUrl.pathname, h.get('origin'), [h.get('host'), h.get('x-forwarded-host'), SITE_URL]))
+    return NextResponse.json({ error: 'Not allowed from another site.' }, { status: 403 });
   const res = await handle(req);
   if (!req.cookies.get('lb_dev'))
     res.cookies.set('lb_dev', crypto.randomUUID(), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 365 });
