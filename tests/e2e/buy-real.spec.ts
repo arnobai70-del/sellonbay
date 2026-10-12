@@ -22,7 +22,7 @@ const CARD = { number: '4242424242424242', exp: '12/34', cvc: '123', name: 'Test
 
 test.describe('buying a seller listing', () => {
   test.skip(!env.SUPABASE_SERVICE_ROLE_KEY, 'needs .env.local with Supabase keys');
-  const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL ?? '', env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } });
+  const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321', env.SUPABASE_SERVICE_ROLE_KEY || 'unset', { auth: { persistSession: false } });
   const stamp = Date.now();
   const users: string[] = [];
   const orders: string[] = [];

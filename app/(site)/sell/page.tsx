@@ -8,14 +8,14 @@ import { Reveal } from '@/components/Reveal';
 import { SellerCalc } from '@/components/SellerCalc';
 import { FAQ_GROUPS } from '@/lib/faq';
 import { BRAND_NAME } from '@/lib/brand';
-import { FEE_SALE_TEXT } from '@/lib/config';
+import { FEE_SALE_TEXT, SELLER_KEEP_TEXT } from '@/lib/config';
 
-export const metadata: Metadata = { title: 'Sell on SellOnBay', description: 'Upload the site you built once and sell it again and again. You keep 85% of every sale.' };
+export const metadata: Metadata = { title: 'Sell on SellOnBay', description: `Upload the site you built once and sell it again and again. You keep ${SELLER_KEEP_TEXT} of every sale.` };
 
 export default function Sell() {
   return (
     <>
-      <PageHero tone="mint" video title="Sell the site you already built." lead="Upload it once and deliver it to every buyer. You keep 85% of every sale, paid every week.">
+      <PageHero tone="mint" video title="Sell the site you already built." lead={`Upload it once and deliver it to every buyer. You keep ${SELLER_KEEP_TEXT} of every sale, paid every week.`}>
         <Link className="btn btn-dark btn-lg" href="/sell/new">
           List your first site
         </Link>

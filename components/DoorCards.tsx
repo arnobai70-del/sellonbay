@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SELLER_KEEP_TEXT } from '@/lib/config';
 import { Tilt } from './Tilt';
 
 /* Three doors from the home page into the three places that explain the rest. Each has its own colour and a tiny moving scene. */
@@ -48,7 +49,7 @@ export function DoorCards() {
             </div>
           </div>
           <h3>Sell what you built</h3>
-          <p>Upload once, sell again and again, and keep 85% of every sale.</p>
+          <p>Upload once, sell again and again, and keep {SELLER_KEEP_TEXT} of every sale.</p>
           <span className="door-link">See what you could earn</span>
         </Link>
       </Tilt>

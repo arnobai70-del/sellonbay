@@ -109,8 +109,8 @@ const totp = (secret: string) => {
 
 test.describe('listing API: the server enforces the same rules', () => {
   test.skip(!env.SUPABASE_SERVICE_ROLE_KEY, 'needs .env.local with Supabase keys');
-  const U = env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const admin = createClient(U, env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } });
+  const U = env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+  const admin = createClient(U, env.SUPABASE_SERVICE_ROLE_KEY || 'unset', { auth: { persistSession: false } });
   const email = `qa-listing-${Date.now()}@launchbay.test`;
   let userId = '';
   let ctx: BrowserContext;

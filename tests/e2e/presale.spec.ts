@@ -112,7 +112,7 @@ const env: Record<string, string> = fs.existsSync(envFile)
 
 test.describe('pre-sale question API guards (real database)', () => {
   test.skip(!env.SUPABASE_SERVICE_ROLE_KEY, 'needs .env.local with Supabase keys');
-  const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL ?? '', env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } });
+  const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321', env.SUPABASE_SERVICE_ROLE_KEY || 'unset', { auth: { persistSession: false } });
   const ids: string[] = [];
   const slug = `qa-presale-${Date.now()}`;
   let sellerId = '';

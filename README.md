@@ -2,7 +2,7 @@
 
 A marketplace for ready-made, AI-built websites, apps and digital products. Buyers pick a product, give a domain (or buy one) and it goes live in 1 to 7 days. Next.js (App Router) + TypeScript + Tailwind v4, Supabase for accounts, listings and orders. Payments, the registrar and deployment run on **fake providers** until the owner decides on real ones (see `docs/DECISIONS.md`).
 
-Read `CLAUDE.md` for the rules of the project and `docs/BUILD_SPEC.pdf` for the product spec (where the code differs on purpose, `docs/DECISIONS.md` says so).
+Read `CLAUDE.md` for the rules of the project and `docs/DECISIONS.md` for every rule chosen while building (the original `docs/BUILD_SPEC.pdf` product spec is not in this repository; where the two differ, `docs/DECISIONS.md` wins).
 
 ## Setup
 
@@ -45,7 +45,7 @@ PAYMENT_WEBHOOK_SECRET=e2e-hook-secret EXAMPLE_ORDERS=1 npx next start -p 3000  
 npm run test:e2e
 ```
 
-Tests that need the real database skip themselves when `.env.local` is missing or a migration is not applied. In CI (`.github/workflows/ci.yml`) lint, types, format, unit tests, a dependency audit and the demo-mode browser tests run on every push.
+Tests that need the real database skip themselves when `.env.local` is missing or a migration is not applied. In CI (`.github/workflows/ci.yml`) lint, types, unit tests, the migration check, the production build, the no-secret bundle check and a demo-mode smoke test run on every push and pull request. The Playwright browser tests are run by hand (see above).
 
 ## Layout
 
@@ -61,7 +61,7 @@ lib/delivery/         signed download links, licence keys, download log
 supabase/migrations/  SQL, in order
 tests/unit, tests/e2e Vitest and Playwright
 prototype/            the old static prototype, kept as a visual reference
-docs/                 BUILD_SPEC.pdf, DECISIONS.md, RUNBOOK.md
+docs/                 DECISIONS.md, RUNBOOK.md, launch gates (FINANCIAL_LAUNCH_GATES.md, STAGING_GATE.md, AI_USAGE_GATES.md)
 emails/               email templates (not built yet)
 ```
 
@@ -71,5 +71,7 @@ emails/               email templates (not built yet)
 2. Set `NEXT_PUBLIC_SITE_URL`, `DELIVERY_SECRET`, `PAYMENT_WEBHOOK_SECRET`, `CRON_SECRET` and the Turnstile keys.
 3. Schedule `POST /api/cron/orders` every few minutes with the header `Authorization: Bearer <CRON_SECRET>` (Vercel cron or Supabase cron). It auto-accepts orders after the review window, marks late orders, and ends payout holds.
 4. Put Cloudflare in front (see `docs/RUNBOOK.md`).
+
+On a Node host such as Hostinger: Node 22 (20.9 at least), install with `npm ci`, build with `npm run build` (it uses webpack, which builds on hosts where Turbopack does not), start with `npm start` (Next reads the port from `PORT`). Pull the new code, run the build again, then restart the app.
 
 Before launch: a lawyer must review every page tagged `[LAWYER REVIEW]`, the payment provider decision (D1) must be made, and the security checklist in `docs/RUNBOOK.md` must be ticked.
