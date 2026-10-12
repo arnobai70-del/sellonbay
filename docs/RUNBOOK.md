@@ -76,7 +76,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - [x] Webhooks: signature checked, age checked, each event processed once
 - [x] Audit log for every admin action (`audit_log`, append-only, `/dashboard/admin/audit`)
 - [ ] Daily database backups, and a restore tested once (above)
-- [ ] Automated dependency vulnerability audit with enforced patch thresholds; Dependabot is enabled (`.github/`) but `npm ci --no-audit` is not an audit.
+- [x] Dependency audit: CI fails on a high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`); Dependabot is enabled (`.github/`).
 - [x] Privacy: cookie notice, data export and delete request flow (`/account/privacy`, admins process deletions under Accounts), retention note on the Privacy page
 - [ ] Real Turnstile keys set (the test keys check nothing)
 
@@ -86,6 +86,10 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - `GUARD_SALT` set to a long random value.
 - A real malware scanner (ClamAV or VirusTotal) is connected and `SCAN_REQUIRE_REAL=1` is set.
 - `PAYMENT_WEBHOOK_SECRET`, `DELIVERY_SECRET`, `CRON_SECRET` set. The demo controls (`/api/demo/orders/*/skip`, "Demo controls" in the order page) and the demo pay form removed.
+
+## Health check
+
+`GET /api/health` answers `{"ok":true}` with status 200 while the app is up. Point the host's health check and an uptime monitor at it. It never shows keys or database state; the launch check page (`/dashboard/admin/launch`) is for that.
 
 ## More operations
 
