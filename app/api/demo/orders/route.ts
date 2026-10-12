@@ -7,7 +7,8 @@ import { findTrialCredit } from '@/lib/orders/trial';
 import { deliveryTypeOf, licenceOf } from '@/lib/handover';
 import { createOrder } from '@/lib/orders/service';
 import { orderCreateSchema } from '@/lib/schemas';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
+import { examplesBuyable } from '@/lib/examples';
 import { readJson } from '@/lib/validate';
 import { isPkg } from '@/lib/data';
 import { guard } from '@/lib/guard';
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
   if (!parsed.ok) return parsed.res;
   const b = parsed.data;
   const buyerId = (await getViewerId()) ?? null;
+  if (await viewerBlocked(buyerId)) return fail('This account cannot place orders.', 403);
   const g = await guard('order', buyerId);
   if (!g.ok) return fail(g.error, g.status);
   if (await checkoutPausedFor(buyerId)) return fail(PAUSED_TEXT, 503);
@@ -32,6 +34,13 @@ export async function POST(req: Request) {
     if (isBlocked(brief)) return fail('Keep emails, phone numbers and outside payment talk out of the brief.');
     const r = await getDev(String(b.dev ?? ''), buyerId ?? undefined);
     if (!r || r.status !== 'live') return fail('That developer is not available.', 404);
+    // A real developer's profile is a real order: the developer delivers it and is paid through the ledger, so both sides need an account.
+    // The made-up starter profiles use the demo seller and can be paid for only where examples can (never on the live site).
+    if (!r.userId && !examplesBuyable()) return fail('This is an example profile. We made it to show how hiring works, so it cannot be hired.', 400);
+    if (r.userId) {
+      if (!buyerId) return fail('Sign in to hire a developer. Developers are paid into their account, so every buyer needs one too.', 401);
+      if (buyerId === r.userId) return fail('This is your own profile.', 400);
+    }
     const trial = b.pack === 'Trial';
     const pack = trial ? trialOf(r.dev) : r.dev.packs.find((p) => p.name === b.pack);
     if (!pack) return fail('Pick a package.');
@@ -49,6 +58,8 @@ export async function POST(req: Request) {
         lines: [[c ? `${pack.name} package, trial credit applied` : `${pack.name} package`, price - (c?.creditCents ?? 0)]],
         days: pack.days,
         buyerId,
+        sellerId: r.userId ?? null,
+        demo: !r.userId,
         trialCreditFor: c?.trialId,
       });
     let o;

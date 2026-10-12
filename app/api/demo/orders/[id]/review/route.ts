@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { orderFor } from '@/lib/commerce/access';
 import { addReview } from '@/lib/reviews';
-import { getViewerId } from '@/lib/supabase/viewer';
+import { getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
 import { idOf, readJson } from '@/lib/validate';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!o) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
   const body = await readJson(req, schema);
   if (!body.ok) return body.res;
-  const r = await addReview(o.id, (await getViewerId()) ?? null, body.data);
+  const viewer = (await getViewerId()) ?? null;
+  if (await viewerBlocked(viewer)) return NextResponse.json({ error: 'This account cannot leave reviews.' }, { status: 403 });
+  const r = await addReview(o.id, viewer, body.data);
   return r.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: r.error }, { status: r.status });
 }
