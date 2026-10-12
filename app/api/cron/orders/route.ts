@@ -5,6 +5,7 @@ import { purgeSecurityEvents } from '@/lib/guard';
 import { runDueJobs } from '@/lib/orders/service';
 import { checkAnomalies } from '@/lib/metrics';
 import { releaseDueReserves } from '@/lib/reserve';
+import { beat } from '@/lib/heartbeat';
 
 export const runtime = 'nodejs';
 
@@ -15,11 +16,13 @@ export async function POST(req: Request) {
   const a = Buffer.from(given),
     b = Buffer.from(secret);
   if (!secret || a.length !== b.length || !timingSafeEqual(a, b)) return NextResponse.json({ error: 'Not allowed.' }, { status: 401 });
-  return NextResponse.json({
+  const done = {
     moved: await runDueJobs(),
     domainReminders: await domainReminders(),
     purgedEvents: await purgeSecurityEvents(),
     anomalies: (await checkAnomalies()).length,
     reservesReleased: await releaseDueReserves(),
-  });
+  };
+  await beat('orders');
+  return NextResponse.json(done);
 }
