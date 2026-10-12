@@ -229,6 +229,20 @@ test.describe('RLS: the wrong person is always refused', () => {
       // an in-review listing is invisible to everyone but its owner
       expect(refused(await users.other.db.from('products').select('id').eq('id', p.data!.id))).toBe(true);
       expect((await users.seller.db.from('products').select('id').eq('id', p.data!.id)).data).toHaveLength(1);
+      // listings are written only by the server, which checks role, authenticator code, links and the scan (migration 0043)
+      expect((await users.seller.db.from('products').update({ code_url: 'https://example.com/other' }).eq('id', p.data!.id)).error).toBeTruthy();
+      const direct = {
+        seller_id: users.buyer.id,
+        name: 'Direct',
+        category: 'Scripts',
+        description: 'Written past the server.',
+        price_cents: 500,
+        delivery_days: 1,
+        demo_url: 'about:blank',
+        license: 'mine',
+        status: 'in_review',
+      };
+      expect((await users.buyer.db.from('products').insert({ ...direct, slug: `qa-rls3-${stamp}` })).error).toBeTruthy();
     } finally {
       await admin.from('products').delete().eq('id', p.data!.id);
     }

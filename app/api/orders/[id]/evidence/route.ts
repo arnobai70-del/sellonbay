@@ -35,6 +35,11 @@ export async function GET(_r: Request, { params }: { params: Promise<{ id: strin
       audience = 'admin';
       adminId = user.id;
     } else if (!party) return no('Order not found.', 404);
+    else if (o.sellerId === user.id && o.buyerId !== user.id) {
+      // Sellers need the authenticator code on every protected page and file, like the rest of their seller tools.
+      const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== 'aal2') return no('Enter your authenticator code first.', 403);
+    }
   }
   if (adminId) await audit(adminId, 'evidence_downloaded', 'order', o.id, {});
   return new NextResponse(new Uint8Array(await buildEvidencePdf(o, audience)), {

@@ -16,6 +16,7 @@ import { cannotAct } from '@/lib/accounts';
 import { guard } from '@/lib/guard';
 import { getSettings } from '@/lib/settings';
 import { audit } from '@/lib/admin/audit';
+import { FUNDED_STATES } from '@/lib/orders/machine';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -343,6 +344,23 @@ export async function POST(req: Request) {
       hasZip ||
       checked.length > 0 ||
       !!trialFile);
+  // A paused listing was stopped by an admin or a report: sending it back to review would get around that, so only text edits are saved until it is reopened.
+  if (editing?.status === 'paused' && linksOrFiles) return fail('This listing is paused. You can change its text and prices now; links and files can be changed once it is reopened.', 409);
+  // Buyers who paid already download the file behind code_url: changing it under them would swap what they bought.
+  if (editing && (row.code_url !== editing.code_url || row.delivery_type !== editing.delivery_type)) {
+    const { count } = await admin
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('product_id', editing.id)
+      .in('status', [...FUNDED_STATES]);
+    if (count === null || count > 0)
+      return fail(
+        platform === 'digital'
+          ? 'Buyers already have the files of this listing. To give them new files, publish a new version from your seller dashboard; it is reviewed before buyers get it.'
+          : 'Buyers already have the files of this listing, so the files link and delivery cannot change. List the new files as a new product instead.',
+        409,
+      );
+  }
   const editStatus = editing && !linksOrFiles && (editing.status === 'live' || editing.status === 'paused') ? editing.status : 'in_review';
   if (editing) {
     const { error } = await admin

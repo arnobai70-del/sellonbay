@@ -64,7 +64,7 @@ export async function logDownload(e: DownloadEvent): Promise<void> {
   const { error } = await createAdminClient().from('download_events').insert(e);
   if (error) console.error('download log failed', error.message);
 }
-/* Every file hash that was delivered for an order, once each, for the handover certificate. */
+/* Every file hash that was delivered for an order, once each, for the handover certificate. Downloads that stopped part way are left out. */
 export async function deliveredFiles(orderId: string): Promise<{ sha256: string; bytes: number; at: number }[]> {
   type Row = { file_hash: string | null; bytes: number | null; created_at?: string };
   let rows: Row[] = memoryDownloads(orderId).map((e) => ({ file_hash: e.file_hash, bytes: e.bytes, created_at: new Date(e.at ?? Date.now()).toISOString() }));
@@ -73,7 +73,9 @@ export async function deliveredFiles(orderId: string): Promise<{ sha256: string;
     rows = [...rows, ...((data ?? []) as Row[])];
   }
   const seen = new Map<string, { sha256: string; bytes: number; at: number }>();
-  for (const r of rows) if (r.file_hash && !seen.has(r.file_hash)) seen.set(r.file_hash, { sha256: r.file_hash, bytes: Number(r.bytes ?? 0), at: Date.parse(r.created_at ?? '') || Date.now() });
+  for (const r of rows)
+    if (r.file_hash && !r.file_hash.startsWith('partial:') && !seen.has(r.file_hash))
+      seen.set(r.file_hash, { sha256: r.file_hash, bytes: Number(r.bytes ?? 0), at: Date.parse(r.created_at ?? '') || Date.now() });
   return [...seen.values()];
 }
 /* Every download of an order, in time order, for the evidence file: who (the account), when, from which address, which file. Trial copies are left out. */
