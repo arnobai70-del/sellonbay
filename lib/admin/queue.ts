@@ -207,9 +207,18 @@ export async function userAction(adminId: string | null, userId: string, action:
   const reason = action === 'unban' ? (await db.from('profiles').select('ban_reason').eq('id', userId).maybeSingle()).data?.ban_reason : null;
   if (action === 'unban' && reason === 'chargeback') return fail(409, 'This buyer was banned for a lost chargeback. That ban is permanent.');
   if (action === 'ban' && p.role === 'admin') return fail(400, 'Remove the admin role first.');
-  if (action === 'ban') await db.from('profiles').update({ banned: true }).eq('id', userId);
-  else if (action === 'unban') await db.from('profiles').update({ banned: false }).eq('id', userId);
-  else if (action === 'unsuspend') await unsuspend(userId, adminId);
+  if (action === 'unban' && (await db.from('data_requests').select('id').eq('user_id', userId).eq('kind', 'delete').eq('status', 'done').limit(1)).data?.length)
+    return fail(409, "This account was deleted at the person's request. It cannot be brought back.");
+  // The ban also reaches sign-in, so a banned person's session cannot be renewed; the unban lifts both.
+  if (action === 'ban') {
+    await db.from('profiles').update({ banned: true }).eq('id', userId);
+    const { error } = await db.auth.admin.updateUserById(userId, { ban_duration: '876000h' });
+    if (error) console.error('ban: could not lock sign-in', error.message);
+  } else if (action === 'unban') {
+    await db.from('profiles').update({ banned: false }).eq('id', userId);
+    const { error } = await db.auth.admin.updateUserById(userId, { ban_duration: 'none' });
+    if (error) console.error('unban: could not unlock sign-in', error.message);
+  } else if (action === 'unsuspend') await unsuspend(userId, adminId);
   else await db.from('profiles').update({ flagged: false }).eq('id', userId);
   await audit(adminId, `user_${action}`, 'profile', userId, { note: note.trim() });
   return { ok: true };

@@ -144,7 +144,8 @@ export async function decideReport(adminId: string | null, id: string, decision:
     if (r.status !== 'open') return fail(409, 'This report is already decided.');
     const slug = slugOf(r.site_url);
     let changed: string | null = null;
-    if (slug && decision === 'suspend') changed = (await db.from('products').update({ status: 'paused' }).eq('slug', slug).select('id')).data?.length ? slug : null;
+    // Only a live listing is paused (one still in review stays there), and only a listing paused over abuse reports is put back.
+    if (slug && decision === 'suspend') changed = (await pauseListing(slug, `Paused after an abuse report was upheld. ${n}`.trim())) ? slug : null;
     if (slug && decision === 'reinstate')
       changed = (
         await db
@@ -152,6 +153,7 @@ export async function decideReport(adminId: string | null, id: string, decision:
           .update({ status: 'live', review_note: n || 'Put back after review.' })
           .eq('slug', slug)
           .eq('status', 'paused')
+          .like('review_note', 'Paused % abuse report%')
           .select('id')
       ).data?.length
         ? slug

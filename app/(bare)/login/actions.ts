@@ -6,6 +6,7 @@ import { guard, noteAccount } from '@/lib/guard';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { safeNext } from '@/lib/safeNext';
 import { clientAddress } from '@/lib/clientIp';
+import { SITE_URL } from '@/lib/site';
 
 const back = (msg: string): never => redirect('/login?error=' + encodeURIComponent(msg));
 /* Turns provider errors into plain sentences. */
@@ -44,10 +45,10 @@ export async function authenticate(formData: FormData) {
   if (signup) {
     const up = await supabase.auth.signUp({ email, password, options: { data: { full_name: name, terms_accepted_at: new Date().toISOString() } } });
     if (up.error) return back(friendly(up.error.message));
+    // Role is set here on the server. The browser can never choose its own role. The account exists before the email is confirmed, so this runs first.
+    if (wantsSeller && up.data.user) await createAdminClient().from('profiles').update({ role: 'seller' }).eq('id', up.data.user.id).eq('role', 'buyer');
     if (!up.data.session || !up.data.user) return back('Check your email to confirm your account, then sign in.');
     userId = up.data.user.id;
-    // Role is set here on the server. The browser can never choose its own role.
-    if (wantsSeller) await createAdminClient().from('profiles').update({ role: 'seller' }).eq('id', userId);
   } else {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) return back('Email or password is wrong.');
@@ -73,8 +74,7 @@ export async function requestReset(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim();
   if (!email) return back('Enter your email.');
   if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
-  const h = await headers();
-  const origin = h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
-  await (await createClient()).auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/callback?next=/reset-password` });
+  // The link is built from our own address, never from request headers someone could set.
+  await (await createClient()).auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/auth/callback?next=/reset-password` });
   redirect('/login?sent=1');
 }
