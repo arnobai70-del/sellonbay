@@ -9,6 +9,7 @@ import { Timer } from '@/components/dash';
 import { FEE_SALE_TEXT } from '@/lib/config';
 import { sellerDashboard } from '@/lib/dashboard';
 import { draftsFor } from '@/lib/drafts';
+import { PAYOUT_METHODS } from '@/lib/payoutDetails';
 import { questionsForSeller } from '@/lib/presale/service';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { getViewerId, requireViewer } from '@/lib/supabase/viewer';
@@ -141,6 +142,30 @@ export default async function SellerDashboard() {
                 </span>
               )}
             </li>
+            {supabaseConfigured && (
+              <li>
+                <div className="grow">
+                  <b>Where we send your earnings</b>
+                  <small>{h?.payoutLabel ?? 'Not set yet. Add it so your weekly payouts can be sent.'}</small>
+                </div>
+                <AdminForm
+                  endpoint="/api/seller/payout"
+                  submit="Save payout details"
+                  openLabel={h?.payoutLabel ? 'Change' : 'Add payout details'}
+                  tone="line"
+                  fields={[
+                    { name: 'method', label: 'How you want to be paid', kind: 'select', options: PAYOUT_METHODS.map(([v, l]) => [v, l]) },
+                    {
+                      name: 'account',
+                      label: 'Account',
+                      kind: 'text',
+                      required: true,
+                      hint: 'For a bank: IBAN or account number, bank name and account holder. For Payoneer or Wise: the email of that account. We email you when this changes.',
+                    },
+                  ]}
+                />
+              </li>
+            )}
           </ul>
         </div>
       </div>
