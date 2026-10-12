@@ -5,8 +5,9 @@
  * (VirusTotal or ClamAV) plugs in behind MalwareScanner in lib/scan/index.ts once keys exist, and an admin still opens the files in a sandbox.
  */
 import { unzipSync } from 'fflate';
+import { CONFIG } from '../config';
 
-export const SCAN_LIMITS = { fileBytes: 50 * 1024 * 1024, entries: 5000, totalBytes: 200 * 1024 * 1024, textFileBytes: 2 * 1024 * 1024 };
+export const SCAN_LIMITS = { fileBytes: CONFIG.download.maxFileMb * 1024 * 1024, entries: 5000, totalBytes: 200 * 1024 * 1024, textFileBytes: 2 * 1024 * 1024 };
 
 export type SecretHit = { kind: string; file: string; sample: string };
 export type MalwareStatus = 'clean' | 'suspicious' | 'infected' | 'unknown';

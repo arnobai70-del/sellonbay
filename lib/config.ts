@@ -12,7 +12,7 @@ export const CONFIG = {
   dispute: { sellerReplyHours: 48, adminDecisionDays: 5, flagAfterRejected: 3 },
   extraWork: { titleMax: 80, minCents: 500, maxCents: 50000, minDays: 1, maxDays: 3, maxPending: 3 }, // max $500 (owner, 2026-10-12)
   trial: { minDays: 3, maxDays: 5, maxPriceCents: 15000, creditWindowDays: 30 }, // starter trial package
-  download: { linkHours: 24, linksPerHourPerOrder: 5, ipPerHour: 30 },
+  download: { linkHours: 24, linksPerHourPerOrder: 5, ipPerHour: 30, maxFileMb: 50 }, // maxFileMb: the largest seller file that can be virus-scanned, so the largest a buyer can get
   trialCopy: { linkMinutes: 60, perBuyerProductDays: 7, requestsPerDay: 3, maxFileMb: 25 }, // limited copy before purchase (feature flag)
   chat: { warnAtBlocks: 3, suspendAtBlocks: 5, windowDays: 30, suspendDays: 7, maxChars: 2000, perUserBurst: [20, 1] as readonly [number, number] }, // perUserBurst: [messages, minutes]
   presale: { perPairPerDay: 5, perBuyerPerDay: 20, userBurst: [5, 10] as const, ipBurst: [10, 10] as const }, // [count, minutes]

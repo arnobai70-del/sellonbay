@@ -13,6 +13,7 @@ describe('rules in one place', () => {
     expect(CONFIG.extraWork).toEqual({ titleMax: 80, minCents: 500, maxCents: 50000, minDays: 1, maxDays: 3, maxPending: 3 });
     expect(CONFIG.trial).toMatchObject({ minDays: 3, maxDays: 5, maxPriceCents: 15000, creditWindowDays: 30 });
     expect(CONFIG.download.linkHours).toBe(24);
+    expect(CONFIG.download.maxFileMb).toBe(50); // the scan limit: a file must be scanned clean to be delivered
     expect(CONFIG.chat).toMatchObject({ warnAtBlocks: 3, suspendAtBlocks: 5, windowDays: 30, suspendDays: 7, maxChars: 2000, perUserBurst: [20, 1] });
     expect(CONFIG.ai.freeRunsPerDay).toBe(5);
     expect(CONFIG.domain.reminderDays).toEqual([30, 7, 1]);

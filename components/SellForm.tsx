@@ -658,7 +658,8 @@ export function SellForm({
                     'A private link. The buyer gets it only after their payment is held in escrow, through a link that expires in 24 hours, with a licence key. Every download is logged, and you are paid 7 days after they accept.'
                   ) : (
                     <>Only shared with buyers after they accept the {app ? 'app' : 'site'}.</>
-                  )}
+                  )}{' '}
+                  The file behind the link can be up to {CONFIG.download.maxFileMb} MB. We scan it for viruses before a buyer gets it, and a bigger file cannot be approved.
                 </small>
               </div>
               {dig && (
