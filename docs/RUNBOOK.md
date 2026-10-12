@@ -4,7 +4,7 @@ How to operate SellOnBay. Short on purpose. Where something is not built yet it 
 
 ## Applying database changes
 
-1. Back up first (Supabase dashboard > Database > Backups, or `pg_dump`).
+1. Back up first: `npm run db:backup` (below), and the Supabase dashboard backup if your plan has one.
 2. Apply the files in `supabase/migrations/` in number order: Supabase SQL editor (paste, run), or a Postgres client with the project's connection string.
 3. After a migration that adds tables, check the grants in that file (clients get the minimum, never TRUNCATE) and run `npm run test:e2e` with the real database: `tests/e2e/rls.spec.ts` tries every forbidden action as the wrong user.
 4. Migrations are never edited after they have been applied. Fix forward with a new file.
@@ -50,12 +50,23 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 
 `/dashboard/admin` lists new listings and developer profiles. Open the demo and the files first (production requires a connected ClamAV daemon and a fresh successful real scan before approving a file; it fails closed if ClamAV is unavailable. For a digital product the admin must also confirm sandbox inspection). Approve, send back or reject, with a note the seller sees.
 
+## Backups (daily, encrypted)
+
+`npm run db:backup` saves the data of every app table (schema `public`) and the accounts (schema `auth`, without logins in progress) into `backups/sellonbay-<date>-<time>.dump.enc`, encrypted with your passphrase. The tables themselves are not in the file: they come back from `supabase/migrations`.
+
+- Needs the PostgreSQL client tools (`pg_dump`, `pg_restore`, `psql`) of the same major version as the database or newer (Supabase > Settings > Infrastructure shows it), and Node 20.
+- Set `SUPABASE_DB_URL` (Supabase > Connect > Session pooler, port 5432; not the transaction pooler 6543) and `BACKUP_PASSPHRASE` (16 characters or more, kept in a password manager: a lost passphrase means a backup nobody can open). `BACKUP_DIR` and `BACKUP_KEEP` (default 14) are optional.
+- Run it every day from a machine you trust (your computer or a small VPS cron job), and copy the file somewhere else too (a cloud drive). Never commit backups: the repository is public. `backups/` is in `.gitignore`.
+- pg_dump may warn about "circular foreign-key constraints" on `orders`. That is expected; the restore handles it.
+- Uploaded files (Storage buckets: demos, product files, pictures) are not in this backup. Copy them separately from Supabase Storage before launch.
+
 ## Restore a backup (test this once before launch)
 
-1. Supabase dashboard > Database > Backups > pick a backup > Restore (this replaces the database), or restore a `pg_dump` file into a fresh project with `psql`.
-2. Re-set the environment variables of the app to the new project's keys.
-3. Run `npm run test:e2e` against it, and open one order and one listing by hand.
-4. Write the date of the test here: ______
+1. Create a new Supabase project (never restore into the live one), and apply every file in `supabase/migrations` to it in number order.
+2. `RESTORE_DB_URL=<new project> BACKUP_PASSPHRASE=... npm run db:restore -- backups/<file>.dump.enc --yes`. It refuses a database without the SellOnBay tables or one that already has accounts, runs as one transaction (all or nothing), and prints the number of accounts, listings, orders and ledger entries: compare them with the live site.
+3. Re-set the environment variables of the app to the new project's keys. Everybody signs in again (sessions are not copied).
+4. Run `npm run test:e2e` against it, and open one order and one listing by hand.
+5. Write the date of the test here: ______
 
 ## Cloudflare (put it in front before launch)
 
