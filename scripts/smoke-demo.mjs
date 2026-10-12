@@ -49,6 +49,11 @@ try {
     }
     console.log(`Demo smoke passed: GET ${page}`);
   }
+  // A route that sets no cache header of its own must still come back uncacheable.
+  const api = await response('/api/demo/orders/smoke-missing');
+  await api.body?.cancel();
+  if (!api.headers.get('cache-control')?.includes('no-store')) throw new Error('API answers must carry Cache-Control: no-store');
+  console.log('Demo smoke passed: API answers are not cached');
 } catch (error) {
   console.error(error);
   process.exitCode = 1;

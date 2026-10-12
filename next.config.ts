@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
         ],
       },
+      // API answers are per person (orders, chat, notifications, downloads), so no browser, Hostinger or Cloudflare cache may keep them.
+      { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
     ];
   },
 };
