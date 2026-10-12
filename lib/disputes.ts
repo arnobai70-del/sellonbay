@@ -251,6 +251,10 @@ export async function decide(
   if (fee > 0 && !i.liability) return fail(400, 'Say whose fault it was before you record a fee.');
   if (i.liability && !['seller', 'buyer_fraud', 'platform'].includes(i.liability)) return fail(400, 'Pick whose fault it was.');
 
+  // A trial whose fee was already taken off a full job with the same developer: the buyer got that money back as the credit, so refunding the
+  // trial too would pay it twice. Fix or release it; a problem with the full job is a dispute on that order.
+  if (o.kind === 'trial' && (i.decision === 'refund_full' || i.decision === 'refund_partial') && (await (await orderStore()).creditClaimed(o.id)))
+    return fail(409, 'This trial fee was already credited to a full order with the same developer, so it cannot be refunded as well. Ask for a fix or release it.');
   let refund: number | undefined;
   // One partial refund per order: a later dispute can still give back the rest (refund_full), never a second part on top.
   if (i.decision === 'refund_partial' && o.refundedCents > 0)

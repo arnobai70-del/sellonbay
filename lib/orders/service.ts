@@ -113,11 +113,14 @@ export async function ensureLedger(o: Order): Promise<void> {
       const extraNet = extras.reduce((s, c) => s + c.priceCents - c.feeCents, 0);
       const key = sellerKey(o.sellerId);
       const rule = await reserveRule(o.sellerId);
-      const planned = split(o.lines, o.feeCents).sellerNet + extraNet - o.refundedCents;
+      // Earnings that already paid off an old debt when the order was accepted never reached pending for this order: they must not be taken
+      // from another order's pending (still in its hold and open to a dispute).
+      const settled = (await L.lines(`debt-settle:${o.id}`))[0]?.amountCents ?? 0;
+      const planned = split(o.lines, o.feeCents).sellerNet + extraNet - o.refundedCents - settled;
       const pending = await L.balance(acct.pending(key));
       const moving = Math.min(planned, pending);
       const reserveCents = rule.days > 0 ? reserveShare(moving, rule.percent) : 0;
-      const entry = holdMoved(money, extraNet - o.refundedCents, { pendingCents: pending, reserveCents });
+      const entry = holdMoved(money, extraNet - o.refundedCents - settled, { pendingCents: pending, reserveCents });
       if (entry) {
         // Written down before the money moves: a reserve record without money is harmless (nothing to release), money without a record would be stuck.
         if (reserveCents > 0) await recordReserve(o.id, o.sellerId, reserveCents, releaseAtFor(o.payoutAfter, rule.days));

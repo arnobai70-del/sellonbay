@@ -4,7 +4,7 @@ import { canUseDemoPayment } from '../commerce/demoPaymentPolicy';
 import type { VerifiedEvent } from '../providers/payment/types';
 import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
-import { fundExtra, getExtra } from './extra';
+import { fundExtra, getExtra, listExtras } from './extra';
 import { cancel, ensureLedger, fund, getOrder, move } from './service';
 import { bump } from '../metrics';
 import { audit } from '../admin/audit';
@@ -103,8 +103,10 @@ async function apply(provider: string, ev: VerifiedEvent): Promise<Outcome> {
   }
 
   if (ev.type === 'refund.succeeded') {
-    // Only a refund of everything still paid ends the order. A smaller refund made at the provider is for an admin to record, not a full refund.
-    if (ev.amountCents < order.priceCents - order.refundedCents) {
+    // Only a refund of everything still paid (the price and any funded extra work) ends the order: the ledger then gives all of the escrow back.
+    // A smaller refund made at the provider is for an admin to record, not a full refund.
+    const extras = (await listExtras(order.id)).filter((c) => c.state === 'funded').reduce((s, c) => s + c.priceCents, 0);
+    if (ev.amountCents < order.priceCents + extras - order.refundedCents) {
       await moneyNeedsAdmin(order, ev, 'a partial refund was made at the payment provider. The order was not changed.');
       return { status: 'ignored', reason: 'partial refund' };
     }
