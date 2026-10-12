@@ -17,7 +17,9 @@
     "test:e2e": "playwright test",
     "check:migrations": "node scripts/check-migrations.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
-    "smoke:demo": "node scripts/smoke-demo.mjs"
+    "smoke:demo": "node scripts/smoke-demo.mjs",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:restore": "node scripts/db-restore.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

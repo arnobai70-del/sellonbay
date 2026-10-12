@@ -8,6 +8,7 @@ next-env.d.ts
 !.env.example
 *.log
 coverage
+backups
 playwright-report
 test-results
 .DS_Store
