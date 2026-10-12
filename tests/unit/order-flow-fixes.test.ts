@@ -114,3 +114,22 @@ describe('order flow fixes', () => {
     expect(await refundAtProvider({ ...fresh, refundedCents: 12_500 })).toBe(0);
   });
 });
+
+describe('cancel notices', () => {
+  it('a paid order that is cancelled tells both sides; an unpaid one tells nobody', async () => {
+    const { cancel } = await import('@/lib/orders/service');
+    const { notificationsFor } = await import('@/lib/notify');
+    const buyerId = `cn-buyer-${Date.now()}`;
+    const sellerId = `cn-seller-${Date.now()}`;
+    const make = () =>
+      createOrder({ kind: 'product', pkg: 'asis', deliveryType: 'live_site', title: 'Site', lines: [['Site', 10_000]], days: 2, buyerId, sellerId, productKey: 'saffron-table', demo: false });
+    const unpaid = await make();
+    await cancel(unpaid.id, buyerId, 'buyer cancelled before paying');
+    expect((await notificationsFor(sellerId)).some((x) => x.kind === 'order_cancelled')).toBe(false);
+    const o = await make();
+    await handlePaymentEvent('verified-test-psp', { id: 'evt_' + o.id, type: 'payment.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 'pay_' + o.id, at: Date.now() });
+    await cancel(o.id, null, 'safety check');
+    expect((await notificationsFor(buyerId)).filter((x) => x.kind === 'order_cancelled')).toHaveLength(1);
+    expect((await notificationsFor(sellerId)).filter((x) => x.kind === 'order_cancelled')).toHaveLength(1);
+  });
+});

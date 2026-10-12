@@ -12,6 +12,7 @@ export type NotificationKind =
   | 'review_ending'
   | 'order_accepted'
   | 'order_overdue'
+  | 'order_cancelled'
   | 'extra_work_request'
   | 'extra_work_funded'
   | 'dispute_opened'
@@ -106,6 +107,7 @@ export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: stri
     text: `Your earnings are paid out weekly, ${CONFIG.payout.holdDays} days after acceptance. The buyer has a ${BUGFIX_DAYS}-day bug-fix guarantee.`,
   }),
   order_overdue: (p) => ({ subject: `${t(p.title)} is late`, text: 'The delivery time has passed. The buyer can cancel for a full refund.' }),
+  order_cancelled: (p) => ({ subject: `${t(p.title)} was cancelled`, text: 'The order is closed. The money held in escrow goes back to the buyer.' }),
   extra_work_request: (p) => ({
     subject: `Extra work for ${t(p.title)}: ${t(p.request, 'a request')}`,
     text: `The seller asks for ${t(p.price, 'more money')} and ${t(p.days, '1')} more days. Approve and pay it into escrow, or decline. Nothing starts before it is paid.`,

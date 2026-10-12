@@ -272,8 +272,23 @@ export const postgresStore: OrderStore = {
     return (data?.length ?? 0) > 0;
   },
   async open() {
-    const { data } = await createAdminClient().from('orders').select('*').in('status', ['funded', 'in_delivery', 'delivered', 'accepted']).limit(500);
-    return (data ?? []).map(fromRow);
+    // Every open order, a page at a time in a fixed order: a single capped read would hand the scheduled job the same subset every run.
+    const out: Order[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await createAdminClient()
+        .from('orders')
+        .select('*')
+        .in('status', ['funded', 'in_delivery', 'delivered', 'accepted'])
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, from + 999);
+      if (error) {
+        console.error('orders: could not read open orders', error.message);
+        return out;
+      }
+      out.push(...(data ?? []).map(fromRow));
+      if ((data?.length ?? 0) < 1000) return out;
+    }
   },
 };
 
