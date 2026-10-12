@@ -50,7 +50,6 @@ test.describe('sample link, trial copy and demo badge', () => {
   let server: ChildProcess;
   let sellerId = '';
   let scriptId = '';
-  let figmaId = '';
   const slugScript = `qa-trial-script-${stamp}`;
   const slugFigma = `qa-trial-figma-${stamp}`;
 
@@ -107,9 +106,8 @@ test.describe('sample link, trial copy and demo badge', () => {
     });
     await admin.storage.from('demos').upload(`trial/${slugScript}/trial.txt`, Buffer.from('LIMITED TRIAL COPY '.repeat(20)), { contentType: 'text/plain', upsert: true });
     const a = await admin.from('products').insert(row(slugScript, 'Scripts')).select('id').single();
-    const b = await admin.from('products').insert(row(slugFigma, 'Figma kits')).select('id').single();
+    expect((await admin.from('products').insert(row(slugFigma, 'Figma kits'))).error).toBeNull();
     scriptId = a.data!.id as string;
-    figmaId = b.data!.id as string;
     slugs.push(slugScript, slugFigma);
   });
 

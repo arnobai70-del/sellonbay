@@ -26,6 +26,8 @@ export function ResetClient() {
       data: { user },
     } = await sb.auth.getUser();
     const { data: p } = user ? await sb.from('profiles').select('role').eq('id', user.id).single() : { data: null };
+    // A full page load, so the new session cookies are read fresh on the server.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign('/dashboard/' + (p?.role ?? 'buyer'));
   };
 

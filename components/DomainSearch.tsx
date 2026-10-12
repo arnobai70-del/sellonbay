@@ -76,9 +76,10 @@ export function DomainSearch({ initial, registrarConnected }: { initial: string;
     }
     if (mine === seq.current) setBusy(false);
   }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (initial) run(initial);
+    // Search once for the name in the address when the page opens, not again on every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const all = ans?.results ?? [];
