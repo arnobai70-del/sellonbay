@@ -28,6 +28,13 @@ export async function notifyOrderEvent(o: Order, e: OrderEvent): Promise<void> {
       await notify(o.buyerId, 'order_overdue', base);
       await notify(o.sellerId, 'order_overdue', base);
       break;
+    case 'cancelled':
+    case 'refunded':
+      // Only a paid order: an unpaid one cancelled by its buyer concerns nobody else.
+      if (o.fundedAt === undefined) break;
+      await notify(o.buyerId, 'order_cancelled', base);
+      await notify(o.sellerId, 'order_cancelled', base);
+      break;
     case 'dispute_opened':
       await notify(o.sellerId, 'dispute_opened', { ...base, reason: String(e.meta.reason ?? '') });
       await notifyAdmins('dispute_opened', { ...base, reason: String(e.meta.reason ?? '') }, `dispute:${String(e.meta.disputeId ?? o.id)}`);
