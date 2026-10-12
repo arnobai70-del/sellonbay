@@ -3,6 +3,7 @@ import { ACCEPT_TEXT_VERSION } from './consentText';
 import { DEVICE_COOKIE, hashKey } from './guard';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
+import { clientAddress } from './clientIp';
 
 /*
  * The log of a buyer's "I accept" click: when, from which address, with which browser and device, and which version of the words they saw. It is evidence
@@ -25,7 +26,7 @@ async function pg() {
 
 /* The connection and device of the request, as they should be written down. */
 export function whoIs(req: Request): { ip: string; userAgent: string; deviceHash: string | null } {
-  const ip = (req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown').slice(0, 64);
+  const ip = clientAddress(req.headers);
   const userAgent = (req.headers.get('user-agent') ?? '').slice(0, 300);
   const cookie = /(?:^|;\s*)lb_dev=([A-Za-z0-9-]{8,64})/.exec(req.headers.get('cookie') ?? '')?.[1];
   return { ip, userAgent, deviceHash: cookie ? hashKey('device', cookie) : null };

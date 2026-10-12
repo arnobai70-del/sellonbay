@@ -199,6 +199,8 @@ export async function decideVersion(
   if (decision === 'reject' && n.length < 5) return fail(400, 'Tell the seller why (at least 5 characters).');
   const p = await loadProduct(v.productSlug);
   if (!p) return fail(404, 'Listing not found.');
+  // A paused or rejected listing (an abuse report, an admin) does not send new files to its buyers until it is live again.
+  if (decision === 'approve' && p.status !== 'live') return fail(409, `The listing is ${p.status.replace('_', ' ')}. Approve the version once the listing is live again.`);
 
   if (decision === 'approve') {
     if (!filesChecked) return fail(400, 'Open the files in a sandbox and tick the box before approving a version. There is no real malware scanner yet.');

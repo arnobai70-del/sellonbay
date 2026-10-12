@@ -247,6 +247,17 @@ async function othersFromStore(slug: string): Promise<Fingerprint[]> {
   return [...mem.listings.values()].filter((l) => l.slug !== slug);
 }
 
+/*
+ * The hashes of this listing's files that passed the malware scan as clean (the first file and every version). Delivery serves only these: the
+ * seller's link is fetched again for each download, so a file changed behind the same link after approval is refused. Null without a database.
+ */
+export async function cleanFileHashes(productId: string): Promise<Set<string> | null> {
+  if (!(await pg())) return null;
+  const { data, error } = await createAdminClient().from('scan_results').select('flags').eq('product_id', productId).eq('malware_status', 'clean');
+  if (error) throw new Error('Could not read the scan results.');
+  return new Set((data ?? []).map((r) => (r.flags as ScanFlags | null)?.fileSha256).filter((h): h is string => !!h));
+}
+
 /* One line for the admin card: what the scan found, in words. */
 export function summarise(r: ScanResult): { tone: 'mint' | 'amber' | 'rose'; text: string }[] {
   const f = r.flags;

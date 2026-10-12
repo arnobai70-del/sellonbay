@@ -8,16 +8,22 @@ export const MAX_FILE_BYTES = 500 * 1024 * 1024;
 /*
  * Pass a file through unchanged while counting its bytes and hashing it. The log row is written once: when the last byte has gone out (complete), or
  * when the download stops part way (the buyer cancels, the connection drops, the file is too big or the source fails), with the bytes sent so far.
+ * With `accept`, the whole file's hash must pass it: otherwise the download fails at the last byte (the browser marks it failed) and is logged as partial.
  */
-export function hashedStream(body: ReadableStream<Uint8Array>, maxBytes: number, onDone: (hash: string, bytes: number, complete: boolean) => void): ReadableStream<Uint8Array> {
+export function hashedStream(
+  body: ReadableStream<Uint8Array>,
+  maxBytes: number,
+  onDone: (hash: string, bytes: number, complete: boolean) => void,
+  accept?: (hash: string) => boolean,
+): ReadableStream<Uint8Array> {
   const h = createHash('sha256');
   const reader = body.getReader();
   let bytes = 0;
   let logged = false;
-  const done = (complete: boolean) => {
+  const done = (complete: boolean, hash = h.digest('hex')) => {
     if (logged) return;
     logged = true;
-    onDone(h.digest('hex'), bytes, complete);
+    onDone(hash, bytes, complete);
   };
   return new ReadableStream<Uint8Array>({
     async pull(ctl) {
@@ -29,7 +35,12 @@ export function hashedStream(body: ReadableStream<Uint8Array>, maxBytes: number,
         return ctl.error(e);
       }
       if (r.done) {
-        done(true);
+        const hash = h.digest('hex');
+        if (accept && !accept(hash)) {
+          done(false, hash);
+          return ctl.error(new Error('file_changed'));
+        }
+        done(true, hash);
         return ctl.close();
       }
       if (bytes + r.value.byteLength > maxBytes) {
@@ -69,10 +80,26 @@ export async function sendBuffer(req: Request, buf: Buffer, name: string, ev: Om
   return new NextResponse(new Uint8Array(buf), { headers: headers(name, { 'content-length': String(buf.length) }) });
 }
 
-export function sendUpstream(upstream: Response, name: string, ev: Omit<DownloadEvent, 'file_hash' | 'bytes'>) {
+/*
+ * Stream a seller's file to a buyer. `pinned` is the set of file hashes that passed the malware scan for this listing: a file whose hash is not in
+ * it (the seller changed the file behind the same link after approval) is never completed, and `onChanged` is told.
+ */
+export function sendUpstream(upstream: Response, name: string, ev: Omit<DownloadEvent, 'file_hash' | 'bytes'>, pinned?: { hashes: ReadonlySet<string>; onChanged: (hash: string) => void }) {
   const declared = Number(upstream.headers.get('content-length') ?? 0);
   if (declared > MAX_FILE_BYTES) return NextResponse.json({ error: 'That file is too large to deliver here.' }, { status: 413 });
-  const body = hashedStream(upstream.body as ReadableStream<Uint8Array>, MAX_FILE_BYTES, (hash, bytes, complete) => void logDownload({ ...ev, file_hash: complete ? hash : PARTIAL + hash, bytes }));
+  const accept = pinned
+    ? (hash: string) => {
+        if (pinned.hashes.has(hash)) return true;
+        pinned.onChanged(hash);
+        return false;
+      }
+    : undefined;
+  const body = hashedStream(
+    upstream.body as ReadableStream<Uint8Array>,
+    MAX_FILE_BYTES,
+    (hash, bytes, complete) => void logDownload({ ...ev, file_hash: complete ? hash : PARTIAL + hash, bytes }),
+    accept,
+  );
   return new NextResponse(body, { headers: headers(name) });
 }
 

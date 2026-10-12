@@ -52,4 +52,26 @@ describe('hashedStream', () => {
     expect(logs).toHaveLength(1);
     expect(logs[0].slice(1)).toEqual([2, false]);
   });
+
+  it('refuses to finish a file whose hash is not the scanned one, and logs it as partial', async () => {
+    const logs: [string, number, boolean][] = [];
+    const good = createHash('sha256')
+      .update(Buffer.from([1, 2, 3]))
+      .digest('hex');
+    const ok = hashedStream(
+      source([[1, 2], [3]]),
+      100,
+      (h, b, c) => logs.push([h, b, c]),
+      (h) => h === good,
+    );
+    expect([...new Uint8Array(await new Response(ok).arrayBuffer())]).toEqual([1, 2, 3]);
+    const swapped = hashedStream(
+      source([[9, 9], [9]]),
+      100,
+      (h, b, c) => logs.push([h, b, c]),
+      (h) => h === good,
+    );
+    await expect(new Response(swapped).arrayBuffer()).rejects.toThrow();
+    expect(logs.map((l) => l[2])).toEqual([true, false]);
+  });
 });
