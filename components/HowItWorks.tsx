@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { CONFIG, SELLER_KEEP_TEXT, pct, sellerNetCents } from '@/lib/config';
 import { imageFor, money } from '@/lib/data';
 
 type Mode = 'buy' | 'sell';
@@ -74,8 +75,8 @@ function Visual({ mode, n }: { mode: Mode; n: number }) {
             <i />
           </div>
           <div className="hv-row">
-            <span className="muted">You keep 85%</span>
-            <b className="hv-green">{money(33.15)}</b>
+            <span className="muted">You keep {pct(10_000 - CONFIG.fees.saleBps)}</span>
+            <b className="hv-green">{money(sellerNetCents(3900, 'sale') / 100)}</b>
           </div>
         </div>
       </div>
@@ -129,7 +130,7 @@ const STEPS: Record<Mode, { t: string; d: string }[]> = {
     { t: 'Review and accept', d: 'Your seller sets it up within 1 to 7 days. You check it, then accept.' },
   ],
   sell: [
-    { t: 'List your site', d: 'Upload it once and set your price. You keep 85% of every sale.' },
+    { t: 'List your site', d: `Upload it once and set your price. You keep ${SELLER_KEEP_TEXT} of every sale.` },
     { t: 'We check it', d: 'We scan for malware and copied content, and reply within 24 hours.' },
     { t: 'Get paid weekly', d: 'Earnings are paid out 7 days after the buyer accepts.' },
   ],

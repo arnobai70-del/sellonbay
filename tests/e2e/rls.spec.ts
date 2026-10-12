@@ -28,9 +28,9 @@ const refused = (r: { data: unknown; error: unknown }) => !!r.error || r.data ==
 
 test.describe('RLS: the wrong person is always refused', () => {
   test.skip(!env.SUPABASE_SERVICE_ROLE_KEY, 'needs .env.local with Supabase keys');
-  const url = env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-  const admin = createClient(url, env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } });
+  const url = env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'unset';
+  const admin = createClient(url, env.SUPABASE_SERVICE_ROLE_KEY || 'unset', { auth: { persistSession: false } });
   const stamp = Date.now();
   const users: Record<'buyer' | 'seller' | 'other', { id: string; db: SupabaseClient }> = {} as never;
   let anon: SupabaseClient;

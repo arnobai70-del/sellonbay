@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BRAND_NAME } from '@/lib/brand';
-import { CONFIG, FEE_CUSTOM_TEXT, FEE_SALE_TEXT, feeCents, sellerNetCents } from '@/lib/config';
+import { CONFIG, FEE_CUSTOM_TEXT, FEE_SALE_TEXT, SELLER_KEEP_TEXT, feeCents, sellerNetCents } from '@/lib/config';
 
 describe('rules in one place', () => {
   it('holds the rules the spec states', () => {
@@ -47,6 +47,7 @@ describe('rules in one place', () => {
     expect(feeCents(10_000, 'custom')).toBe(2000);
     expect(FEE_SALE_TEXT).toBe('22% (30% under $20)');
     expect(FEE_CUSTOM_TEXT).toBe('20%');
+    expect(SELLER_KEEP_TEXT).toBe('78% (70% under $20)');
   });
   it('fee and payout always add up to the price, whatever the rounding', () => {
     for (const price of [1, 3, 99, 333, 1999, 2901, 14_999, 15_000]) {
