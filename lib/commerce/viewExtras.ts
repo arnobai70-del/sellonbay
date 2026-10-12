@@ -1,5 +1,5 @@
 import 'server-only';
-import { visibleProduct } from '../catalog';
+import { productRecord } from '../catalog';
 import { disputeSummary } from '../disputes';
 import { heldReason } from '../holdStore';
 import type { Order } from '../orders/machine';
@@ -15,7 +15,8 @@ async function repoView(o: Order) {
 }
 
 export async function viewExtras(o: Order) {
-  const prod = o.productKey ? (await visibleProduct(o.productKey))?.product : undefined;
+  // The order proves the buyer may see what they bought, even after the listing leaves "live" (an edit in review, a pause).
+  const prod = o.productKey ? (await productRecord(o.productKey))?.product : undefined;
   const i = prod ? infoOf(prod) : null;
   const supportDays = i ? promisedDays(o.supportDays, i.supportDays) : 0;
   const updateDays = i ? promisedDays(o.updateDays, i.updateDays) : 0;

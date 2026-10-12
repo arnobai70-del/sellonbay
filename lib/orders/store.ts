@@ -256,7 +256,7 @@ export const postgresStore: OrderStore = {
     return (data ?? []).map((r) => ({ orderId: r.order_id, actorId: r.actor_id, event: r.event, from: r.from_state, to: r.to_state, meta: r.meta ?? {}, at: Date.parse(r.created_at) }));
   },
   async forUser(userId) {
-    const { data } = await createAdminClient().from('orders').select('*').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100);
+    const { data } = await createAdminClient().from('orders').select('*').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(2000); // the seller dashboard counts on every open order being here
     return (data ?? []).map(fromRow);
   },
   async byState(states) {

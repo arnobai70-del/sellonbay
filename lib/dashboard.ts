@@ -166,7 +166,7 @@ export async function sellerDashboard(userId: string, now = Date.now()): Promise
     weekly: weeklyBuckets(earnings, now, CONFIG.dashboard.chartWeeks),
     extras,
     listings,
-    payouts: (await listPayouts()).filter((p) => p.sellerId === userId),
+    payouts: await listPayouts({ sellerId: userId }),
     health: {
       onTime: onTimeShare(orders),
       rating: ratingCount ? Math.round((rated.reduce((s, l) => s + (l.ratingAvg ?? 0) * l.ratingCount, 0) / ratingCount) * 10) / 10 : null,

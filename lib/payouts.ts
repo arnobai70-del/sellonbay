@@ -111,12 +111,13 @@ const toPayout = (r: Row, items: string[], info?: { name: string; method: string
   paidAt: r.paid_at ? Date.parse(r.paid_at as string) : undefined,
 });
 
-export async function listPayouts(opts: { weekStart?: string; status?: PayoutStatus[] } = {}): Promise<Payout[]> {
+export async function listPayouts(opts: { weekStart?: string; status?: PayoutStatus[]; sellerId?: string } = {}): Promise<Payout[]> {
   let list: Payout[];
   if (await pg()) {
     const db = createAdminClient();
     let q = db.from('payouts').select('*').order('created_at', { ascending: false }).limit(500);
     if (opts.weekStart) q = q.eq('week_start', opts.weekStart);
+    if (opts.sellerId) q = q.eq('seller_id', opts.sellerId);
     const { data } = await q;
     const rows = data ?? [];
     const { data: items } = rows.length
@@ -137,7 +138,7 @@ export async function listPayouts(opts: { weekStart?: string; status?: PayoutSta
       ),
     );
   } else {
-    list = [...mem.payouts.values()].filter((p) => !opts.weekStart || p.weekStart === opts.weekStart).sort((a, b) => b.createdAt - a.createdAt);
+    list = [...mem.payouts.values()].filter((p) => (!opts.weekStart || p.weekStart === opts.weekStart) && (!opts.sellerId || p.sellerId === opts.sellerId)).sort((a, b) => b.createdAt - a.createdAt);
   }
   return opts.status ? list.filter((p) => opts.status!.includes(p.status)) : list;
 }
