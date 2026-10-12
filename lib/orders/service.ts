@@ -35,7 +35,8 @@ import { notifyOrderEvent, notifyReminders } from './notifications';
 import { isOrderId, orderStore } from './store';
 import { heldReason, maybeHold } from '../holdStore';
 import { bump } from '../metrics';
-import { noteInvite, requestRevocation } from '../repoAccess';
+import { CONFIG, DAY_MS } from '../config';
+import { inviteState, noteInvite, requestRevocation } from '../repoAccess';
 import { recordReserve, releaseAtFor, reserveRule } from '../reserve';
 
 /* What the rest of the app calls. Everything goes through the state machine and the store; nothing edits an order directly. */
@@ -283,12 +284,25 @@ export async function demoSkip(id: string): Promise<Result> {
   return fail(409, 'Nothing to skip.');
 }
 
+/*
+ * A repository order whose buyer never says "I can open it": access counts as confirmed CONFIG.repo.autoConfirmDays after the last invite, and the
+ * review starts (owner, 2026-10-12). The buyer still has the full review to report a problem. Not while the order is held for a safety check.
+ */
+async function autoConfirmAccess(o: Order, now: number): Promise<Order> {
+  if (o.deliveryType !== 'repo_access' || o.state !== 'in_delivery') return o;
+  const s = await inviteState(o, now);
+  if (!s || now < s.invitedAt + CONFIG.repo.autoConfirmDays * DAY_MS || (await heldReason(o.id))) return o;
+  const r = await move(o.id, 'delivered', { actorId: null, event: 'access_auto_confirmed', meta: { github: o.githubUsername ?? null, days: CONFIG.repo.autoConfirmDays }, now });
+  return r.ok ? r.order : o;
+}
+
 /* The scheduled job: applies every due step to every open order. Returns how many orders moved. */
 export async function runDueJobs(now = Date.now()): Promise<number> {
   const store = await orderStore();
   let moved = 0;
   for (const o of await store.open()) {
-    const after = await tick(o, now);
+    let after = await tick(o, now);
+    after = await autoConfirmAccess(after, now);
     await ensureLedger(after);
     await notifyReminders(after, now);
     if (after.state !== o.state) moved++;

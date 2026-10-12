@@ -90,10 +90,10 @@ export async function createExtra(orderId: string, sellerId: string | null, i: {
   if (!o) return fail(404, 'Order not found.');
   if (!OPEN_FOR_EXTRA.includes(o.state)) return fail(409, 'Extra work can only be added while the order is open and not yet accepted.');
   const title = i.title.trim();
-  const { titleMax, minCents, minDays, maxDays, maxPending } = CONFIG.extraWork;
+  const { titleMax, minCents, maxCents, minDays, maxDays, maxPending } = CONFIG.extraWork;
   if (title.length < 3 || title.length > titleMax) return fail(400, `Give the extra work a title of 3 to ${titleMax} characters.`);
   if (isBlocked(title)) return fail(400, 'Keep emails, phone numbers and outside payment talk out of the title.');
-  if (!Number.isInteger(i.priceCents) || i.priceCents < minCents) return fail(400, `The price must be at least $${minCents / 100}.`);
+  if (!Number.isInteger(i.priceCents) || i.priceCents < minCents || i.priceCents > maxCents) return fail(400, `The price must be $${minCents / 100} to $${maxCents / 100}.`);
   if (!Number.isInteger(i.addDays) || i.addDays < minDays || i.addDays > maxDays) return fail(400, `Extra days must be ${minDays} to ${maxDays}.`);
   const pending = (await listExtras(orderId)).filter((c) => c.state === 'pending').length;
   if (pending >= maxPending) return fail(409, `There are already ${maxPending} requests waiting for the buyer.`);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '@/lib/config';
 import { createExtra } from '@/lib/orders/extra';
 import { handlePaymentEvent } from '@/lib/orders/payments';
-import { createOrder, deliver, getOrder, handoverSent, runDueJobs } from '@/lib/orders/service';
+import { createOrder, deliver, getOrder, handoverSent, orderEvents, runDueJobs } from '@/lib/orders/service';
 
 /* Order paths found wrong in a review: repository orders, extra work during the review, and payment events that do not fit the order. */
 let n = 0;
@@ -26,11 +26,31 @@ const paid = async (deliveryType: 'live_site' | 'repo_access' = 'live_site') => 
 };
 
 describe('order flow fixes', () => {
-  it('a repository order with the invite sent never turns overdue (the buyer already has the code)', async () => {
+  it('a repository order with the invite sent never turns overdue (the buyer already has the code), it is confirmed instead', async () => {
     const o = await paid('repo_access');
     expect((await handoverSent(o.id, o.sellerId)).ok).toBe(true);
     await runDueJobs(Date.now() + 10 * DAY_MS);
+    expect((await getOrder(o.id))!.state).toBe('delivered');
+  });
+
+  it('a repository order counts as confirmed 7 days after the invite, and the review starts', async () => {
+    const o = await paid('repo_access');
+    const t0 = Date.now();
+    expect((await handoverSent(o.id, o.sellerId)).ok).toBe(true);
+    await runDueJobs(t0 + 6 * DAY_MS);
     expect((await getOrder(o.id))!.state).toBe('in_delivery');
+    await runDueJobs(t0 + 7 * DAY_MS + 60_000);
+    const after = (await getOrder(o.id))!;
+    expect(after.state).toBe('delivered');
+    expect(after.reviewEndsAt).toBeGreaterThan(t0 + 7 * DAY_MS);
+    expect((await orderEvents(o.id)).some((e) => e.event === 'access_auto_confirmed')).toBe(true);
+  });
+
+  it('extra work costs $5 to $500', async () => {
+    const o = await paid();
+    const ask = (priceCents: number) => createExtra(o.id, o.sellerId, { title: 'Add a gallery page', priceCents, addDays: 1 });
+    expect((await ask(50_000)).ok).toBe(true);
+    expect((await ask(50_001)).ok).toBe(false);
   });
 
   it('a site order still turns overdue', async () => {
