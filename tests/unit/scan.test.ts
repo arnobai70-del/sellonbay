@@ -1,7 +1,7 @@
 import { zipSync, strToU8 } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { findSecrets, inspect, inspectBytes, similarity } from '@/lib/scan/engine';
-import { approvalBlock, localScanner, runScan, summarise, type Deps, type ScanResult } from '@/lib/scan';
+import { approvalBlock, localScanner, runScan, summarise, trialCopyRefusal, type Deps, type ScanResult } from '@/lib/scan';
 
 const zip = (files: Record<string, string | Uint8Array>) => zipSync(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, typeof v === 'string' ? strToU8(v) : v])));
 const EICAR = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
@@ -178,5 +178,27 @@ describe('approval gate', () => {
   it('listings without files, or with the switch off, are not held back', () => {
     expect(approvalBlock(null, false, true)).toBeNull();
     expect(approvalBlock(scan('clean', 'local'), true, false)).toBeNull();
+  });
+});
+
+describe('trial copy check', () => {
+  const bytes = new Uint8Array([1, 2, 3]);
+  const scanner = (name: string, status: 'clean' | 'infected' | 'suspicious' | 'unknown' | 'throw') => ({
+    name,
+    scan: async () => {
+      if (status === 'throw') throw new Error('down');
+      return { status, detail: [] };
+    },
+  });
+  it('serves only a file that scans clean', async () => {
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('clamav', 'clean'), true)).toBeNull();
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('clamav', 'infected'), true)).toMatch(/virus check/);
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('clamav', 'suspicious'), true)).toMatch(/virus check/);
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('clamav', 'unknown'), true)).toMatch(/could not be checked/);
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('clamav', 'throw'), true)).toMatch(/could not be checked/);
+  });
+  it('needs a real scanner where one is required', async () => {
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('local', 'clean'), true)).toMatch(/cannot be checked/);
+    expect(await trialCopyRefusal(bytes, 'trial.zip', scanner('local', 'clean'), false)).toBeNull();
   });
 });

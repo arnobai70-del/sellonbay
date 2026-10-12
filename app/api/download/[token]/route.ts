@@ -13,7 +13,7 @@ import { CONFIG, HOUR_MS } from '@/lib/config';
 import { tokenParam } from '@/lib/validate';
 import { HELD_TEXT, heldReason } from '@/lib/holds';
 import { fileForOrder } from '@/lib/versions';
-import { cleanFileHashes, requireRealMalwareScanner } from '@/lib/scan';
+import { cleanFileHashes, requireRealMalwareScanner, trialCopyRefusal } from '@/lib/scan';
 import { audit } from '@/lib/admin/audit';
 import { notifyAdmins } from '@/lib/notify';
 
@@ -37,18 +37,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     const admin = createAdminClient();
     const { data: p } = await admin.from('products').select('id, slug, status, trial_url').eq('id', orderId).maybeSingle();
     if (!p || p.status !== 'live' || !p.trial_url) return no('This trial is no longer available.', 404);
-    if (p.trial_url.startsWith('storage:')) {
-      const { data: blob } = await admin.storage.from('demos').download(p.trial_url.slice(8));
-      if (!blob) return no('The trial file could not be reached. Try again soon.', 502);
-      return sendBuffer(req, Buffer.from(await blob.arrayBuffer()), `trial-${p.slug ?? 'download'}.${p.trial_url.split('.').pop()}`, baseEvent(req, p.id, 'trial', userId));
-    }
-    try {
-      const upstream = await safeFetch(p.trial_url, AbortSignal.timeout(20_000));
-      if (!upstream.ok || !upstream.body) return no('The trial file could not be reached. Try again soon.', 502);
-      return sendUpstream(upstream, `trial-${filenameFromUrl(p.trial_url, p.slug ?? 'download')}`, baseEvent(req, p.id, 'trial', userId));
-    } catch {
-      return no('The trial file could not be reached. Try again soon.', 502);
-    }
+    // Trial copies are only ever stored files the seller uploaded (app/api/listings); nothing else is served.
+    if (!p.trial_url.startsWith('storage:')) return no('This trial is no longer available.', 404);
+    const { data: blob } = await admin.storage.from('demos').download(p.trial_url.slice(8));
+    if (!blob) return no('The trial file could not be reached. Try again soon.', 502);
+    const name = `trial-${p.slug ?? 'download'}.${p.trial_url.split('.').pop()}`;
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    // Scanned again before every download: signatures change, and files stored before the upload check existed were never scanned.
+    if (await trialCopyRefusal(bytes, name)) return no('This trial is not available right now.', 403);
+    return sendBuffer(req, bytes, name, baseEvent(req, p.id, 'trial', userId));
   }
 
   if (k === 'demo') {

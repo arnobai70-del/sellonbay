@@ -8,7 +8,7 @@ import { flags } from '@/lib/flags';
 import { missingForReview, reviewMessage } from '@/lib/listingRules';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { CONFIG } from '@/lib/config';
-import { runScan } from '@/lib/scan';
+import { runScan, trialCopyRefusal } from '@/lib/scan';
 import { DEFAULT_LICENCE, isLicenceType, parseThirdParty } from '@/lib/licences';
 import { listingFieldsSchema } from '@/lib/schemas';
 import { idParam, parseWith } from '@/lib/validate';
@@ -252,7 +252,11 @@ export async function POST(req: Request) {
 
   if (sampleRaw && !isHttps(sampleRaw)) return fail('The free sample link must start with https.');
   if (trialFile && !['zip', 'pdf', 'txt', 'md', 'json', 'csv'].includes(trialExt)) return fail('The trial copy must be a zip, pdf, txt, md, json or csv file.');
-  if (trialFile && trialFile.size > 25 * 1024 * 1024) return fail('The trial copy file can be at most 25 MB.');
+  if (trialFile && trialFile.size > CONFIG.trialCopy.maxFileMb * 1024 * 1024) return fail(`The trial copy file can be at most ${CONFIG.trialCopy.maxFileMb} MB.`);
+  const trialBytes = trialFile ? new Uint8Array(await trialFile.arrayBuffer()) : null;
+  // Visitors download the trial copy before paying and before anyone opens it, so it is refused unless it scans clean.
+  const trialBad = trialBytes ? await trialCopyRefusal(trialBytes, trialFile!.name) : null;
+  if (trialBad) return fail(trialBad, 422);
   if (name.length < 3 || name.length > 60) return fail('Give the site a name of 3 to 60 characters.');
   if (isApp ? !catsFor(platform).includes(category) : !CATS.includes(category) || category === 'All') return fail('Pick a category.');
   if (isApp && !toolsFor(platform).includes(stack)) return fail(platform === 'digital' ? 'Say what the product is made for.' : 'Say what the app is built with.');
@@ -391,7 +395,7 @@ export async function POST(req: Request) {
 
   if (trialFile) {
     const tpath = `trial/${productId}/trial.${trialExt}`;
-    const { error: terr } = await admin.storage.from('demos').upload(tpath, new Uint8Array(await trialFile.arrayBuffer()), { contentType: 'application/octet-stream', upsert: true });
+    const { error: terr } = await admin.storage.from('demos').upload(tpath, trialBytes!, { contentType: 'application/octet-stream', upsert: true });
     if (terr) {
       await undo();
       return fail('The trial copy could not be stored. Nothing was saved, please try again.', 500);
