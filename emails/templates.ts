@@ -18,6 +18,7 @@ export type NotificationKind =
   | 'dispute_reply'
   | 'dispute_decided'
   | 'payout_sent'
+  | 'payout_details_changed'
   | 'listing_decision'
   | 'domain_expiring'
   | 'new_message'
@@ -122,6 +123,10 @@ export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: stri
   payout_sent: (p) => ({
     subject: 'Your payout was sent',
     text: `${t(p.amount, 'Your earnings')} were sent with ${t(p.method, 'the payout method on your account')}. It can take a few days to show.`,
+  }),
+  payout_details_changed: (p) => ({
+    subject: 'Your payout details were changed',
+    text: `Your earnings will now be sent to: ${t(p.now, 'the new account')}. Before: ${t(p.was, 'none')}. If you did not do this, change your password and contact support at once.`,
   }),
   listing_decision: (p) => ({ subject: `Your listing ${t(p.name, '')} was ${t(p.decision, 'reviewed')}`, text: t(p.note, 'Open your dashboard for details.') }),
   domain_expiring: (p) => ({ subject: `${t(p.domain, 'Your domain')} expires soon`, text: `It expires on ${t(p.date, 'soon')}. Renew it so your site stays online.` }),

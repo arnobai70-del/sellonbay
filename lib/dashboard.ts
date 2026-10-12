@@ -12,6 +12,7 @@ import { listPayouts, sellerEarnings, weekStartOf, type Payout } from './payouts
 import { createAdminClient } from './supabase/server';
 import { pendingForSeller, type Checklist } from './repoAccess';
 import { versionsOf } from './versions';
+import { payoutLabel } from './payoutDetails';
 
 /*
  * What the buyer and seller dashboards show: the person's own orders, money and listings, read from the real stores. Nothing here is made up:
@@ -91,7 +92,14 @@ export type SellerView = {
   extras: { order: Order; request: ChangeRequest }[];
   listings: SellerListing[];
   payouts: Payout[];
-  health: { onTime: number | null; rating: number | null; ratingCount: number; disputeRate: number | null; verified: { email: boolean; phone: boolean; id: boolean; payout: boolean } | null };
+  health: {
+    onTime: number | null;
+    rating: number | null;
+    ratingCount: number;
+    disputeRate: number | null;
+    verified: { email: boolean; phone: boolean; id: boolean; payout: boolean } | null;
+    payoutLabel: string | null;
+  };
   nextPayout: string;
   revocations: Checklist[]; // repository access to take back after a refund
 };
@@ -114,6 +122,7 @@ export async function sellerDashboard(userId: string, now = Date.now()): Promise
 
   let listings: SellerListing[] = [];
   let verified: SellerView['health']['verified'] = null;
+  let payout: string | null = null;
   if (await pg()) {
     const db = createAdminClient();
     const { data } = await db
@@ -138,6 +147,7 @@ export async function sellerDashboard(userId: string, now = Date.now()): Promise
     verified = sp
       ? { email: !!sp.email_verified, phone: !!sp.phone_verified, id: !!sp.id_verified, payout: !!sp.payout_method && !!sp.payout_ref }
       : { email: false, phone: false, id: false, payout: false };
+    payout = payoutLabel(sp?.payout_method, sp?.payout_ref);
   }
   const rated = listings.filter((l) => l.ratingCount > 0);
   const ratingCount = rated.reduce((s, l) => s + l.ratingCount, 0);
@@ -163,6 +173,7 @@ export async function sellerDashboard(userId: string, now = Date.now()): Promise
       ratingCount,
       disputeRate: funded ? disputed / funded : null,
       verified,
+      payoutLabel: payout,
     },
     nextPayout: nextPayoutDay(now),
     revocations: await pendingForSeller(userId),
