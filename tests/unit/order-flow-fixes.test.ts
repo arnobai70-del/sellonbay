@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '@/lib/config';
 import { createExtra } from '@/lib/orders/extra';
 import { handlePaymentEvent } from '@/lib/orders/payments';
-import { createOrder, deliver, getOrder, handoverSent, orderEvents, runDueJobs } from '@/lib/orders/service';
+import { createOrder, deliver, getOrder, handoverSent, orderEvents, refundAtProvider, runDueJobs } from '@/lib/orders/service';
+import { fakePayments } from '@/lib/providers/payment';
 
 /* Order paths found wrong in a review: repository orders, extra work during the review, and payment events that do not fit the order. */
 let n = 0;
@@ -91,5 +92,25 @@ describe('order flow fixes', () => {
     const full = await handlePaymentEvent('verified-test-psp', { id: 'evt_fr_' + o.id, type: 'refund.succeeded', orderId: o.id, amountCents: o.priceCents, ref: 're2_' + o.id, at: Date.now() });
     expect(full.status).toBe('applied');
     expect((await getOrder(o.id))!.state).toBe('cancelled');
+  });
+
+  it('a refund at the provider covers the price and funded extra work, less what was refunded already', async () => {
+    const o = await paid();
+    const r = await createExtra(o.id, o.sellerId, { title: 'Add a gallery page', priceCents: 2_500, addDays: 2 });
+    if (!r.ok) throw new Error(r.error);
+    await handlePaymentEvent('verified-test-psp', {
+      id: 'evt_x_' + r.request.id,
+      type: 'payment.succeeded',
+      orderId: o.id,
+      amountCents: 2_500,
+      ref: 'pay_x_' + o.id,
+      at: Date.now(),
+      changeRequestId: r.request.id,
+    });
+    const fresh = (await getOrder(o.id))!;
+    expect(await refundAtProvider(fresh)).toBe(12_500);
+    expect(fakePayments.calls.at(-1)).toEqual({ method: 'refund', args: [o.id, 12_500] });
+    expect(await refundAtProvider({ ...fresh, refundedCents: 4_000 })).toBe(8_500);
+    expect(await refundAtProvider({ ...fresh, refundedCents: 12_500 })).toBe(0);
   });
 });

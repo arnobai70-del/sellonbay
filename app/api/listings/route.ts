@@ -457,6 +457,9 @@ export async function GET(req: Request) {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return fail('Sign in first.', 401);
+  // The answer holds the private files link: the same authenticator code as saving a listing.
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.currentLevel !== 'aal2') return fail('Enter your authenticator code first.', 403);
   const { data: p } = await createAdminClient()
     .from('products')
     .select(

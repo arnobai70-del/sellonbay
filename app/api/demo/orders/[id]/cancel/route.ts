@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { orderFor } from '@/lib/commerce/access';
-import { cancel } from '@/lib/orders/service';
-import { fakePayments } from '@/lib/providers/payment';
+import { cancel, refundAtProvider } from '@/lib/orders/service';
 import { getViewerId } from '@/lib/supabase/viewer';
 import { idOf } from '@/lib/validate';
 
@@ -15,6 +14,6 @@ export async function POST(_r: Request, { params }: { params: Promise<{ id: stri
   const wasPaid = !!o.fundedAt;
   const r = await cancel(o.id, (await getViewerId()) ?? null, wasPaid ? 'buyer cancelled an overdue order' : 'buyer cancelled before paying');
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
-  if (wasPaid) await fakePayments.refund(o.id, o.priceCents);
+  if (wasPaid) await refundAtProvider(o); // the price and any funded extra work, as the ledger gives back
   return NextResponse.json({ ok: true, refunded: wasPaid });
 }

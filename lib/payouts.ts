@@ -72,8 +72,8 @@ async function pg() {
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function sellerInfo(ids: string[]): Promise<Map<string, { name: string; method: string; account: string }>> {
-  const out = new Map<string, { name: string; method: string; account: string }>();
+async function sellerInfo(ids: string[]): Promise<Map<string, { name: string; method: string; account: string; banned?: boolean }>> {
+  const out = new Map<string, { name: string; method: string; account: string; banned?: boolean }>();
   for (const id of ids) {
     const m = mem.sellers.get(id);
     if (m) out.set(id, m);
@@ -83,12 +83,12 @@ async function sellerInfo(ids: string[]): Promise<Map<string, { name: string; me
     const db = createAdminClient();
     const [{ data: sp }, { data: pr }] = await Promise.all([
       db.from('seller_profiles').select('user_id, display_name, payout_method, payout_ref').in('user_id', real),
-      db.from('profiles').select('id, full_name').in('id', real),
+      db.from('profiles').select('id, full_name, banned').in('id', real),
     ]);
     for (const id of real) {
       const s = sp?.find((x) => x.user_id === id);
       const name = s?.display_name || pr?.find((x) => x.id === id)?.full_name || 'Seller';
-      out.set(id, { name, method: s?.payout_method ?? '', account: s?.payout_ref ?? '' });
+      out.set(id, { name, method: s?.payout_method ?? '', account: s?.payout_ref ?? '', banned: !!pr?.find((x) => x.id === id)?.banned });
     }
   }
   return out;
@@ -158,7 +158,7 @@ async function getPayout(id: string): Promise<Payout | null> {
 
 /*
  * Makes this week's batch. For each seller: the orders whose hold ended and that are in no payout yet, added up.
- * Skipped (and said so): a seller with no payout method or account on file. A seller whose orders are in dispute is not affected, because a disputed
+ * Skipped (and said so): a seller with no payout method or account on file, and a banned seller. A seller whose orders are in dispute is not affected, because a disputed
  * order never reaches the end of its hold, so it is simply not in the list yet.
  */
 export async function planPayouts(now = Date.now(), adminId: string | null = null): Promise<{ created: Payout[]; skipped: Skipped[]; weekStart: string }> {
@@ -190,6 +190,12 @@ export async function planPayouts(now = Date.now(), adminId: string | null = nul
     const i = info.get(sellerId);
     if (!i || !i.method || !i.account) {
       skipped.push({ sellerId, reason: 'no payout method on file', amountCents: total });
+      continue;
+    }
+    // A banned seller's money stays put until an admin looks at it (a ban is usually for fraud, and a chargeback may still come). It is paid
+    // in a later batch if the ban is lifted; nothing is taken from them here.
+    if (i.banned) {
+      skipped.push({ sellerId, reason: 'account banned, check this seller', amountCents: total });
       continue;
     }
     if (existing.some((p) => p.sellerId === sellerId && p.status !== 'failed')) {

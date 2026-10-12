@@ -141,6 +141,20 @@ export async function ensureLedger(o: Order): Promise<void> {
   }
 }
 
+/*
+ * After a cancel or a full refund: asks the payment provider to give back what it still holds for this order, the price plus funded extra work,
+ * less anything refunded already. The ledger side is ensureLedger's. Returns the amount asked for (0 when nothing is left).
+ */
+export async function refundAtProvider(o: Order): Promise<number> {
+  const { listExtras } = await import('./extra');
+  const extras = (await listExtras(o.id)).filter((c) => c.state === 'funded').reduce((s, c) => s + c.priceCents, 0);
+  const amount = o.priceCents + extras - o.refundedCents;
+  if (amount <= 0) return 0;
+  const { paymentProvider } = await import('../providers/payment');
+  await paymentProvider().refund(o.id, amount);
+  return amount;
+}
+
 export async function createOrder(i: NewOrder, now = Date.now()): Promise<Order> {
   const total = i.lines.reduce((s, l) => s + l[1], 0);
   const o: Order = {

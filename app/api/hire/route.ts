@@ -6,6 +6,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { hireSchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
 import { cannotAct } from '@/lib/accounts';
+import { accountLockedOut } from '@/lib/supabase/viewer';
 import { guard } from '@/lib/guard';
 import { PAUSED_TEXT, checkoutPausedFor } from '@/lib/switches';
 
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       .select('user_id, packs, status, avail, trial_price_cents, trial_days')
       .eq('handle', String(body?.dev ?? ''))
       .maybeSingle();
-    if (!data || data.status !== 'live') return fail('That developer is not available.', 404);
+    if (!data || data.status !== 'live' || (await accountLockedOut(data.user_id))) return fail('That developer is not available.', 404);
     if (data.avail === 'Booked') return fail('This developer is fully booked right now. Try again later or pick another developer.', 409);
     packs = data.packs;
     devUser = data.user_id;
