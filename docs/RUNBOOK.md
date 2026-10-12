@@ -11,7 +11,7 @@ How to operate SellOnBay. Short on purpose. Where something is not built yet it 
 
 ## Scheduled job
 
-`POST /api/cron/orders` with `Authorization: Bearer $CRON_SECRET`, every 5 to 10 minutes. It runs `runDueJobs`: auto-accept after the review window, mark late orders `overdue`, end the 7-day payout hold, and make sure the ledger and certificates match every open order. It is safe to run twice. Orders are also brought up to date whenever somebody opens them.
+`POST /api/cron/orders` with `Authorization: Bearer $CRON_SECRET`, every 5 to 10 minutes. It runs `runDueJobs`: auto-accept after the review window, mark late orders `overdue`, end the 7-day payout hold, and make sure the ledger and certificates match every open order. It is safe to run twice. Orders are also brought up to date whenever somebody opens them. Each run of either job writes its finish time (`app_settings`, key `heartbeat:orders` or `heartbeat:payouts`); `/dashboard/admin/launch` shows both times and marks Scheduled jobs as to do when the orders job has not finished for 30 minutes or the payout job for 8 days (`CONFIG.cron`).
 
 ## Orders and money
 

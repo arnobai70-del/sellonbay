@@ -8,6 +8,7 @@ import { hasNonTestTurnstileKeys } from './bot/turnstile';
 import { clamavReady } from './scan/clamav';
 import { aiProvider } from './providers/ai';
 import { allowedAiBudget } from './ai/budget';
+import { isStale, lastBeat } from './heartbeat';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -18,6 +19,10 @@ const set = (k: string, min = 1) => (process.env[k] ?? '').length >= min;
 
 export async function launchChecks(): Promise<Check[]> {
   const s = await getSettings();
+  const [orders, payouts] = await Promise.all([lastBeat('orders'), lastBeat('payouts')]);
+  const when = (t: number | null) => (t === null ? 'never yet' : new Date(t).toISOString().replace('T', ' ').slice(0, 16) + ' UTC');
+  const late = (job: 'orders' | 'payouts', t: number | null) => (isStale(job, t) ? ' (late)' : '');
+  const jobsOk = set('CRON_SECRET', 32) && orders !== null && !isStale('orders', orders) && !isStale('payouts', payouts);
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? '';
   const c = (name: string, ok: boolean, note: string, otherwise: 'todo' | 'warn' = 'todo'): Check => ({ name, state: ok ? 'ok' : otherwise, note });
   return [
@@ -25,7 +30,11 @@ export async function launchChecks(): Promise<Check[]> {
     c('Database', supabaseConfigured && set('SUPABASE_SERVICE_ROLE_KEY'), 'Supabase URL, anon key and service key are set, and demo mode is off.'),
     c('Download link key', set('DELIVERY_SECRET', 32), 'DELIVERY_SECRET: a random value of 32 or more characters signs the download links.'),
     c('Payment webhook key', set('PAYMENT_WEBHOOK_SECRET', 32), 'PAYMENT_WEBHOOK_SECRET: a random value of 32 or more characters.'),
-    c('Scheduled jobs', set('CRON_SECRET', 32), 'CRON_SECRET, and a scheduler calling POST /api/cron/orders every 5 to 10 minutes and /api/cron/payouts on Sundays.'),
+    c(
+      'Scheduled jobs',
+      jobsOk,
+      `CRON_SECRET, and a scheduler calling POST /api/cron/orders every 5 to 10 minutes and /api/cron/payouts on Sundays. Orders job last finished: ${when(orders)}${late('orders', orders)}. Payout job last finished: ${when(payouts)}${late('payouts', payouts)}.`,
+    ),
     c('Abuse hashing salt', set('GUARD_SALT', 32), 'GUARD_SALT: a random value of 32 or more characters. Set it once; changing it later forgets blocks.'),
     c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
