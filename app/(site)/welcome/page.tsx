@@ -10,8 +10,9 @@ import { PRODUCTS, imageFor } from '@/lib/data';
 import { REVIEW_HOURS } from '@/lib/config';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { showExamples } from '@/lib/examples';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Websites and apps ready for your domain' };
+export const generateMetadata = () => pageMetadata('/welcome');
 
 /* Home: a hero that says what we do, a scroll story that shows how, then proof and the way in. Detail lives on each page. */
 export default async function Home() {

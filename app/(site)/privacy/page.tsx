@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CONFIG } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Privacy policy' };
+export const generateMetadata = () => pageMetadata('/privacy');
 
 export default function Privacy() {
   return (

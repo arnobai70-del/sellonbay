@@ -2729,6 +2729,11 @@ html{scroll-padding-top:92px}
   .adm-table.stack td::before{content:attr(data-label);position:absolute;left:0;top:9px;width:96px;color:var(--mute);font-size:13px;font-weight:600}
   .dash .adm-table.stack tbody tr:hover{background:#fff}
 }
+.seo-pages{display:grid;gap:12px}
+.seo-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.seo-row>div{min-width:0}
+.seo-row a{font-size:13px;overflow-wrap:anywhere}
+.dash .adm-card .pe-serp{background:#fff;border:1px solid var(--dash-line,#E4E7F2);border-radius:10px;padding:12px 14px;margin:0}
 
 /* ---------- site polish, October 2026 ---------- */
 /* Buttons inside long text keep their own colours (the text link style made "Download my data" blue on blue). */

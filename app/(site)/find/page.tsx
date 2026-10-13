@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { PageHero } from '@/components/PageHero';
 import { SolutionFinder } from '@/components/SolutionFinder';
 import { getLiveDbProducts } from '@/lib/catalog';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Find your site', description: 'Tell us what you do and get the best matching sites straight away.' };
+export const generateMetadata = () => pageMetadata('/find');
 
 export default async function Find() {
   return (

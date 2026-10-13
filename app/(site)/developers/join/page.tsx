@@ -3,8 +3,9 @@ import { DevJoinForm } from '@/components/DevJoinForm';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getViewerId, requireViewer } from '@/lib/supabase/viewer';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Become a developer' };
+export const generateMetadata = () => pageMetadata('/developers/join');
 export const dynamic = 'force-dynamic';
 
 export default async function Join() {

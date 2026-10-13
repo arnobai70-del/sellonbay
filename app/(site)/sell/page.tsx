@@ -9,8 +9,9 @@ import { SellerCalc } from '@/components/SellerCalc';
 import { FAQ_GROUPS } from '@/lib/faq';
 import { BRAND_NAME } from '@/lib/brand';
 import { FEE_SALE_TEXT, SELLER_KEEP_TEXT } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Sell on SellOnBay', description: `Upload the site you built once and sell it again and again. You keep ${SELLER_KEEP_TEXT} of every sale.` };
+export const generateMetadata = () => pageMetadata('/sell');
 
 export default function Sell() {
   return (

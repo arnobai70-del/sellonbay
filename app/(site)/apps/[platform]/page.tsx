@@ -4,6 +4,7 @@ import { BrowseClient, type Initial } from '@/components/BrowseClient';
 import { SHELVES, SLUG_TO_PLATFORM, appsFor } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { showExamples } from '@/lib/examples';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
 type Props = { params: Promise<{ platform: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -17,7 +18,7 @@ const DESC = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pl = SLUG_TO_PLATFORM[(await params).platform];
-  return pl ? { title: SHELVES[pl].label, description: DESC[pl] } : {};
+  return pl ? pageMetadata(`/apps/${SHELVES[pl].slug}`, { title: SHELVES[pl].label, description: DESC[pl] }) : {};
 }
 
 /* Seller apps depend on the database, so this shelf renders per request like the website one. */
