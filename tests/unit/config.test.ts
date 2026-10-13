@@ -20,7 +20,7 @@ describe('rules in one place', () => {
     expect(CONFIG.abuse).toEqual({ autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 });
     expect(CONFIG.listing.periodDays).toEqual([0, 30, 90, 180, 365]);
     expect(CONFIG.listing.requirementsMax).toBe(600);
-    expect(CONFIG.repo).toEqual({ inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 7 });
+    expect(CONFIG.repo).toEqual({ inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 10 });
     expect(CONFIG.packages).toEqual({
       setupCents: [0, 1000, 2000, 3000, 5000, 7500, 10000, 15000],
       customCents: [0, 5000, 10000, 15000, 25000, 50000, 100000],

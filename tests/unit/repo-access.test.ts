@@ -54,6 +54,10 @@ describe('the invite and its time limit', () => {
     await inviteReminders(o, s.expiresAt + 1000);
     await inviteReminders(o, s.expiresAt + 2000);
     expect((await notificationsFor(seller)).filter((x) => x.kind === 'repo_invite_expired')).toHaveLength(1);
+    expect((await notificationsFor(buyer)).filter((x) => x.kind === 'repo_invite_lapsed')).toHaveLength(1);
+  });
+  it('access is confirmed by itself only after the invite has run out, so it can be sent again first', () => {
+    expect(CONFIG.repo.autoConfirmDays).toBeGreaterThan(CONFIG.repo.inviteDays);
   });
   it('the seller can send it again (a new date, the buyer is told), a limited number of times, and only for their own order', async () => {
     const { id, buyer, seller } = await order();

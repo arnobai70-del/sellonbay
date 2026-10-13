@@ -35,8 +35,9 @@ export const CONFIG = {
     burst: { hits: 10, hours: 1 }, // this many refused requests from one connection raises an alert
   },
   // a GitHub invitation runs out after 7 days; remind the buyer a day before. If the buyer never confirms access, it counts as confirmed
-  // autoConfirmDays after the last invite and the review starts (owner, 2026-10-12).
-  repo: { inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 7 },
+  // autoConfirmDays after the last invite and the review starts (owner, 2026-10-12). Longer than inviteDays, so a lapsed invite is noticed and
+  // sent again before the review starts (owner, 2026-10-13: 10 days).
+  repo: { inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 10 },
   // What a seller may charge on top of the price for "with setup help" and "with customisation" (0 = not offered). The defaults are what every listing had before sellers chose.
   packages: {
     setupCents: [0, 1000, 2000, 3000, 5000, 7500, 10000, 15000] as readonly number[],

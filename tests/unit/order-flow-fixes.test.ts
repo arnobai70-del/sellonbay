@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAY_MS } from '@/lib/config';
+import { CONFIG, DAY_MS } from '@/lib/config';
 import { createExtra } from '@/lib/orders/extra';
 import { handlePaymentEvent } from '@/lib/orders/payments';
 import { createOrder, deliver, getOrder, handoverSent, orderEvents, refundAtProvider, runDueJobs } from '@/lib/orders/service';
@@ -34,16 +34,17 @@ describe('order flow fixes', () => {
     expect((await getOrder(o.id))!.state).toBe('delivered');
   });
 
-  it('a repository order counts as confirmed 7 days after the invite, and the review starts', async () => {
+  it('a repository order counts as confirmed 10 days after the invite, and the review starts', async () => {
     const o = await paid('repo_access');
     const t0 = Date.now();
+    const days = CONFIG.repo.autoConfirmDays;
     expect((await handoverSent(o.id, o.sellerId)).ok).toBe(true);
-    await runDueJobs(t0 + 6 * DAY_MS);
+    await runDueJobs(t0 + (days - 1) * DAY_MS);
     expect((await getOrder(o.id))!.state).toBe('in_delivery');
-    await runDueJobs(t0 + 7 * DAY_MS + 60_000);
+    await runDueJobs(t0 + days * DAY_MS + 60_000);
     const after = (await getOrder(o.id))!;
     expect(after.state).toBe('delivered');
-    expect(after.reviewEndsAt).toBeGreaterThan(t0 + 7 * DAY_MS);
+    expect(after.reviewEndsAt).toBeGreaterThan(t0 + days * DAY_MS);
     expect((await orderEvents(o.id)).some((e) => e.event === 'access_auto_confirmed')).toBe(true);
   });
 
