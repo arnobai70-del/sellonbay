@@ -92,3 +92,44 @@ test('a row of apps and software comes before the featured list, with four order
   await page.goto(`${DEMO}/`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test('sections below the screen rise in as you scroll, and nothing is ever left hidden', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.setViewportSize({ width: 1280, height: 700 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto(`${DEMO}/`);
+  await expect(page.locator('.ex-hero h1')).toHaveCSS('opacity', '1'); // the hero words finish arriving
+  const banners = page.locator('.ex-banners');
+  await expect(banners).toHaveClass(/\brise\b/); // starts below the screen, so it waits
+  await expect(banners).not.toHaveClass(/\bin\b/);
+  expect(
+    await banners
+      .locator('.ex-ban')
+      .first()
+      .evaluate((el) => getComputedStyle(el).opacity),
+  ).toBe('0');
+  await banners.scrollIntoViewIfNeeded();
+  await expect(banners).toHaveClass(/\bin\b/);
+  for (const b of await banners.locator('.ex-ban').all()) await expect(b).toHaveCSS('opacity', '1');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280); // rising moves up and down only
+  // a group already on screen at load is never hidden
+  expect(await page.locator('.ex-tiles').evaluate((el) => el.classList.contains('rise') && !el.classList.contains('in'))).toBe(false);
+  // switching tabs after the cards came in keeps the new cards visible
+  const grid = page.locator('.ex-grid');
+  await grid.scrollIntoViewIfNeeded();
+  await expect(grid).toHaveClass(/\bin\b/);
+  await page.getByRole('tab', { name: 'Top rated' }).last().click();
+  await expect(page).toHaveURL(/tab=top/);
+  for (const c of await grid.locator('.ex-card').all()) await expect(c.locator('xpath=ancestor::div[contains(@class,"tilt")][1]')).toHaveCSS('opacity', '1');
+  expect(errors).toEqual([]);
+});
+
+test('with reduced motion the store home shows everything at once', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 700 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${DEMO}/`);
+  await expect(page.locator('.rise')).toHaveCount(0);
+  expect(await page.locator('.ex-hero h1').evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  for (const b of await page.locator('.ex-ban').all()) expect(await b.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+});

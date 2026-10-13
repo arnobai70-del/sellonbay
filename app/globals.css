@@ -2819,3 +2819,24 @@ html{scroll-padding-top:92px}
   .facts b{font-size:1.55rem;letter-spacing:-.03em}
   .facts>div>span{font-size:14px}
 }
+
+/* ---------- store home motion ---------- */
+/* Only for people who have not asked their device for less motion. Groups are hidden by StoreMotion (class "rise") only
+   when they start below the screen, then each item rises in on its own small delay (--rise-d). The animation uses
+   opacity and translate, so the cards' own hover lift and tilt (transform) keep working. */
+@keyframes rise-up{from{opacity:0;translate:0 22px}to{opacity:1;translate:none}}
+@media (prefers-reduced-motion:no-preference){
+  .ex-hero-copy>*,.ex-trust li{animation:rise-up .8s cubic-bezier(.2,.75,.2,1) both}
+  .ex-hero-copy>:nth-child(2){animation-delay:.12s}
+  .ex-hero-copy>:nth-child(3){animation-delay:.24s}
+  .ex-trust li{animation-delay:.36s}
+  .ex-trust li+li{animation-delay:.46s}
+  .ex-trust li+li+li{animation-delay:.56s}
+  .rise>*{opacity:0}
+  .rise.in>*{animation:rise-up .7s cubic-bezier(.2,.75,.2,1) var(--rise-d,0ms) both}
+  /* shelf tiles: the icon gives a small hop when the pointer arrives */
+  .ex-tile svg{transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+  .ex-tile:hover svg{transform:translateY(-4px) rotate(-6deg) scale(1.08)}
+  .ex-ban b{transition:translate .25s}
+  .ex-ban:hover b{translate:4px 0}
+}
