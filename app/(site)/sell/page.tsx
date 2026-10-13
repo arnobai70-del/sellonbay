@@ -8,7 +8,7 @@ import { Reveal } from '@/components/Reveal';
 import { SellerCalc } from '@/components/SellerCalc';
 import { FAQ_GROUPS } from '@/lib/faq';
 import { BRAND_NAME } from '@/lib/brand';
-import { FEE_SALE_TEXT, SELLER_KEEP_TEXT } from '@/lib/config';
+import { CONFIG, FEE_SALE_TEXT, SELLER_KEEP_TEXT } from '@/lib/config';
 import { pageMetadata } from '@/lib/seo/pageMeta';
 
 export const generateMetadata = () => pageMetadata('/sell');
@@ -29,9 +29,9 @@ export default function Sell() {
         <div className="facts">
           <div>
             <b>
-              <CountUp to={85} suffix="%" />
+              <CountUp to={(10_000 - CONFIG.fees.saleBps) / 100} suffix="%" />
             </b>
-            <span>Yours on every sale</span>
+            <span>Yours on every sale from ${CONFIG.fees.saleLowBelowCents / 100}</span>
           </div>
           <div>
             <b>

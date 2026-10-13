@@ -40,7 +40,7 @@ export function StoreTop() {
           <circle cx="11" cy="11" r="7" />
           <path d="M20 20l-3.5-3.5" />
         </svg>
-        <input id="st-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search websites, apps and more" autoComplete="off" />
+        <input id="st-q" type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search websites, apps and more" autoComplete="off" />
         <label className="sr-only" htmlFor="st-shelf">
           Where to search
         </label>
