@@ -1,33 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import { DashIcon as Ico, type IconName } from './DashIcon';
 import { Logo } from './Logo';
 import { signOut } from '@/app/(bare)/login/actions';
 
 export type Role = 'buyer' | 'seller' | 'admin';
-type IconName = 'grid' | 'bag' | 'chat' | 'shield' | 'plus' | 'home' | 'user';
-
-const ICON: Record<IconName, React.ReactNode> = {
-  grid: <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
-  bag: <path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2" />,
-  chat: <path d="M4 5h16v11H9l-5 4z" />,
-  shield: <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />,
-  plus: <path d="M12 5v14M5 12h14" />,
-  home: <path d="M4 11l8-7 8 7v9H4z" />,
-  user: (
-    <>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
-    </>
-  ),
-};
-const Ico = ({ n }: { n: IconName }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {ICON[n]}
-  </svg>
-);
-
-type Item = { label: string; href: string; icon: IconName; key: string };
+/* group: a heading the item sits under in the menu (items keep their order; a new heading starts when the group changes). */
+type Item = { label: string; href: string; icon: IconName; key: string; group?: string };
 const DASH: Record<Role, { name: string; label: string; initial: string; items: Item[]; extra: Omit<Item, 'key'>[] }> = {
   buyer: {
     name: 'Your account',
@@ -60,20 +40,20 @@ const DASH: Record<Role, { name: string; label: string; initial: string; items: 
     label: 'Admin',
     initial: 'U',
     items: [
-      { label: 'Overview', href: '/dashboard/admin', icon: 'shield', key: 'admin' },
-      { label: 'Disputes', href: '/dashboard/admin/disputes', icon: 'chat', key: 'admin-disputes' },
-      { label: 'Payouts', href: '/dashboard/admin/payouts', icon: 'bag', key: 'admin-payouts' },
-      { label: 'Accounts', href: '/dashboard/admin/users', icon: 'user', key: 'admin-users' },
-      { label: 'Abuse reports', href: '/dashboard/admin/abuse', icon: 'shield', key: 'admin-abuse' },
-      { label: 'Security', href: '/dashboard/admin/security', icon: 'shield', key: 'admin-security' },
-      { label: 'Settings', href: '/dashboard/admin/settings', icon: 'grid', key: 'admin-settings' },
-      { label: 'SEO and blog', href: '/dashboard/admin/seo', icon: 'grid', key: 'admin-seo' },
-      { label: 'Launch check', href: '/dashboard/admin/launch', icon: 'shield', key: 'admin-launch' },
-      { label: 'Risk', href: '/dashboard/admin/risk', icon: 'grid', key: 'admin-risk' },
-      { label: 'New versions', href: '/dashboard/admin/versions', icon: 'grid', key: 'admin-versions' },
-      { label: 'Repository access', href: '/dashboard/admin/repo', icon: 'shield', key: 'admin-repo' },
-      { label: 'Audit log', href: '/dashboard/admin/audit', icon: 'grid', key: 'admin-audit' },
-      { label: 'Messages', href: '/messages', icon: 'chat', key: 'messages' },
+      { label: 'Overview', href: '/dashboard/admin', icon: 'grid', key: 'admin' },
+      { label: 'Disputes', href: '/dashboard/admin/disputes', icon: 'scale', key: 'admin-disputes', group: 'Orders and money' },
+      { label: 'Payouts', href: '/dashboard/admin/payouts', icon: 'wallet', key: 'admin-payouts', group: 'Orders and money' },
+      { label: 'New versions', href: '/dashboard/admin/versions', icon: 'layers', key: 'admin-versions', group: 'Orders and money' },
+      { label: 'Repository access', href: '/dashboard/admin/repo', icon: 'branch', key: 'admin-repo', group: 'Orders and money' },
+      { label: 'Accounts', href: '/dashboard/admin/users', icon: 'user', key: 'admin-users', group: 'People' },
+      { label: 'Abuse reports', href: '/dashboard/admin/abuse', icon: 'flag', key: 'admin-abuse', group: 'People' },
+      { label: 'Messages', href: '/messages', icon: 'chat', key: 'messages', group: 'People' },
+      { label: 'Risk', href: '/dashboard/admin/risk', icon: 'pulse', key: 'admin-risk', group: 'Safety' },
+      { label: 'Security', href: '/dashboard/admin/security', icon: 'lock', key: 'admin-security', group: 'Safety' },
+      { label: 'Audit log', href: '/dashboard/admin/audit', icon: 'list', key: 'admin-audit', group: 'Safety' },
+      { label: 'SEO and blog', href: '/dashboard/admin/seo', icon: 'search', key: 'admin-seo', group: 'Site' },
+      { label: 'Settings', href: '/dashboard/admin/settings', icon: 'gear', key: 'admin-settings', group: 'Site' },
+      { label: 'Launch check', href: '/dashboard/admin/launch', icon: 'check', key: 'admin-launch', group: 'Site' },
     ],
     extra: [{ label: 'Back to site', href: '/', icon: 'home' }],
   },
@@ -102,64 +82,98 @@ export function DashShell({
   // Signed in: only list dashboards this person can open, and show their real role. Demo mode lists all three.
   const can: Role[] = !signedIn || !viewerRole ? ['buyer', 'seller', 'admin'] : viewerRole === 'admin' ? ['admin', 'seller', 'buyer'] : viewerRole === 'seller' ? ['seller', 'buyer'] : ['buyer'];
   const roleLabel = signedIn && viewerRole ? viewerRole[0].toUpperCase() + viewerRole.slice(1) : d.label;
+  const here = d.items.find((i) => i.key === active);
+  const crumb = here && here.key !== role ? (here.group ?? d.label) : null;
+
+  // The phone menu: Escape closes it and the page behind does not scroll while it is open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    document.documentElement.classList.add('sheet-open');
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.documentElement.classList.remove('sheet-open');
+    };
+  }, [open]);
+  const close = () => setOpen(false);
+
   return (
-    <div className={'dash' + (open ? ' open' : '')}>
-      <aside className="side" aria-label="Dashboard">
-        <Logo />
-        {d.items.map((i) => (
-          <Link key={i.key} className="it" href={i.href} aria-current={i.key === active ? 'page' : undefined}>
-            <Ico n={i.icon} />
-            <span>{i.label}</span>
-          </Link>
-        ))}
-        <div className="grp">Go to</div>
-        {d.extra.map((i) => (
-          <Link key={i.href} className="it" href={i.href}>
-            <Ico n={i.icon} />
-            <span>{i.label}</span>
-          </Link>
-        ))}
-        {can.some((r) => r !== role) && <div className="grp">Switch view</div>}
-        {can
-          .filter((r) => r !== role)
-          .map((r) => (
-            <Link key={r} className="it" href={`/dashboard/${r}`}>
-              <Ico n="user" />
-              <span>{r[0].toUpperCase() + r.slice(1)} view</span>
+    <div className={'dash dash-' + role + (open ? ' open' : '')}>
+      <aside className="side" id="dash-menu" aria-label="Dashboard">
+        <div className="side-hd">
+          <Logo />
+          <button className="side-x" type="button" aria-label="Close menu" onClick={close}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <nav className="side-nav">
+          {d.items.map((i, n) => (
+            <Fragment key={i.key}>
+              {i.group && i.group !== d.items[n - 1]?.group && <div className="grp">{i.group}</div>}
+              <Link className="it" href={i.href} aria-current={i.key === active ? 'page' : undefined} onClick={close}>
+                <Ico n={i.icon} />
+                <span>{i.label}</span>
+              </Link>
+            </Fragment>
+          ))}
+          <div className="grp">Go to</div>
+          {d.extra.map((i) => (
+            <Link key={i.href} className="it" href={i.href} onClick={close}>
+              <Ico n={i.icon} />
+              <span>{i.label}</span>
             </Link>
           ))}
-        <div className="who">
-          <span className="av">{shown[0]?.toUpperCase() ?? d.initial}</span>
-          <div className="nm">
-            <b title={shown}>{shown}</b>
-            <small>{roleLabel} account</small>
+          {can.some((r) => r !== role) && <div className="grp">Switch view</div>}
+          {can
+            .filter((r) => r !== role)
+            .map((r) => (
+              <Link key={r} className="it" href={`/dashboard/${r}`} onClick={close}>
+                <Ico n="user" />
+                <span>{r[0].toUpperCase() + r.slice(1)} view</span>
+              </Link>
+            ))}
+        </nav>
+        <div className="side-ft">
+          <div className="who">
+            <span className="av">{shown[0]?.toUpperCase() ?? d.initial}</span>
+            <div className="nm">
+              <b title={shown}>{shown}</b>
+              <small>{roleLabel} account</small>
+            </div>
           </div>
+          {signedIn && (
+            <form action={signOut}>
+              <button className="signout" type="submit">
+                Sign out
+              </button>
+            </form>
+          )}
         </div>
-        {signedIn && (
-          <form action={signOut}>
-            <button className="signout" type="submit">
-              Sign out
-            </button>
-          </form>
-        )}
       </aside>
+      {open && <button className="dash-scrim" type="button" aria-hidden="true" tabIndex={-1} onClick={close} />}
       <div className="main" id="main">
-        <div className="top">
-          <button className="menu-btn" aria-label="Open menu" onClick={() => setOpen((o) => !o)}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <header className="top">
+          <button className="menu-btn" type="button" aria-label="Open menu" aria-expanded={open} aria-controls="dash-menu" onClick={() => setOpen((o) => !o)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>
           </button>
-          <h1>{title}</h1>
-          <label className="search">
-            <span className="sr">Search</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6485" strokeWidth="2" strokeLinecap="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
-            </svg>
-            <input placeholder="Search orders, sites, people" />
-          </label>
-        </div>
+          <div className="top-t">
+            {crumb && <small>{crumb}</small>}
+            <h1>{title}</h1>
+          </div>
+          <div className="top-r">
+            <Link className="top-site" href="/" target="_blank">
+              View site
+            </Link>
+            <span className="av top-av" title={`${shown} · ${roleLabel} account`}>
+              {shown[0]?.toUpperCase() ?? d.initial}
+            </span>
+          </div>
+        </header>
         <div className="content">{children}</div>
       </div>
     </div>
