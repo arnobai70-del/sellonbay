@@ -42,6 +42,7 @@ const COLUMNS: { title: string; links: [label: string, href: string][] }[] = [
     title: 'Help',
     links: [
       ['FAQ', '/faq'],
+      ['Blog', '/blog'],
       ['Messages', '/messages'],
       ['Refunds', '/refunds'],
       ['Copyright complaints', '/dmca'],

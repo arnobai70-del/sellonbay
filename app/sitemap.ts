@@ -1,8 +1,12 @@
 import type { MetadataRoute } from 'next';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { starterProducts } from '@/lib/examples';
+import { publishedPosts } from '@/lib/posts';
 import { categoryPages } from '@/lib/seo/pages';
 import { SITE_URL } from '@/lib/site';
+
+// Read on each request, so new listings and posts appear without a new build.
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages = [
@@ -21,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/find',
     '/how-it-works',
     '/faq',
+    '/blog',
     '/sell',
     '/terms',
     '/refunds',
@@ -34,5 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Sellers' live listings and, while they are shown, the examples.
   const live = (await Promise.all((['web', 'android', 'ios', 'webapp', 'desktop', 'digital'] as const).map((pl) => getLiveDbProducts(pl)))).flat();
   const products = [...live, ...(await starterProducts())].filter((p, i, a) => a.findIndex((q) => q.id === p.id) === i);
-  return [...pages, ...cats, ...products.map((p) => ({ url: `${SITE_URL}/product/${p.id}`, changeFrequency: 'weekly' as const }))];
+  // Published posts, except those kept out of search.
+  const posts = (await publishedPosts(1000)).filter((p) => !p.noindex).map((p) => ({ url: `${SITE_URL}/blog/${p.slug}`, lastModified: new Date(p.updatedAt), changeFrequency: 'monthly' as const }));
+  return [...pages, ...cats, ...products.map((p) => ({ url: `${SITE_URL}/product/${p.id}`, changeFrequency: 'weekly' as const })), ...posts];
 }

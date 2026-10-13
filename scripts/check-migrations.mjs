@@ -235,7 +235,9 @@ if (!failed) {
     if ((await priv('authenticated', 'insert abuse_reports')) || (await anyCol('authenticated', 'abuse_reports', 'insert'))) throw new Error('clients can still insert abuse reports');
     if ((await priv('anon', 'select reviews')) || (await priv('authenticated', 'select reviews'))) throw new Error('clients can still read reviews (buyer_id, order_id)');
     if (!(await priv('service_role', 'select reviews')) || !(await priv('service_role', 'insert abuse_reports'))) throw new Error('the server lost its access');
-    console.log('ok   abuse reports and reviews: server only');
+    if ((await priv('anon', 'select posts')) || (await priv('authenticated', 'insert posts'))) throw new Error('clients can reach posts directly');
+    if (!(await priv('service_role', 'insert posts'))) throw new Error('the server cannot write posts');
+    console.log('ok   abuse reports, reviews and posts: server only');
   } catch (e) {
     failed = true;
     console.log('FAIL server-only grants:', e.message);

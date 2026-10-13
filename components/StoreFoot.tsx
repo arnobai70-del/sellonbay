@@ -11,6 +11,7 @@ export function StoreFoot() {
         <Link href="/privacy">Privacy</Link>
         <Link href="/refunds">Refunds</Link>
         <Link href="/faq">FAQ</Link>
+        <Link href="/blog">Blog</Link>
         <Link href="/welcome">About</Link>
       </nav>
     </footer>

@@ -9,13 +9,28 @@ import { TemplatePage } from '@/components/TemplatePage';
 import { Tilt } from '@/components/Tilt';
 import { SHELVES, isApp, platformOf, shelfHref, shelfLabel, type AppPlatform, type Platform } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
+import { getSeo } from '@/lib/seo/site';
 import { starterProducts } from '@/lib/examples';
 import { CONFIG, REVIEW_HOURS } from '@/lib/config';
 import { daysLabel, imageFor, isNew, money, type Product } from '@/lib/data';
 
-export const metadata: Metadata = {
-  description: 'Websites, apps and digital products in one place. Look at the real thing before you pay; your money is held until you accept.',
-};
+const HOME_DESCRIPTION = 'Websites, apps and digital products in one place. Look at the real thing before you pay; your money is held until you accept.';
+
+/* The admin can set the title and description Google shows, and the Search Console and Bing codes, at /dashboard/admin/seo. */
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getSeo();
+  const description = seo.homeDescription || HOME_DESCRIPTION;
+  return {
+    ...(seo.homeTitle ? { title: { absolute: seo.homeTitle } } : {}),
+    description,
+    alternates: { canonical: '/' },
+    openGraph: { description, ...(seo.homeTitle ? { title: seo.homeTitle } : {}) },
+    verification: {
+      ...(seo.googleVerification ? { google: seo.googleVerification } : {}),
+      ...(seo.bingVerification ? { other: { 'msvalidate.01': seo.bingVerification } } : {}),
+    },
+  };
+}
 export const dynamic = 'force-dynamic';
 
 const TABS = [
