@@ -13,6 +13,9 @@ export type Field = {
   options?: [value: string, label: string][];
   required?: boolean;
   hint?: string;
+  /* What the field starts with (text fields), and a character limit shown as a live count. */
+  value?: string;
+  max?: number;
   /* Shown only when another field has this value. Plain data, so the page (a server component) can pass it. */
   showWhen?: { field: string; equals: string };
 };
@@ -36,7 +39,7 @@ export function AdminForm({
 }) {
   const router = useRouter();
   const [shown, setShown] = useState(open);
-  const [v, setV] = useState<Record<string, string | boolean>>(() => Object.fromEntries(fields.map((f) => [f.name, f.kind === 'checkbox' ? false : (f.options?.[0]?.[0] ?? '')])));
+  const [v, setV] = useState<Record<string, string | boolean>>(() => Object.fromEntries(fields.map((f) => [f.name, f.kind === 'checkbox' ? false : (f.value ?? f.options?.[0]?.[0] ?? '')])));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -79,7 +82,7 @@ export function AdminForm({
           <div className="field" key={f.name}>
             <label htmlFor={id}>{f.label}</label>
             {f.kind === 'textarea' ? (
-              <textarea id={id} rows={2} value={String(v[f.name])} onChange={(e) => set(e.target.value)} required={f.required} maxLength={600} />
+              <textarea id={id} rows={2} value={String(v[f.name])} onChange={(e) => set(e.target.value)} required={f.required} maxLength={f.max ?? 600} />
             ) : f.kind === 'select' ? (
               <select id={id} value={String(v[f.name])} onChange={(e) => set(e.target.value)}>
                 {f.options?.map(([val, label]) => (
@@ -97,10 +100,15 @@ export function AdminForm({
                 value={String(v[f.name])}
                 onChange={(e) => set(e.target.value)}
                 required={f.required}
-                maxLength={200}
+                maxLength={f.max ?? 200}
               />
             )}
-            {f.hint && <small>{f.hint}</small>}
+            {(f.hint || f.max) && (
+              <small>
+                {f.hint}
+                {f.max ? `${f.hint ? ' ' : ''}${String(v[f.name]).length} / ${f.max}` : ''}
+              </small>
+            )}
           </div>
         );
       })}

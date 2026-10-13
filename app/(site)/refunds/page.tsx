@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/LegalPage';
 import { BUGFIX_DAYS, CONFIG, REVIEW_HOURS } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Refunds' };
+export const generateMetadata = () => pageMetadata('/refunds');
 
 export default function Refunds() {
   return (

@@ -7,8 +7,9 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { PageHero } from '@/components/PageHero';
 import { Reveal } from '@/components/Reveal';
 import { TOP_FAQ } from '@/lib/faq';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'How it works', description: 'Pick a site, add your domain, review it, then accept. Your money waits until the site works.' };
+export const generateMetadata = () => pageMetadata('/how-it-works');
 
 export default function HowPage() {
   return (

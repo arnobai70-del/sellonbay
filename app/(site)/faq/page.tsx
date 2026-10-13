@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { FaqList } from '@/components/FaqList';
 import { PageHero } from '@/components/PageHero';
 import { FAQ_GROUPS } from '@/lib/faq';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Questions and answers' };
+export const generateMetadata = () => pageMetadata('/faq');
 
 export default function FaqPage() {
   return (

@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/LegalPage';
 import { CONFIG } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Acceptable use' };
+export const generateMetadata = () => pageMetadata('/acceptable-use');
 
 export default function AcceptableUse() {
   return (

@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { DomainSearch } from '@/components/DomainSearch';
 import { ALL_TLDS, cleanName } from '@/lib/domains';
 import { domainProvider, isLiveRegistrar } from '@/lib/providers/domain';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Domain name ideas', description: 'Explore domain name ideas. Live registrar availability, registration and purchase are not yet connected.' };
+export const generateMetadata = () => pageMetadata('/domains');
 
 const GET: [string, string][] = [
   ['Domain registration', 'This feature is not yet live. Bring your own domain for now.'],

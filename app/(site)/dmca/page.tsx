@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { LegalPage } from '@/components/LegalPage';
 import { BRAND_EMAIL } from '@/lib/brand';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Copyright complaints' };
+export const generateMetadata = () => pageMetadata('/dmca');
 
 export default function Dmca() {
   return (

@@ -58,6 +58,20 @@ export default async function SeoAdmin() {
       <div className="dp">
         <div className="hd">
           <div>
+            <h2>Every page&rsquo;s title and description</h2>
+            <p className="sub">
+              Set the meta title and meta description Google shows for each page: browse, the app shelves, how it works, sell, the blog, the legal pages and more. Products and posts have their own.
+            </p>
+          </div>
+          <Link className="btn btn-dark btn-sm" href="/dashboard/admin/seo/pages">
+            Edit page titles
+          </Link>
+        </div>
+      </div>
+
+      <div className="dp">
+        <div className="hd">
+          <div>
             <h2>Home page in Google</h2>
             <p className="sub">The title and description search engines show for {SITE_URL}. Empty uses the built-in words.</p>
           </div>
