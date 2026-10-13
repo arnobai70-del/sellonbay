@@ -28,6 +28,7 @@ export type NotificationKind =
   | 'repo_invite_resent'
   | 'repo_invite_expiring'
   | 'repo_invite_expired'
+  | 'repo_invite_lapsed'
   | 'repo_revoke_request'
   | 'repo_revoke_ready'
   | 'repo_revoke_confirmed'
@@ -55,6 +56,10 @@ export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: stri
   repo_invite_expired: (p) => ({
     subject: `The GitHub invite for ${t(p.title)} has run out`,
     text: 'The buyer did not accept it in time. Send the invite again from your seller dashboard so the order can go on.',
+  }),
+  repo_invite_lapsed: (p) => ({
+    subject: `The GitHub invite for ${t(p.title)} has run out`,
+    text: `We asked the seller to send a new one. Accept it and confirm in your order. If you do not confirm, access counts as confirmed on ${t(p.date)} and your time to check it starts then.`,
   }),
   repo_revoke_request: (p) => ({
     subject: `Remove the buyer from the repository: ${t(p.title)}`,

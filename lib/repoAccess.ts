@@ -111,14 +111,17 @@ export async function resendInvite(orderId: string, sellerId: string, now = Date
   return { ok: true, value: true };
 }
 
-/* Called with the timed reminders: the buyer a day before the invite runs out, the seller once it has. Each goes out once per invite. */
+/* Called with the timed reminders: the buyer a day before the invite runs out, both sides once it has. Each goes out once per invite. */
 export async function inviteReminders(o: Order, now = Date.now()) {
   if (o.deliveryType !== 'repo_access' || o.state !== 'in_delivery') return;
   const s = await inviteState(o, now);
   if (!s) return;
   const base = { title: o.title, orderId: o.id };
-  if (s.expired) await notify(o.sellerId, 'repo_invite_expired', base, { dedupe: `repo-expired:${o.id}:${s.invitedAt}` });
-  else if (s.expiresAt - now <= CONFIG.repo.reminderHours * HOUR_MS) await notify(o.buyerId, 'repo_invite_expiring', base, { dedupe: `repo-expiring:${o.id}:${s.invitedAt}` });
+  if (s.expired) {
+    await notify(o.sellerId, 'repo_invite_expired', base, { dedupe: `repo-expired:${o.id}:${s.invitedAt}` });
+    const confirmOn = new Date(s.invitedAt + CONFIG.repo.autoConfirmDays * DAY_MS).toISOString().slice(0, 10);
+    await notify(o.buyerId, 'repo_invite_lapsed', { ...base, date: confirmOn }, { dedupe: `repo-lapsed:${o.id}:${s.invitedAt}` });
+  } else if (s.expiresAt - now <= CONFIG.repo.reminderHours * HOUR_MS) await notify(o.buyerId, 'repo_invite_expiring', base, { dedupe: `repo-expiring:${o.id}:${s.invitedAt}` });
 }
 
 /* ---------- taking access back ---------- */
