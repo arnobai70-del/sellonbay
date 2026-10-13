@@ -4,6 +4,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { PageHero } from '@/components/PageHero';
 import { descriptionOf, publishedPosts } from '@/lib/posts';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,10 @@ export const generateMetadata = (): Promise<Metadata> =>
 const day = (t?: number) => (t ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 export default async function Blog() {
-  const posts = await publishedPosts();
+  const [posts, w] = await Promise.all([publishedPosts(), pageWords('/blog')]);
   return (
     <>
-      <PageHero tone="cobalt" title="Guides and news" lead={description} art={false} />
+      <PageHero tone="cobalt" title={w.heading} lead={w.intro ?? description} art={false} />
       <div className="wrap blog-list">
         {posts.length === 0 && (
           <div className="empty-note">

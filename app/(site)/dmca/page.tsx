@@ -7,7 +7,7 @@ export const generateMetadata = () => pageMetadata('/dmca');
 
 export default function Dmca() {
   return (
-    <LegalPage title="Copyright complaints">
+    <LegalPage path="/dmca">
       <h2>If someone copied your work</h2>
       <p>Send a notice to {BRAND_EMAIL} with these things.</p>
       <ul>

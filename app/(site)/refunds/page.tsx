@@ -8,7 +8,7 @@ export const generateMetadata = () => pageMetadata('/refunds');
 
 export default function Refunds() {
   return (
-    <LegalPage title="Refunds">
+    <LegalPage path="/refunds">
       <h2>How your money is held</h2>
       <p>Your payment is held in escrow until you accept the order. You have {REVIEW_HOURS} hours after delivery to check it. If you do nothing, it is accepted for you.</p>
 

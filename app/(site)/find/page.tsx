@@ -4,13 +4,15 @@ import { PageHero } from '@/components/PageHero';
 import { SolutionFinder } from '@/components/SolutionFinder';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/find');
 
 export default async function Find() {
+  const w = await pageWords('/find');
   return (
     <>
-      <PageHero tone="violet" art={false} title="Tell us what you do. We pick your site." lead="One click. No sign-up, no long form." />
+      <PageHero tone="violet" art={false} title={w.heading} lead={w.intro ?? ''} />
       <div className="wrap find-body">
         <SolutionFinder extra={await getLiveDbProducts()} />
         <p className="muted find-alt">

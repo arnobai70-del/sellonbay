@@ -4,6 +4,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { SiteIdeasTool } from '@/components/SiteIdeasTool';
 import { CONFIG } from '@/lib/config';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 import { SITE_URL } from '@/lib/site';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('/tools/site-ideas', { alternates: { canonical: '/tools/site-ideas' } });
@@ -15,7 +16,8 @@ const FAQ: [string, string][] = [
   ['What do you do with what I type?', 'We use it to make your answer and keep it for 30 days so the same question is not paid for twice. Please do not type personal details.'],
 ];
 
-export default function SiteIdeas() {
+export default async function SiteIdeas() {
+  const w = await pageWords('/tools/site-ideas');
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -25,8 +27,8 @@ export default function SiteIdeas() {
     <div className="wrap">
       <JsonLd data={{ ...jsonLd, url: `${SITE_URL}/tools/site-ideas` }} />
       <div className="page-head">
-        <h1>Website ideas and domain names, free</h1>
-        <p>Tell us what your business does in one line. We give you five pages your site should have, ten domain names to try, and ready-made sites that fit. Suggestions currently come from predefined templates, not a live AI model.</p>
+        <h1>{w.heading}</h1>
+        <p>{w.intro}</p>
       </div>
       <SiteIdeasTool />
       <div className="prose" style={{ marginTop: 40, paddingBottom: 80 }}>

@@ -7,7 +7,7 @@ type Answer = { name: string; live: boolean; results: DomainResult[] };
 const EXAMPLES = ['mariasbakery', 'northside-dental', 'folio-studio', 'greenleaf'];
 const TABS = ['All', 'Popular', 'Business', 'Tech', 'Shop'] as const;
 
-export function DomainSearch({ initial, registrarConnected }: { initial: string; registrarConnected: boolean }) {
+export function DomainSearch({ initial, registrarConnected, heading = 'Find a domain people remember', intro }: { initial: string; registrarConnected: boolean; heading?: string; intro?: string }) {
   const [q, setQ] = useState(initial);
   const [ans, setAns] = useState<Answer | null>(null);
   const [busy, setBusy] = useState(false);
@@ -112,7 +112,9 @@ export function DomainSearch({ initial, registrarConnected }: { initial: string;
           Choose
         </Link>
       ) : (
-        <span className="dm-na" aria-label={ans?.live ? 'Unavailable' : 'Not for sale'}>—</span>
+        <span className="dm-na" aria-label={ans?.live ? 'Unavailable' : 'Not for sale'}>
+          —
+        </span>
       )}
     </li>
   );
@@ -120,8 +122,10 @@ export function DomainSearch({ initial, registrarConnected }: { initial: string;
   return (
     <section className="dm-hero">
       <div className="wrap">
-        <h1>Find a domain people remember</h1>
-        <p className="lead">{registrarConnected ? 'Check a domain name before choosing your website.' : 'Explore example names. Live availability checks and new domain registration are not connected yet.'}</p>
+        <h1>{heading}</h1>
+        <p className="lead">
+          {intro || (registrarConnected ? 'Check a domain name before choosing your website.' : 'Explore example names. Live availability checks and new domain registration are not connected yet.')}
+        </p>
         <form
           className="dm-form"
           onSubmit={(e) => {

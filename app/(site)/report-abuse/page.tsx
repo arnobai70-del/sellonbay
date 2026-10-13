@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 import { reportAbuse } from './actions';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/report-abuse');
 
 export default async function ReportAbuse({ searchParams }: { searchParams: Promise<{ sent?: string; error?: string }> }) {
-  const { sent, error } = await searchParams;
+  const [{ sent, error }, w] = await Promise.all([searchParams, pageWords('/report-abuse')]);
   return (
     <div className="wrap">
       <div className="page-head">
-        <h1>Report abuse</h1>
-        <p>Tell us about a site hosted through SellOnBay that looks like phishing, fraud or stolen work. We review every report.</p>
+        <h1>{w.heading}</h1>
+        <p>{w.intro}</p>
       </div>
       <div style={{ maxWidth: 620, paddingBottom: 88 }}>
         {sent ? (

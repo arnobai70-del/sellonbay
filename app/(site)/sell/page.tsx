@@ -8,15 +8,17 @@ import { Reveal } from '@/components/Reveal';
 import { SellerCalc } from '@/components/SellerCalc';
 import { FAQ_GROUPS } from '@/lib/faq';
 import { BRAND_NAME } from '@/lib/brand';
-import { CONFIG, FEE_SALE_TEXT, SELLER_KEEP_TEXT } from '@/lib/config';
+import { CONFIG, FEE_SALE_TEXT } from '@/lib/config';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/sell');
 
-export default function Sell() {
+export default async function Sell() {
+  const w = await pageWords('/sell');
   return (
     <>
-      <PageHero tone="mint" video title="Sell the site you already built." lead={`Upload it once and deliver it to every buyer. You keep ${SELLER_KEEP_TEXT} of every sale, paid every week.`}>
+      <PageHero tone="mint" video title={w.heading} lead={w.intro ?? ''}>
         <Link className="btn btn-dark btn-lg" href="/sell/new">
           List your first site
         </Link>

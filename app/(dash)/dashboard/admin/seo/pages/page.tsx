@@ -4,6 +4,7 @@ import { AdminForm } from '@/components/AdminForm';
 import { DashShell } from '@/components/DashShell';
 import { PAGE_SEO_GOOD, PAGE_SEO_MAX, SEO_PAGES } from '@/lib/seo/pageList';
 import { allPageSeo } from '@/lib/seo/pageMeta';
+import { allPageWords } from '@/lib/seo/pageWords';
 import { getSeo } from '@/lib/seo/site';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import { requireViewer } from '@/lib/supabase/viewer';
@@ -15,17 +16,19 @@ const LAYOUT_DESCRIPTION = 'The site-wide description';
 
 export default async function SeoPages() {
   const viewer = await requireViewer({ path: '/dashboard/admin/seo/pages', roles: ['admin'] });
-  const [saved, seo] = await Promise.all([allPageSeo(0), getSeo(0)]);
-  const changed = SEO_PAGES.filter((p) => saved[p.path]?.title || saved[p.path]?.description).length;
+  const [saved, seo, words] = await Promise.all([allPageSeo(0), getSeo(0), allPageWords(0)]);
+  const wordsChanged = (path: string) => !!(words[path]?.heading || words[path]?.intro || words[path]?.body);
+  const changed = SEO_PAGES.filter((p) => saved[p.path]?.title || saved[p.path]?.description || wordsChanged(p.path)).length;
   return (
     <DashShell name={viewer?.name} signedIn={!!viewer} viewerRole={viewer?.role} role="admin" active="admin-seo" title="Page titles and descriptions">
       <div className="dp">
         <div className="hd">
           <div>
-            <h2>Every page in Google</h2>
+            <h2>Every page: words and Google</h2>
             <p className="sub">
-              The title and description search engines and share cards show for each page. Leave a box empty to use the built-in words. A saved title is shown exactly as you write it. Changes show on
-              the page within a minute; Google picks them up the next time it visits. {changed} of {SEO_PAGES.length + 1} pages changed.
+              For each page: the title and description search engines and share cards show, and with Edit page the heading, intro and (for policy pages) the whole text visitors read. Leave a box empty
+              to use the built-in words. A saved title is shown exactly as you write it. Changes show on the page within a minute; Google picks them up the next time it visits. {changed} of{' '}
+              {SEO_PAGES.length + 1} pages changed.
             </p>
           </div>
           <Link className="btn btn-line btn-sm" href="/dashboard/admin/seo">
@@ -53,7 +56,7 @@ export default async function SeoPages() {
           </div>
           {SEO_PAGES.map((p) => {
             const s = saved[p.path] ?? { title: '', description: '' };
-            const isChanged = !!(s.title || s.description);
+            const isChanged = !!(s.title || s.description) || wordsChanged(p.path);
             const shownTitle = s.title || `${p.title} · ${SITE_NAME}`;
             const shownDesc = s.description || p.description;
             return (
@@ -97,9 +100,12 @@ export default async function SeoPages() {
                     },
                   ]}
                   submit="Save"
-                  openLabel="Edit"
+                  openLabel="Quick edit: meta"
                   tone="line"
                 />
+                <Link className="btn btn-dark btn-sm" href={`/dashboard/admin/seo/pages/edit?path=${encodeURIComponent(p.path)}`} style={{ justifySelf: 'start' }}>
+                  {p.words ? (p.words.body ? 'Edit page: words and text' : 'Edit page: heading and intro') : 'Edit page'}
+                </Link>
               </div>
             );
           })}

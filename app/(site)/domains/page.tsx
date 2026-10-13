@@ -4,6 +4,7 @@ import { DomainSearch } from '@/components/DomainSearch';
 import { ALL_TLDS, cleanName } from '@/lib/domains';
 import { domainProvider, isLiveRegistrar } from '@/lib/providers/domain';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/domains');
 
@@ -27,11 +28,11 @@ const QA: [string, string][] = [
 ];
 
 export default async function Domains({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
+  const [{ q }, w] = await Promise.all([searchParams, pageWords('/domains')]);
   const registrarConnected = isLiveRegistrar(domainProvider());
   return (
     <div className="dm-page">
-      <DomainSearch initial={cleanName(q ?? '')} registrarConnected={registrarConnected} />
+      <DomainSearch initial={cleanName(q ?? '')} registrarConnected={registrarConnected} heading={w.heading} intro={w.intro} />
 
       <section className="dm-sec">
         <div className="wrap">

@@ -2840,3 +2840,12 @@ html{scroll-padding-top:92px}
   .ex-ban b{transition:translate .25s}
   .ex-ban:hover b{translate:4px 0}
 }
+
+/* ---------- admin: edit a page's words ---------- */
+.pw-h{font-size:1rem;margin:0 0 10px}
+.dash .adm-form.pw-form{max-width:900px}
+.dash .dp>.pe-serp{background:#fff;border:1px solid var(--dash-line,#E4E7F2);border-radius:10px;padding:12px 14px;margin:0 0 14px}
+.pw-form textarea.pw-body{min-height:420px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.55}
+.pw-preview{margin-top:18px;padding:18px 20px;border:1px dashed var(--dash-line,#E4E7F2);border-radius:12px;background:#fff}
+.pw-preview>b{display:block;margin-bottom:8px;color:var(--mute);font-size:13px}
+@media (max-width:640px){.pw-form textarea.pw-body{min-height:300px;font-size:16px}}

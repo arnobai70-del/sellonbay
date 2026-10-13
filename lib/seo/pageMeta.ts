@@ -16,8 +16,9 @@ const EMPTY: PageSeo = { title: '', description: '' };
 const mem: { saved: Record<string, PageSeo> } = ((globalThis as { __pageSeoMem?: { saved: Record<string, PageSeo> } }).__pageSeoMem ??= { saved: {} });
 const g = globalThis as { __pageSeoCache?: { at: number; value: Record<string, PageSeo> } };
 
+/* Is the app_settings table there (Postgres store with migration 0040)? Otherwise saved words live in memory (demo). */
 let ready: { ok: boolean; at: number } | undefined;
-async function pg() {
+export async function settingsTableReady() {
   if ((await orderStore()).kind !== 'postgres') return false;
   if (!ready || (!ready.ok && Date.now() - ready.at > 30_000)) {
     const { error } = await createAdminClient().from('app_settings').select('key').limit(1);
@@ -36,7 +37,7 @@ const clean = (v: unknown): PageSeo => {
 export async function allPageSeo(now = Date.now()): Promise<Record<string, PageSeo>> {
   if (g.__pageSeoCache && now - g.__pageSeoCache.at < 30_000) return g.__pageSeoCache.value;
   let value: Record<string, PageSeo> = { ...mem.saved };
-  if (await pg()) {
+  if (await settingsTableReady()) {
     const { data } = await createAdminClient()
       .from('app_settings')
       .select('key, value')
@@ -78,7 +79,7 @@ export async function setPageSeo(adminId: string | null, path: string, v: PageSe
   g.__pageSeoCache = undefined;
   const before = (await allPageSeo())[path] ?? EMPTY;
   if (before.title === next.title && before.description === next.description) return { ok: false, status: 409, error: 'Nothing changed.' };
-  if (await pg()) {
+  if (await settingsTableReady()) {
     const { error } = await createAdminClient()
       .from('app_settings')
       .upsert({ key: KEY(path), value: next, changed_by: /^[0-9a-f-]{36}$/i.test(adminId ?? '') ? adminId : null, changed_at: new Date().toISOString() });
