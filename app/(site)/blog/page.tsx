@@ -3,16 +3,16 @@ import Link from 'next/link';
 import { JsonLd } from '@/components/JsonLd';
 import { PageHero } from '@/components/PageHero';
 import { descriptionOf, publishedPosts } from '@/lib/posts';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 const description = `Guides on choosing, launching and growing a website, from the ${SITE_NAME} team.`;
-export const metadata: Metadata = {
-  title: 'Blog',
-  description,
-  alternates: { canonical: '/blog', types: { 'application/rss+xml': `${SITE_URL}/blog/feed.xml` } },
-  openGraph: { title: `${SITE_NAME} blog`, description, url: '/blog' },
-};
+export const generateMetadata = (): Promise<Metadata> =>
+  pageMetadata('/blog', {
+    alternates: { canonical: '/blog', types: { 'application/rss+xml': `${SITE_URL}/blog/feed.xml` } },
+    openGraph: { title: `${SITE_NAME} blog`, description, url: '/blog' },
+  });
 
 const day = (t?: number) => (t ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 

@@ -3,13 +3,10 @@ import Link from 'next/link';
 import { JsonLd } from '@/components/JsonLd';
 import { SiteIdeasTool } from '@/components/SiteIdeasTool';
 import { CONFIG } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 import { SITE_URL } from '@/lib/site';
 
-export const metadata: Metadata = {
-  title: 'Free website idea and domain name generator',
-  description: 'Type your business in one line. Get five pages your website needs, ten domain names to try, and ready-made sites that fit. Free, no sign-up.',
-  alternates: { canonical: '/tools/site-ideas' },
-};
+export const generateMetadata = (): Promise<Metadata> => pageMetadata('/tools/site-ideas', { alternates: { canonical: '/tools/site-ideas' } });
 
 const FAQ: [string, string][] = [
   ['Is it really free?', `Yes. You get ${CONFIG.ai.freeRunsPerDay} free runs a day without signing up. The same idea twice gives the same answer and does not use a run.`],

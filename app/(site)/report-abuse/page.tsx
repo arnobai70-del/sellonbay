@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { reportAbuse } from './actions';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Report abuse' };
+export const generateMetadata = () => pageMetadata('/report-abuse');
 
 export default async function ReportAbuse({ searchParams }: { searchParams: Promise<{ sent?: string; error?: string }> }) {
   const { sent, error } = await searchParams;

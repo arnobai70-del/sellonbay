@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FEE_CUSTOM_TEXT, FEE_SALE_TEXT } from '@/lib/config';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = { title: 'Terms of service' };
+export const generateMetadata = () => pageMetadata('/terms');
 
 export default function Terms() {
   return (
