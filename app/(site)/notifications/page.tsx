@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { MarkRead } from '@/components/MarkRead';
 import { notificationsFor } from '@/lib/notify';
 import { getViewerId, requireViewer } from '@/lib/supabase/viewer';
@@ -11,12 +12,17 @@ export default async function Notifications() {
   const id = await getViewerId();
   const list = id ? await notificationsFor(id) : [];
   return (
-    <div className="wrap">
+    <div className="wrap page-body">
       <div className="page-head">
         <h1>Notifications</h1>
       </div>
       {list.length === 0 ? (
-        <p className="muted">Nothing yet. Order updates, reminders and messages from us show up here.</p>
+        <div className="empty-note">
+          <b>Nothing yet.</b>
+          <span>
+            Order updates, reminders and messages from us show up here. <Link href="/browse">Browse sites</Link>
+          </span>
+        </div>
       ) : (
         <>
           <MarkRead />
