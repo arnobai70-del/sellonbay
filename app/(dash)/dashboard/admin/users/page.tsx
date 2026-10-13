@@ -50,58 +50,60 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
           </button>
         </form>
         {users.length === 0 && <p className="muted">No accounts to show.</p>}
-        <div className="adm-table-wrap">
-          <table className="adm-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>State</th>
-                <th>Strikes</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    {u.name}
-                    <br />
-                    <small className="muted">{u.id.slice(0, 8)}</small>
-                  </td>
-                  <td>{u.role}</td>
-                  <td>
-                    {u.banned ? 'banned' : u.suspendedUntil && u.suspendedUntil > now ? `suspended until ${new Date(u.suspendedUntil).toISOString().slice(0, 10)}` : 'active'}
-                    {u.flagged ? ', flagged' : ''}
-                  </td>
-                  <td>{u.strikes}</td>
-                  <td>
-                    <AdminForm
-                      endpoint={`/api/admin/users/${u.id}/action`}
-                      openLabel="Act"
-                      submit="Do it"
-                      tone="line"
-                      fields={[
-                        {
-                          name: 'action',
-                          label: 'Action',
-                          kind: 'select',
-                          options: [
-                            ['ban', 'Ban'],
-                            ['unban', 'Unban'],
-                            ['unsuspend', 'Lift the suspension'],
-                            ['clear_flag', 'Clear the flag'],
-                          ],
-                        },
-                        { name: 'note', label: 'Why (goes in the audit log)', kind: 'textarea', required: true },
-                      ]}
-                    />
-                  </td>
+        {users.length > 0 && (
+          <div className="adm-table-wrap">
+            <table className="adm-table stack">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>State</th>
+                  <th>Strikes</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td data-label="Name">
+                      {u.name}
+                      <br />
+                      <small className="muted">{u.id.slice(0, 8)}</small>
+                    </td>
+                    <td data-label="Role">{u.role}</td>
+                    <td data-label="State">
+                      {u.banned ? 'banned' : u.suspendedUntil && u.suspendedUntil > now ? `suspended until ${new Date(u.suspendedUntil).toISOString().slice(0, 10)}` : 'active'}
+                      {u.flagged ? ', flagged' : ''}
+                    </td>
+                    <td data-label="Strikes">{u.strikes}</td>
+                    <td data-label="Action">
+                      <AdminForm
+                        endpoint={`/api/admin/users/${u.id}/action`}
+                        openLabel="Act"
+                        submit="Do it"
+                        tone="line"
+                        fields={[
+                          {
+                            name: 'action',
+                            label: 'Action',
+                            kind: 'select',
+                            options: [
+                              ['ban', 'Ban'],
+                              ['unban', 'Unban'],
+                              ['unsuspend', 'Lift the suspension'],
+                              ['clear_flag', 'Clear the flag'],
+                            ],
+                          },
+                          { name: 'note', label: 'Why (goes in the audit log)', kind: 'textarea', required: true },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </DashShell>
   );

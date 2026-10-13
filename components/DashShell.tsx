@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { DashIcon as Ico, type IconName } from './DashIcon';
 import { Logo } from './Logo';
 import { signOut } from '@/app/(bare)/login/actions';
@@ -98,6 +98,14 @@ export function DashShell({
   }, [open]);
   const close = () => setOpen(false);
 
+  // On a short screen the menu scrolls: start it where the current page's link can be seen.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    const cur = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (nav && cur && cur.offsetTop + cur.offsetHeight > nav.clientHeight) nav.scrollTop = cur.offsetTop - nav.clientHeight / 2;
+  }, [active]);
+
   return (
     <div className={'dash dash-' + role + (open ? ' open' : '')}>
       <aside className="side" id="dash-menu" aria-label="Dashboard">
@@ -109,7 +117,7 @@ export function DashShell({
             </svg>
           </button>
         </div>
-        <nav className="side-nav">
+        <nav className="side-nav" ref={navRef}>
           {d.items.map((i, n) => (
             <Fragment key={i.key}>
               {i.group && i.group !== d.items[n - 1]?.group && <div className="grp">{i.group}</div>}
