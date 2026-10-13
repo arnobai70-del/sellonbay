@@ -2750,3 +2750,72 @@ html{scroll-padding-top:92px}
 /* Question headings inside long text get room above them, so each question starts clearly after the last answer. */
 .prose h3{font-size:1.12rem;margin:22px 0 4px}
 .prose h2+h3,.prose h2+div>h3:first-child{margin-top:12px}
+
+/* ---------- phones, component by component (October 2026) ---------- */
+/* Text boxes at 16px on phones: below that, iPhone zooms the whole page in when you tap a box. */
+@media (max-width:640px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea{font-size:16px}
+}
+/* Fingers need bigger targets than a mouse: tick boxes, footer links and question rows grow on touch screens. */
+@media (pointer:coarse){
+  input[type=checkbox],input[type=radio]{width:20px;height:20px;flex:none}
+  .foot li{margin:2px 0}
+  .foot li a{display:inline-block;padding:6px 0}
+  .foot .base-legal a{display:inline-block;padding:6px 0}
+  .faq summary,.dm-faq summary{padding-block:6px}
+  .cmp{padding:10px 14px 10px 11px}
+  input[type=range]{height:28px}
+}
+/* Store top bar: on a phone the search box gets the room; the keyboard's search key sends it. */
+@media (max-width:640px){
+  .st-search{padding:4px 6px 4px 14px;min-height:46px}
+  .st-search .btn{display:none}
+  .st-side nav a{padding:9px 14px}
+}
+/* Store tabs stay on one line and slide sideways instead of breaking into two-line words. */
+.ex-tabs{overflow-x:auto;scrollbar-width:none}
+.ex-tabs::-webkit-scrollbar{display:none}
+.ex-tabs a{white-space:nowrap;flex:none}
+/* The six shelf tabs: two neat columns on a phone instead of a squashed pill that cuts the last one off. */
+@media (max-width:620px){
+  .ptabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;border-radius:20px;overflow:visible}
+  .ptabs a{padding:10px 8px;font-size:14.5px;white-space:nowrap;text-align:center}
+}
+/* Boxes inside boxes lose some padding on a phone, so the words inside get the width. */
+@media (max-width:560px){
+  .panel{padding:20px 18px}
+  .addon{padding:14px;gap:12px}
+}
+/* Developer profile on a phone: the name and title first, then the packages, then the rest. */
+@media (max-width:980px){
+  .dv-layout{display:flex;flex-direction:column;gap:0}
+  .dv-main{display:contents}
+  .dv-main>h1,.dv-strip{order:-2}
+  .dv-pack{order:-1;margin:22px 0 8px}
+}
+/* Dashboard number cards: two to a row on a phone instead of one tall column. */
+@media (max-width:520px){
+  .dash .strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .dash .strip>div,.dash .strip>div:first-child{padding:14px 14px 16px}
+  .dash .strip b{font-size:1.6rem}
+  .dash .strip small{display:block;font-size:12.5px;line-height:1.35}
+}
+/* Dates and short first cells in wide admin tables stay on one line (the table slides sideways). */
+.dash .adm-table:not(.stack) td:first-child{white-space:nowrap}
+/* Product page on a phone: a slim bar with the price and a buy button, until the full buy box is on screen. */
+.buybar{display:none}
+@media (max-width:980px){
+  .buybar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);box-shadow:0 -12px 30px -18px rgba(15,19,48,.35);transition:transform .25s}
+  .buybar[data-hide]{transform:translateY(110%)}
+  .buybar b{display:block;font-family:var(--display);font-size:1.35rem;letter-spacing:-.03em;line-height:1.1}
+  .buybar small{color:var(--mute);font-size:12.5px}
+  .buybar .btn{flex:none}
+  [data-pdp]{padding-bottom:84px}
+}
+@media (prefers-reduced-motion:reduce){.buybar{transition:none}}
+/* The big numbers row: smaller figures on a phone so "24 hours" and "Again and again" fit their half. */
+@media (max-width:520px){
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facts b{font-size:1.55rem;letter-spacing:-.03em}
+  .facts>div>span{font-size:14px}
+}

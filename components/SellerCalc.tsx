@@ -21,7 +21,7 @@ export function SellerCalc() {
         you earn
       </p>
       <div className="big">
-        <span>{money((sellerNetCents(price * 100, 'sale') / 100) * sales)}</span>
+        <span>{'$' + ((sellerNetCents(price * 100, 'sale') * sales) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         <span style={{ fontSize: '1.1rem', fontWeight: 600, letterSpacing: 0 }}> a month</span>
       </div>
     </div>
