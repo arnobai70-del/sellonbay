@@ -15,7 +15,7 @@ const DASH: Record<Role, { name: string; label: string; initial: string; items: 
     initial: 'U',
     items: [
       { label: 'Overview', href: '/dashboard/buyer', icon: 'grid', key: 'buyer' },
-      { label: 'Messages', href: '/messages', icon: 'chat', key: 'messages' },
+      { label: 'Messages', href: '/messages?view=buyer', icon: 'chat', key: 'messages' },
     ],
     extra: [
       { label: 'Browse sites', href: '/browse', icon: 'bag' },
@@ -28,7 +28,7 @@ const DASH: Record<Role, { name: string; label: string; initial: string; items: 
     initial: 'U',
     items: [
       { label: 'Overview', href: '/dashboard/seller', icon: 'grid', key: 'seller' },
-      { label: 'Messages', href: '/messages', icon: 'chat', key: 'messages' },
+      { label: 'Messages', href: '/messages?view=seller', icon: 'chat', key: 'messages' },
     ],
     extra: [
       { label: 'List a new site', href: '/sell/new', icon: 'plus' },
@@ -47,7 +47,7 @@ const DASH: Record<Role, { name: string; label: string; initial: string; items: 
       { label: 'Repository access', href: '/dashboard/admin/repo', icon: 'branch', key: 'admin-repo', group: 'Orders and money' },
       { label: 'Accounts', href: '/dashboard/admin/users', icon: 'user', key: 'admin-users', group: 'People' },
       { label: 'Abuse reports', href: '/dashboard/admin/abuse', icon: 'flag', key: 'admin-abuse', group: 'People' },
-      { label: 'Messages', href: '/messages', icon: 'chat', key: 'messages', group: 'People' },
+      { label: 'Messages', href: '/messages?view=admin', icon: 'chat', key: 'messages', group: 'People' },
       { label: 'Risk', href: '/dashboard/admin/risk', icon: 'pulse', key: 'admin-risk', group: 'Safety' },
       { label: 'Security', href: '/dashboard/admin/security', icon: 'lock', key: 'admin-security', group: 'Safety' },
       { label: 'Audit log', href: '/dashboard/admin/audit', icon: 'list', key: 'admin-audit', group: 'Safety' },

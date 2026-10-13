@@ -65,6 +65,14 @@ test.describe('disputes through the API', () => {
 });
 
 test.describe('admin pages (demo mode)', () => {
+  test('Messages opened from the admin menu keeps the admin menu', async ({ page }) => {
+    await page.goto(`${DEMO}/dashboard/admin`);
+    await page.locator('.side').getByRole('link', { name: 'Messages' }).click();
+    await expect(page).toHaveURL(/\/messages\?view=admin/);
+    await expect(page.locator('.side').getByRole('link', { name: 'Disputes' })).toBeVisible();
+    await expect(page.locator('.side').getByRole('link', { name: 'Messages' })).toHaveAttribute('aria-current', 'page');
+  });
+
   test('every admin page opens and says what it is for', async ({ page }) => {
     for (const [path, heading] of [
       ['/dashboard/admin', 'New listings'],
