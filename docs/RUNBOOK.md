@@ -105,6 +105,9 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 
 ## More operations
 
+- **Make an admin**: there is no built-in admin login. Sign up on the site with your own email and password, then run `update profiles set role = 'admin' where id = (select id from auth.users where email = 'you@example.com');` in the Supabase SQL editor. Sign in again: the site asks you to set up an authenticator app (2FA), which every admin page needs.
+- **Remove fake reviews**: Admin > Risk > Clean up. "Remove all reviews by an account" works even when the account has paid orders (the full account removal refuses those). Orders are kept.
+- **Blocked emails**: a blocked mailbox is refused in the sign-in form and on every guarded action (orders, hiring, listings, extra work, disputes, developer profiles), because an account can also be made by calling Supabase directly. Also set Supabase Auth > Rate Limits for sign-ups and sign-ins, since that path skips our own limits.
 - **Scan a listing again**: Admin > New listings > "Scan again". Production scans use a private-network ClamAV daemon. Admin approval also re-scans the exact current file URL, persists the result and requires sandbox inspection.
 - **Process a deletion request**: Admin > Accounts > Deletion requests. It is refused (and the person sees why) while an order, a dispute or a payout is open.
 - **Abuse reports**: three different reporters pause a listing by themselves. Look at it, then suspend, dismiss, or put it back.

@@ -182,7 +182,7 @@ export default async function Risk() {
             <h2>Clean up</h2>
             <p className="sub">
               Removing a fake account bans it for good and deletes the reviews and abuse reports it wrote. Orders, chat, downloads and the logs are kept as evidence. An account with a paid order is
-              refused: use a dispute or a refund.
+              refused: use a dispute or a refund, and remove its reviews with the second form.
             </p>
           </div>
         </div>
@@ -195,6 +195,17 @@ export default async function Risk() {
             submit="Remove the account"
             openLabel="Remove an account"
             tone="dark"
+          />
+        </div>
+        <div className="adm-card">
+          <b>Remove all reviews by an account</b>
+          <AdminForm
+            endpoint="/api/admin/risk/clean"
+            fixed={{ what: 'reviews_by' }}
+            fields={[{ name: 'id', label: 'Account id (from the Accounts page)', kind: 'text', required: true }, why]}
+            submit="Remove the reviews"
+            openLabel="Remove reviews by an account"
+            tone="line"
           />
         </div>
         <div className="adm-card">
