@@ -45,7 +45,7 @@ export default async function Payouts() {
         {weeks.map((w) => (
           <div key={w} className="adm-table-wrap">
             <h3 style={{ marginTop: 18 }}>Week starting {w}</h3>
-            <table className="adm-table">
+            <table className="adm-table stack">
               <thead>
                 <tr>
                   <th>Seller</th>
@@ -62,18 +62,18 @@ export default async function Payouts() {
                   .filter((p) => p.weekStart === w)
                   .map((p) => (
                     <tr key={p.id}>
-                      <td>{p.sellerName}</td>
-                      <td>{p.method}</td>
-                      <td>{p.account}</td>
-                      <td>
+                      <td data-label="Seller">{p.sellerName}</td>
+                      <td data-label="Method">{p.method}</td>
+                      <td data-label="Send to">{p.account}</td>
+                      <td data-label="Amount">
                         <b>{money(p.amountCents)}</b>
                       </td>
-                      <td>{p.orderIds.length}</td>
-                      <td>
+                      <td data-label="Orders">{p.orderIds.length}</td>
+                      <td data-label="Status">
                         {p.status}
                         {p.reference ? ` (${p.reference})` : ''}
                       </td>
-                      <td>
+                      <td data-label="Action">
                         {p.status === 'exported' && (
                           <>
                             <AdminForm
