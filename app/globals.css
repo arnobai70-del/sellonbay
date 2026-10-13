@@ -238,8 +238,8 @@ h1,h2,h3,h4{font-family:var(--display);letter-spacing:-.03em;line-height:1.05;fo
 .input,.field input:not([type=checkbox]):not([type=radio]):not([type=range]),.field select,.field textarea{width:100%;border:1.5px solid var(--line);border-radius:var(--r-m);padding:12px 14px;background:#fff;outline:0;transition:border-color .15s,box-shadow .15s}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cobalt);box-shadow:0 0 0 4px var(--blue-bg)}
 .field small{color:var(--mute)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:620px){.row2{grid-template-columns:1fr}}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row2{grid-template-columns:minmax(0,1fr)}}
 .panel{background:#fff;border:1px solid var(--line);border-radius:var(--r-l);padding:28px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--fog);border-radius:999px;padding:5px;gap:5px}
 .seg button{border:0;background:transparent;border-radius:999px;padding:11px;font-weight:600;cursor:pointer;color:var(--mute)}
@@ -2191,7 +2191,7 @@ a.dv-chip:hover{background:var(--blue-bg);color:var(--cobalt-d)}
 .dm-steps i{width:38px;height:38px;border-radius:50%;background:#05071A;border:3px solid var(--gold);display:grid;place-items:center;font-style:normal;font-weight:800;color:var(--gold);position:relative;z-index:1}
 .dm-steps b{font-family:var(--display);font-size:1.25rem;margin-top:8px}
 .dm-steps span{color:rgba(255,255,255,.72);line-height:1.55;max-width:34ch}
-.dm-split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start}
+.dm-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
 .dm-lead{margin:0 0 20px;color:rgba(255,255,255,.76);font-size:1.08rem;max-width:44ch}
 .dm-own-form{display:flex;gap:10px;align-items:center;max-width:480px;padding:7px 7px 7px 20px;border-radius:99px;background:#fff}
 .dm-own-form input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:1.05rem;color:var(--ink);padding:10px 0}
@@ -2206,7 +2206,7 @@ a.dv-chip:hover{background:var(--blue-bg);color:var(--cobalt-d)}
 .dm-faq details[open] summary::after{content:"\2212"}
 .dm-faq p{margin:12px 0 0;color:rgba(255,255,255,.76);line-height:1.65;max-width:62ch}
 .dm-more{margin-top:22px;color:rgba(255,255,255,.65)}.dm-more a{color:var(--gold);font-weight:600}
-@media (max-width:980px){.dm-get{grid-template-columns:1fr 1fr}.dm-split{grid-template-columns:1fr;gap:44px}}
+@media (max-width:980px){.dm-get{grid-template-columns:1fr 1fr}.dm-split{grid-template-columns:minmax(0,1fr);gap:44px}}
 @media (max-width:700px){
   .dm-steps{grid-template-columns:1fr;gap:26px;padding-left:54px}
   .dm-steps::before{left:18px;right:auto;top:18px;bottom:18px;width:2px;height:auto;background:linear-gradient(180deg,var(--cobalt),var(--gold))}
@@ -2729,3 +2729,19 @@ html{scroll-padding-top:92px}
   .adm-table.stack td::before{content:attr(data-label);position:absolute;left:0;top:9px;width:96px;color:var(--mute);font-size:13px;font-weight:600}
   .dash .adm-table.stack tbody tr:hover{background:#fff}
 }
+
+/* ---------- site polish, October 2026 ---------- */
+/* Buttons inside long text keep their own colours (the text link style made "Download my data" blue on blue). */
+.prose a.btn{text-decoration:none}
+.prose a.btn-blue,.prose a.btn-dark{color:#fff}
+.prose a.btn-gold,.prose a.btn-line{color:var(--ink)}
+/* Short pages (an empty list, a sign-in) no longer pull the footer up into the middle of the screen. */
+#main{min-height:60vh}
+.page-body{padding-bottom:88px}
+.empty-note{display:grid;gap:6px;padding:22px 24px;border:1.5px dashed var(--line);border-radius:var(--r-l);background:var(--fog);max-width:640px}
+.empty-note b{font-family:var(--display);font-size:1.1rem;letter-spacing:-.01em}
+.empty-note span{color:var(--ink-2)}
+.empty-note a{color:var(--cobalt);font-weight:600}
+/* Question headings inside long text get room above them, so each question starts clearly after the last answer. */
+.prose h3{font-size:1.12rem;margin:22px 0 4px}
+.prose h2+h3,.prose h2+div>h3:first-child{margin-top:12px}

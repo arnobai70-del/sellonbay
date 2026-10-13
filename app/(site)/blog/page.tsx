@@ -22,7 +22,14 @@ export default async function Blog() {
     <>
       <PageHero tone="cobalt" title="Guides and news" lead={description} art={false} />
       <div className="wrap blog-list">
-        {posts.length === 0 && <p className="muted">The first guides are on their way.</p>}
+        {posts.length === 0 && (
+          <div className="empty-note">
+            <b>The first guides are on their way.</b>
+            <span>
+              Until then, <Link href="/how-it-works">how it works</Link> and <Link href="/faq">questions and answers</Link> cover buying, escrow and going live.
+            </span>
+          </div>
+        )}
         {posts.map((p) => (
           <article key={p.id} className="blog-card">
             {p.coverUrl && (
