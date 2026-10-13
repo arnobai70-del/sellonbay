@@ -8,7 +8,7 @@ export const generateMetadata = () => pageMetadata('/acceptable-use');
 
 export default function AcceptableUse() {
   return (
-    <LegalPage title="Acceptable use">
+    <LegalPage path="/acceptable-use">
       <h2>Not allowed</h2>
       <ul>
         <li>Phishing, fake login pages, or pages that pretend to be another person or company.</li>

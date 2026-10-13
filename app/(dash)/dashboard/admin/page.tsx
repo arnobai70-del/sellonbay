@@ -16,7 +16,7 @@ const REASON_LABEL: Record<string, string> = { email: 'email address', phone: 'p
 const SHORTCUTS: { label: string; text: string; href: string; icon: IconName }[] = [
   { label: 'Write a blog post', text: 'With its own meta title and description', href: '/dashboard/admin/seo/post', icon: 'plus' },
   { label: 'SEO and blog', text: 'Posts, Google title, Search Console', href: '/dashboard/admin/seo', icon: 'search' },
-  { label: 'Page titles', text: 'Meta title and description for every page', href: '/dashboard/admin/seo/pages', icon: 'list' },
+  { label: 'Pages', text: 'Heading, text, meta title and description', href: '/dashboard/admin/seo/pages', icon: 'list' },
   { label: 'Accounts', text: 'Find, ban or unban a person', href: '/dashboard/admin/users', icon: 'user' },
   { label: 'Risk', text: 'Daily numbers and the emergency switch', href: '/dashboard/admin/risk', icon: 'pulse' },
   { label: 'Settings', text: 'Site switches and limits', href: '/dashboard/admin/settings', icon: 'gear' },

@@ -23,7 +23,19 @@ const EMPTY: PackIn[] = [
   { price: '', days: '', blurb: '', features: '' },
 ];
 
-export function DevJoinForm({ defaultName, existing, live }: { defaultName: string; live: boolean; existing: 'live' | 'in_review' | 'rejected' | 'paused' | 'draft' | null }) {
+export function DevJoinForm({
+  defaultName,
+  existing,
+  live,
+  heading = 'Create your developer profile',
+  intro = 'Buyers filter by language and skill, so be specific. Prices are fixed per package, and payment is held in escrow until the buyer accepts.',
+}: {
+  defaultName: string;
+  live: boolean;
+  existing: 'live' | 'in_review' | 'rejected' | 'paused' | 'draft' | null;
+  heading?: string;
+  intro?: string;
+}) {
   const [name, setName] = useState(defaultName);
   const [headline, setHeadline] = useState('');
   const [gig, setGig] = useState('I will ');
@@ -135,8 +147,8 @@ export function DevJoinForm({ defaultName, existing, live }: { defaultName: stri
 
   return (
     <div className="wrap dv-join">
-      <h1>Create your developer profile</h1>
-      <p className="lead muted">Buyers filter by language and skill, so be specific. Prices are fixed per package, and payment is held in escrow until the buyer accepts.</p>
+      <h1>{heading}</h1>
+      <p className="lead muted">{intro}</p>
       {existing && (
         <div className="note" style={{ margin: '16px 0' }}>
           <span>{existing === 'live' ? 'Your profile is live. Saving changes sends it back for a quick review.' : 'You already have a profile in review. Saving replaces it.'}</span>

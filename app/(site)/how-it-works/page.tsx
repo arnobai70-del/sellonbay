@@ -8,13 +8,15 @@ import { PageHero } from '@/components/PageHero';
 import { Reveal } from '@/components/Reveal';
 import { TOP_FAQ } from '@/lib/faq';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/how-it-works');
 
-export default function HowPage() {
+export default async function HowPage() {
+  const w = await pageWords('/how-it-works');
   return (
     <>
-      <PageHero tone="gold" title="Pick a site. Add your domain. Go live." lead="Here is exactly what happens, from your first click to the day the seller gets paid.">
+      <PageHero tone="gold" title={w.heading} lead={w.intro ?? ''}>
         <Link className="btn btn-dark btn-lg" href="/browse">
           Find a site
         </Link>

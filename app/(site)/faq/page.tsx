@@ -4,13 +4,15 @@ import { FaqList } from '@/components/FaqList';
 import { PageHero } from '@/components/PageHero';
 import { FAQ_GROUPS } from '@/lib/faq';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { pageWords } from '@/lib/seo/pageWords';
 
 export const generateMetadata = () => pageMetadata('/faq');
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const w = await pageWords('/faq');
   return (
     <>
-      <PageHero tone="cobalt" title="Questions people ask" lead="Short answers about buying, selling, money and safety." art={false}>
+      <PageHero tone="cobalt" title={w.heading} lead={w.intro ?? ''} art={false}>
         {FAQ_GROUPS.map((g) => (
           <a key={g.title} className="hero-link" href={'#' + g.title.toLowerCase().replace(/\W+/g, '-')}>
             {g.title}

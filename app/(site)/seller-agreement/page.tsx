@@ -7,7 +7,7 @@ export const generateMetadata = () => pageMetadata('/seller-agreement');
 
 export default function SellerAgreement() {
   return (
-    <LegalPage title="Seller agreement">
+    <LegalPage path="/seller-agreement">
       <h2>What you promise</h2>
       <ul>
         <li>You own what you list, or you have the right to sell it. Third-party code is declared with its licence.</li>

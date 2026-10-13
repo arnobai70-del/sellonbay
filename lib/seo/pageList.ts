@@ -6,7 +6,13 @@ import { SELLER_KEEP_TEXT } from '../config';
  * when nothing is saved. Product pages, category pages and blog posts have their own words; the home page has its own form.
  * Pages read this through pageMetadata() in lib/seo/pageMeta.ts.
  */
-export type SeoPage = { path: string; name: string; title: string; description: string };
+/*
+ * `words`: the page's own heading and intro an admin can rewrite (and, with body: true, the whole text of a policy page).
+ * These built-in words are what the page shows when nothing is saved; the page reads them from here through pageWords() in lib/seo/pageWords.ts.
+ * An intro left out here means the page writes its own (it depends on something live, like the domain page).
+ */
+export type WordsSpec = { heading: string; intro?: string; body?: boolean };
+export type SeoPage = { path: string; name: string; title: string; description: string; words?: WordsSpec };
 
 export const SEO_PAGES: SeoPage[] = [
   { path: '/welcome', name: 'About (welcome)', title: 'Websites and apps ready for your domain', description: '' },
@@ -32,26 +38,82 @@ export const SEO_PAGES: SeoPage[] = [
     title: 'Hire a developer',
     description: 'Hire a developer to customise your template, fix a bug or build a feature. Fixed prices, payment held until you accept.',
   },
-  { path: '/developers/join', name: 'Become a developer', title: 'Become a developer', description: '' },
-  { path: '/domains', name: 'Domains', title: 'Domain name ideas', description: 'Explore domain name ideas. Live registrar availability, registration and purchase are not yet connected.' },
-  { path: '/find', name: 'Find your site', title: 'Find your site', description: 'Tell us what you do and get the best matching sites straight away.' },
-  { path: '/how-it-works', name: 'How it works', title: 'How it works', description: 'Pick a site, add your domain, review it, then accept. Your money waits until the site works.' },
-  { path: '/faq', name: 'Questions and answers', title: 'Questions and answers', description: '' },
-  { path: '/sell', name: 'Sell a site', title: `Sell on ${BRAND_NAME}`, description: `Upload the site you built once and sell it again and again. You keep ${SELLER_KEEP_TEXT} of every sale.` },
-  { path: '/blog', name: 'Blog', title: 'Blog', description: `Guides on choosing, launching and growing a website, from the ${BRAND_NAME} team.` },
+  {
+    path: '/developers/join',
+    name: 'Become a developer',
+    title: 'Become a developer',
+    description: '',
+    words: {
+      heading: 'Create your developer profile',
+      intro: 'Buyers filter by language and skill, so be specific. Prices are fixed per package, and payment is held in escrow until the buyer accepts.',
+    },
+  },
+  {
+    path: '/domains',
+    name: 'Domains',
+    title: 'Domain name ideas',
+    description: 'Explore domain name ideas. Live registrar availability, registration and purchase are not yet connected.',
+    words: { heading: 'Find a domain people remember' },
+  },
+  {
+    path: '/find',
+    name: 'Find your site',
+    title: 'Find your site',
+    description: 'Tell us what you do and get the best matching sites straight away.',
+    words: { heading: 'Tell us what you do. We pick your site.', intro: 'One click. No sign-up, no long form.' },
+  },
+  {
+    path: '/how-it-works',
+    name: 'How it works',
+    title: 'How it works',
+    description: 'Pick a site, add your domain, review it, then accept. Your money waits until the site works.',
+    words: { heading: 'Pick a site. Add your domain. Go live.', intro: 'Here is exactly what happens, from your first click to the day the seller gets paid.' },
+  },
+  {
+    path: '/faq',
+    name: 'Questions and answers',
+    title: 'Questions and answers',
+    description: '',
+    words: { heading: 'Questions people ask', intro: 'Short answers about buying, selling, money and safety.' },
+  },
+  {
+    path: '/sell',
+    name: 'Sell a site',
+    title: `Sell on ${BRAND_NAME}`,
+    description: `Upload the site you built once and sell it again and again. You keep ${SELLER_KEEP_TEXT} of every sale.`,
+    words: { heading: 'Sell the site you already built.', intro: `Upload it once and deliver it to every buyer. You keep ${SELLER_KEEP_TEXT} of every sale, paid every week.` },
+  },
+  {
+    path: '/blog',
+    name: 'Blog',
+    title: 'Blog',
+    description: `Guides on choosing, launching and growing a website, from the ${BRAND_NAME} team.`,
+    words: { heading: 'Guides and news', intro: `Guides on choosing, launching and growing a website, from the ${BRAND_NAME} team.` },
+  },
   {
     path: '/tools/site-ideas',
     name: 'Free site ideas tool',
     title: 'Free website idea and domain name generator',
     description: 'Type your business in one line. Get five pages your website needs, ten domain names to try, and ready-made sites that fit. Free, no sign-up.',
+    words: {
+      heading: 'Website ideas and domain names, free',
+      intro:
+        'Tell us what your business does in one line. We give you five pages your site should have, ten domain names to try, and ready-made sites that fit. Suggestions currently come from predefined templates, not a live AI model.',
+    },
   },
-  { path: '/terms', name: 'Terms of service', title: 'Terms of service', description: '' },
-  { path: '/privacy', name: 'Privacy policy', title: 'Privacy policy', description: '' },
-  { path: '/refunds', name: 'Refunds', title: 'Refunds', description: '' },
-  { path: '/acceptable-use', name: 'Acceptable use', title: 'Acceptable use', description: '' },
-  { path: '/seller-agreement', name: 'Seller agreement', title: 'Seller agreement', description: '' },
-  { path: '/dmca', name: 'Copyright complaints', title: 'Copyright complaints', description: '' },
-  { path: '/report-abuse', name: 'Report abuse', title: 'Report abuse', description: '' },
+  { path: '/terms', name: 'Terms of service', title: 'Terms of service', description: '', words: { heading: 'Terms of service', body: true } },
+  { path: '/privacy', name: 'Privacy policy', title: 'Privacy policy', description: '', words: { heading: 'Privacy policy', body: true } },
+  { path: '/refunds', name: 'Refunds', title: 'Refunds', description: '', words: { heading: 'Refunds', body: true } },
+  { path: '/acceptable-use', name: 'Acceptable use', title: 'Acceptable use', description: '', words: { heading: 'Acceptable use', body: true } },
+  { path: '/seller-agreement', name: 'Seller agreement', title: 'Seller agreement', description: '', words: { heading: 'Seller agreement', body: true } },
+  { path: '/dmca', name: 'Copyright complaints', title: 'Copyright complaints', description: '', words: { heading: 'Copyright complaints', body: true } },
+  {
+    path: '/report-abuse',
+    name: 'Report abuse',
+    title: 'Report abuse',
+    description: '',
+    words: { heading: 'Report abuse', intro: `Tell us about a site hosted through ${BRAND_NAME} that looks like phishing, fraud or stolen work. We review every report.` },
+  },
 ];
 
 export const seoPage = (path: string) => SEO_PAGES.find((p) => p.path === path);
@@ -66,5 +128,21 @@ export function pageSeoProblem(v: PageSeo): string | null {
   if (v.title.trim().length > PAGE_SEO_MAX.title) return `The title can have up to ${PAGE_SEO_MAX.title} characters.`;
   if (v.description.trim().length > PAGE_SEO_MAX.description) return `The description can have up to ${PAGE_SEO_MAX.description} characters.`;
   if (/[<>]/.test(v.title + v.description)) return 'Leave out < and >.';
+  return null;
+}
+
+/* Limits for the page words an admin saves. */
+export const PAGE_WORDS_MAX = { heading: 120, intro: 400, body: 30_000 } as const;
+
+export type PageWordsInput = { heading: string; intro: string; body: string };
+export function pageWordsProblem(v: PageWordsInput, spec?: WordsSpec): string | null {
+  if (typeof v.heading !== 'string' || typeof v.intro !== 'string' || typeof v.body !== 'string') return 'Send a heading, an intro and a text.';
+  if (!spec) return 'That page has no words to change here.';
+  if (v.heading.trim().length > PAGE_WORDS_MAX.heading) return `The heading can have up to ${PAGE_WORDS_MAX.heading} characters.`;
+  if (/\n/.test(v.heading.trim())) return 'Keep the heading on one line.';
+  if (v.intro.trim().length > PAGE_WORDS_MAX.intro) return `The intro can have up to ${PAGE_WORDS_MAX.intro} characters.`;
+  if (v.body.length > PAGE_WORDS_MAX.body) return `The page text can have up to ${PAGE_WORDS_MAX.body.toLocaleString('en-US')} characters.`;
+  if (v.body.trim() && !spec.body) return 'This page has no page text to change, only its heading and intro.';
+  if (/[<>]/.test(v.heading + v.intro)) return 'Leave out < and > in the heading and intro.';
   return null;
 }
