@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { auditList } from '@/lib/admin/audit';
 import { deleteReportsBy, fileReport, listReports } from '@/lib/abuse';
-import { removeFakeAccount, removeFakeReview } from '@/lib/clean';
+import { removeFakeAccount, removeFakeReview, removeReviewsBy } from '@/lib/clean';
 import { CONFIG, DAY_MS } from '@/lib/config';
 import type { Order } from '@/lib/orders/machine';
 import { seenFirst } from '@/lib/guard';
@@ -190,6 +190,25 @@ describe('clean-up', () => {
     expect(await deleteReportsBy(fake)).toBe(1);
     expect(await reviewOfOrder(b.id)).not.toBeNull();
     expect((await listReports(false)).filter((r) => r.url.endsWith(`clean-${n}`))).toHaveLength(1);
+  });
+  it('removes every review by an account that has paid orders, keeps the orders, and leaves others alone', async () => {
+    const fake = uid();
+    const other = uid();
+    seenFirst(fake, 0);
+    seenFirst(other, 0);
+    const a1 = await accepted(fake);
+    const a2 = await accepted(fake);
+    const b = await accepted(other);
+    await addReview(a1.id, fake, { rating: 5, body: 'Great.' });
+    await addReview(a2.id, fake, { rating: 5, body: 'Great again.' });
+    await addReview(b.id, other, { rating: 2, body: 'Meh.' });
+    expect(await removeReviewsBy('admin-1', fake, 'no')).toMatchObject({ ok: false, status: 400 });
+    expect(await removeReviewsBy('admin-1', fake, 'Seller bought their own listing.')).toEqual({ ok: true, removed: { reviews: 2, reports: 0 } });
+    expect(await reviewOfOrder(a1.id)).toBeNull();
+    expect(await reviewOfOrder(b.id)).not.toBeNull();
+    expect((await getOrder(a1.id))?.state).toBe('accepted');
+    expect(await removeReviewsBy('admin-1', fake, 'Seller bought their own listing.')).toMatchObject({ ok: false, status: 404 });
+    expect((await auditList(300)).some((e) => e.action === 'reviews_removed' && e.targetRef === fake)).toBe(true);
   });
   it('an account cannot be removed in demo mode, and the guards on the form work', async () => {
     expect((await removeFakeAccount('admin-1', '11111111-1111-4111-8111-111111111111', 'Fake account.')).ok).toBe(false);

@@ -38,6 +38,21 @@ export async function removeFakeAccount(adminId: string | null, userId: string, 
   return { ok: true, removed };
 }
 
+/*
+ * Removes every review and abuse report one account wrote, without banning it. For an account with paid orders (which the full removal refuses):
+ * a seller who bought their own listing through a second account to post "verified" reviews, for example. The orders stay as they are.
+ */
+export async function removeReviewsBy(adminId: string | null, userId: string, note: string): Promise<Result> {
+  const why = note.trim();
+  if (why.length < 5) return fail(400, 'Write why (at least 5 characters). It goes in the audit log.');
+  if (why.length > 500) return fail(400, 'Keep the reason under 500 characters.');
+  if ((await orderStore()).kind === 'postgres' && !UUID.test(userId)) return fail(400, 'That is not an account id.');
+  const removed = { reviews: await deleteReviewsBy(userId), reports: await deleteReportsBy(userId) };
+  if (!removed.reviews && !removed.reports) return fail(404, 'This account has no reviews or abuse reports.');
+  await audit(adminId, 'reviews_removed', 'profile', userId, { note: why, ...removed });
+  return { ok: true, removed };
+}
+
 export async function removeFakeReview(adminId: string | null, orderId: string, note: string): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   const why = note.trim();
   if (why.length < 5) return { ok: false, status: 400, error: 'Write why (at least 5 characters). It goes in the audit log.' };

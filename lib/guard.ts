@@ -6,7 +6,7 @@ import { allow } from './delivery/service';
 import { bump } from './metrics';
 import { notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
-import { createAdminClient } from './supabase/server';
+import { createAdminClient, createClient } from './supabase/server';
 import { clientAddress } from './clientIp';
 
 /*
@@ -324,7 +324,19 @@ export async function purgeSecurityEvents(now = Date.now()): Promise<number> {
 export async function guard(action: Action, userId: string | null = null, opts: { email?: string | null } = {}): Promise<Verdict> {
   const { headers, cookies } = await import('next/headers');
   const [h, c] = await Promise.all([headers(), cookies()]);
-  return check(action, { userId, ip: clientAddress(h), device: c.get(DEVICE_COOKIE)?.value ?? null, email: opts.email ?? null });
+  return check(action, { userId, ip: clientAddress(h), device: c.get(DEVICE_COOKIE)?.value ?? null, email: opts.email ?? (await sessionEmail(userId)) });
+}
+
+/*
+ * The signed-in person's email, so a blocked mailbox is refused on every guarded action and not only in our sign-in form
+ * (an account can also be made by calling Supabase directly with the public key, which skips that form).
+ */
+async function sessionEmail(userId: string | null): Promise<string | null> {
+  if (!userId || !UUID.test(userId) || !(await pg())) return null;
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser();
+  return user?.id === userId ? (user.email ?? null) : null;
 }
 
 /* After a sign-up or sign-in worked, tie the connection and device to the account so shared ones show up on the Security page. */
