@@ -6,6 +6,7 @@ import { AppArt } from '@/components/AppPhone';
 import { SaveButton } from '@/components/SaveButton';
 import { ScaledPage } from '@/components/ScaledPage';
 import { TemplatePage } from '@/components/TemplatePage';
+import { StoreMotion } from '@/components/StoreMotion';
 import { Tilt } from '@/components/Tilt';
 import { SHELVES, isApp, platformOf, shelfHref, shelfLabel, type AppPlatform, type Platform } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
@@ -241,6 +242,7 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
 
   return (
     <div className="ex-main">
+      <StoreMotion />
       <section className="ex-hero" aria-label="Explore everything">
         <LoopVideo className="ex-hero-video" src="/video/work-laptop.mp4" poster="/video/work-laptop-poster.webp" />
         <div className="ex-hero-shade" aria-hidden="true" />
@@ -274,7 +276,7 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
             View all websites
           </Link>
         </div>
-        <div className="ex-tiles">
+        <div className="ex-tiles" data-rise>
           {SHELF_ORDER.map((pl) => (
             <Link key={pl} href={shelfHref(pl)} className="ex-tile" data-tone={pl === 'web' ? 'cobalt' : SHELVES[pl as AppPlatform].tone}>
               <Glyph k={pl} />
@@ -299,7 +301,7 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
             </Link>
           ))}
         </div>
-        <div className="ex-minis">
+        <div className="ex-minis" data-rise>
           {rowItems.map((p) => (
             <MiniCard key={p.id} p={p} />
           ))}
@@ -318,14 +320,14 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
               </Link>
             ))}
           </div>
-          <div className="ex-grid">
+          <div className="ex-grid" data-rise>
             {featured.map((p) => (
               <Card key={p.id} p={p} />
             ))}
           </div>
         </section>
 
-        <div className="ex-right">
+        <div className="ex-right" data-rise>
           <section className="ex-promo">
             <h2>Sell what you built</h2>
             <p>
@@ -359,7 +361,7 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
         </div>
       </div>
 
-      <section className="ex-banners" aria-label="Shelves">
+      <section className="ex-banners" aria-label="Shelves" data-rise>
         <Link href={shelfHref('android')} className="ex-ban" data-b="a">
           <small>Android apps</small>
           <b>Power up your Android</b>
