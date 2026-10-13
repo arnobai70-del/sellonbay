@@ -67,6 +67,7 @@ const DASH: Record<Role, { name: string; label: string; initial: string; items: 
       { label: 'Abuse reports', href: '/dashboard/admin/abuse', icon: 'shield', key: 'admin-abuse' },
       { label: 'Security', href: '/dashboard/admin/security', icon: 'shield', key: 'admin-security' },
       { label: 'Settings', href: '/dashboard/admin/settings', icon: 'grid', key: 'admin-settings' },
+      { label: 'SEO and blog', href: '/dashboard/admin/seo', icon: 'grid', key: 'admin-seo' },
       { label: 'Launch check', href: '/dashboard/admin/launch', icon: 'shield', key: 'admin-launch' },
       { label: 'Risk', href: '/dashboard/admin/risk', icon: 'grid', key: 'admin-risk' },
       { label: 'New versions', href: '/dashboard/admin/versions', icon: 'grid', key: 'admin-versions' },

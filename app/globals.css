@@ -2584,3 +2584,35 @@ html{scroll-padding-top:92px}
 /* Example listings (made-up starters): a quiet grey mark instead of New */
 .tc-b.ex,.ex-new.ex-eg{background:#fff;color:var(--ink);box-shadow:0 0 0 1px rgba(15,19,48,.18)}
 .dv-eg{display:inline-block;justify-self:start;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;color:var(--ink);box-shadow:0 0 0 1px rgba(15,19,48,.18)}
+
+/* Blog (app/(site)/blog) and the post editor (components/PostEditor.tsx) */
+.blog-list{display:grid;gap:22px;padding:40px 0 88px;max-width:860px}
+.blog-card{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:22px;border:1px solid var(--line);border-radius:var(--r-m);background:#fff}
+.blog-card img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:var(--r-m)}
+.blog-card h2{font-size:1.35rem}
+.blog-card h2 a{color:var(--ink)}
+.blog-card p{margin-top:6px}
+@media (min-width:760px){.blog-card:has(img){grid-template-columns:240px minmax(0,1fr)}}
+.crumbs{padding-top:28px;font-size:14.5px}
+.crumbs a{color:var(--mute)}
+.post .page-head{padding-top:18px}
+.post-cover{width:100%;max-width:860px;border-radius:var(--r-m);margin-bottom:12px}
+.post .prose h3{font-size:1.2rem;margin:26px 0 8px}
+.post .prose ol{padding-left:22px;display:grid;gap:4px}
+.post .prose ol li{list-style:decimal}
+.post .prose ul li{list-style:disc}
+.post .prose blockquote{border-left:3px solid var(--line);padding-left:14px;margin:14px 0;color:var(--ink-2)}
+.post .prose code{background:var(--fog);padding:1px 5px;border-radius:5px;font-size:.92em}
+.post .prose .post-img{width:100%;border-radius:var(--r-m);margin:16px 0}
+.pe{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+@media (min-width:1100px){.pe{grid-template-columns:minmax(0,1fr) 340px}}
+.pe-main{display:grid;gap:12px}
+.pe-body{font:inherit;resize:vertical;min-height:320px}
+.pe-over{color:var(--rose,#E23C61)}
+.pe-side{display:grid;gap:10px;align-content:start}
+.pe-serp{display:grid;gap:3px;padding:14px;border:1px solid var(--line);border-radius:var(--r-m);background:#fff;font-family:Arial,sans-serif}
+.pe-url{font-size:12.5px;color:#4d5156;overflow-wrap:anywhere}
+.pe-st{font-size:18px;color:#1a0dab;overflow-wrap:anywhere}
+.pe-sd{font-size:13.5px;color:#4d5156;overflow-wrap:anywhere}
+.pe-hints{display:grid;gap:6px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.pe-hints li{list-style:disc}
