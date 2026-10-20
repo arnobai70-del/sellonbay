@@ -66,3 +66,31 @@ export async function limit(key: string, max: number, windowMs: number, nowMs = 
     return allow(key, max, windowMs, nowMs);
   }
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const RELEASE = "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
+
+/*
+ * A short lock that every copy of the site shares, for work that must not run twice at the same moment (two Buy clicks landing on two copies).
+ * Waits up to waitMs for a holder to finish; the lock frees itself after holdMs if its holder stops. Returns the release function.
+ * Without Redis, or when Redis does not answer, or after waiting too long, it returns a release that does nothing and the caller goes ahead:
+ * the in-process lock and the database checks behind it stay as before, so Redis being down never stops a purchase.
+ */
+export async function sharedLock(key: string, holdMs = 10_000, waitMs = 3_000): Promise<() => Promise<void>> {
+  const none = async () => undefined;
+  if (!sharedLimitsConfigured()) return none;
+  const name = `sob:lock:${createHash('sha256').update(key).digest('base64url').slice(0, 32)}`;
+  const mine = crypto.randomUUID();
+  const until = Date.now() + waitMs;
+  try {
+    for (let pause = 50; ; pause = Math.min(pause * 2, 400)) {
+      const [got] = await pipeline([['SET', name, mine, 'NX', 'PX', holdMs]]);
+      if (got === 'OK') return async () => void (await pipeline([['EVAL', RELEASE, 1, name, mine]]).catch(() => undefined));
+      if (Date.now() + pause > until) return none;
+      await sleep(pause);
+    }
+  } catch (e) {
+    logDown(e);
+    return none;
+  }
+}
