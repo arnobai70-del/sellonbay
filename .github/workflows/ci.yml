@@ -22,7 +22,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run check:migrations
-      - run: node --test scripts/verify-staging-target.test.mjs scripts/lib/backup-file.test.mjs scripts/lib/storage-copy.test.mjs
+      - run: node --test scripts/verify-staging-target.test.mjs scripts/lib/backup-file.test.mjs scripts/lib/storage-copy.test.mjs deploy/blue-green.test.mjs
       - run: npm run build
         env:
           LAUNCHBAY_DEMO: '1'
