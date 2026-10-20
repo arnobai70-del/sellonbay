@@ -43,6 +43,7 @@ const OPEN_PAGES = [
   '/report-abuse',
   '/dashboard',
   '/dashboard/admin/audit',
+  '/dashboard/admin/maintenance',
   '/maintenance/x',
   '/login',
   '/login/mfa',

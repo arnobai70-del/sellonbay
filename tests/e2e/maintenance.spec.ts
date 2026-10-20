@@ -6,7 +6,7 @@ const set = (request: APIRequestContext, data: object) => request.post(`${DEMO}/
 
 test.describe('module maintenance (demo mode)', () => {
   test.afterEach(async ({ request }) => {
-    for (const key of ['seller', 'checkout', 'seo']) await set(request, { module: key, enabled: false, message: '' });
+    for (const key of ['seller', 'checkout', 'seo', 'ai']) await set(request, { module: key, enabled: false, message: '' });
   });
 
   test('seller maintenance closes the seller side only; buyers and visitors carry on', async ({ page, request }) => {
@@ -58,5 +58,32 @@ test.describe('module maintenance (demo mode)', () => {
     expect((await set(request, { module: 'seo', enabled: true, message: '<script>' })).status()).toBe(400);
     const now = Date.now();
     expect((await set(request, { module: 'seo', enabled: true, startAt: new Date(now + 60_000).toISOString(), endAt: new Date(now).toISOString() })).status()).toBe(400);
+  });
+
+  test('the Maintenance Manager closes and reopens a module, shows its state and history, and fits a phone', async ({ page }) => {
+    await page.goto(`${DEMO}/dashboard/admin/maintenance`);
+    await expect(page.getByRole('heading', { name: 'Every part of the site is open' })).toBeVisible();
+    const card = page.locator('#module-ai');
+    await card.getByLabel('Under maintenance').check();
+    await card.getByLabel(/Message visitors see/).fill('The idea tool gets a new model today.');
+    await card.getByRole('button', { name: 'Save' }).click();
+    await expect(card.getByRole('status')).toContainText('now in maintenance');
+    await expect(page.getByRole('heading', { name: 'In maintenance now: AI tools' })).toBeVisible();
+    await expect(card.locator('.chip')).toHaveText('In maintenance');
+    await expect(page.getByText('AI tools: maintenance on').first()).toBeVisible();
+
+    const tool = await page.request.get(`${DEMO}/tools/site-ideas`);
+    expect(tool.status()).toBe(503);
+    expect(await tool.text()).toContain('The idea tool gets a new model today.');
+
+    await card.getByLabel('Under maintenance').uncheck();
+    await card.getByRole('button', { name: 'Save' }).click();
+    await expect(card.getByRole('status')).toContainText('open again');
+    await expect(card.locator('.chip')).toHaveText('Open');
+    expect((await page.request.get(`${DEMO}/tools/site-ideas`)).status()).toBe(200);
+
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto(`${DEMO}/dashboard/admin/maintenance`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   });
 });

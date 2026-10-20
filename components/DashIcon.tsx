@@ -1,5 +1,6 @@
 /* Line icons for the dashboards (menu, overview cards). Plain SVG, no client code. */
-export type IconName = 'grid' | 'bag' | 'chat' | 'shield' | 'plus' | 'home' | 'user' | 'scale' | 'wallet' | 'flag' | 'lock' | 'gear' | 'search' | 'check' | 'pulse' | 'layers' | 'branch' | 'list';
+export type IconName =
+  'grid' | 'bag' | 'chat' | 'shield' | 'plus' | 'home' | 'user' | 'scale' | 'wallet' | 'flag' | 'lock' | 'gear' | 'search' | 'check' | 'pulse' | 'layers' | 'branch' | 'list' | 'tool';
 
 const ICON: Record<IconName, React.ReactNode> = {
   grid: <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
@@ -47,6 +48,7 @@ const ICON: Record<IconName, React.ReactNode> = {
     </>
   ),
   list: <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />,
+  tool: <path d="M15 4a4 4 0 0 0-1 5l-9 9 2 2 9-9a4 4 0 0 0 5-1l-2-2-2 1-1-1 1-2z" />,
 };
 export const DashIcon = ({ n }: { n: IconName }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
