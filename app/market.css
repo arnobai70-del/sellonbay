@@ -337,3 +337,10 @@ html.sheet-open{overflow:hidden}
 .mn-until{color:var(--ink-2)}
 .mn-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
 @media (max-width:640px){.mn{padding:32px 16px 72px}.mn-card{padding:22px}}
+.mm-form{display:grid;gap:6px;margin-top:6px}
+.mm-form textarea,.mm-form input[type=datetime-local]{width:100%;max-width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit}
+.mm-switch{display:flex;align-items:center;gap:8px;font-weight:600}
+.mm-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mm-times span{display:grid;gap:4px}
+.mm-form .btn{justify-self:start;margin-top:4px}
+@media (max-width:640px){.mm-times{grid-template-columns:minmax(0,1fr)}}
