@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BrowseClient, type Initial } from '@/components/BrowseClient';
+import { ShelfGuide } from '@/components/ShelfGuide';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { showExamples } from '@/lib/examples';
 import { PRODUCTS } from '@/lib/data';
@@ -25,5 +26,16 @@ export default async function Browse({ searchParams }: { searchParams: Promise<R
     saved: one('saved'),
     domain: one('domain'),
   };
-  return <BrowseClient initial={initial} items={[...(await getLiveDbProducts('web')), ...((await showExamples()) ? PRODUCTS : [])]} kind="web" />;
+  // A search from the top bar lands here again with new words: the key starts the list over with them.
+  return (
+    <>
+      <BrowseClient
+        key={`${initial.q ?? ''}|${initial.cat ?? ''}|${initial.saved ?? ''}`}
+        initial={initial}
+        items={[...(await getLiveDbProducts('web')), ...((await showExamples()) ? PRODUCTS : [])]}
+        kind="web"
+      />
+      <ShelfGuide kind="web" />
+    </>
+  );
 }

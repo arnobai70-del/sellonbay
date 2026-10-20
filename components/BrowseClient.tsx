@@ -1,11 +1,11 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { CATS, FEATURES as WEB_FEATURES, doesFeature, imageFor, isNew, type Product } from '@/lib/data';
-import { APP_FEATURES, catsFor, type Platform } from '@/lib/apps';
+import { APP_FEATURES, catsFor, shelfLabel, type Platform } from '@/lib/apps';
 import { demoLift } from '@/lib/demoQuality';
 import { flags } from '@/lib/flags';
-import { PlatformTabs } from './PlatformTabs';
 import { useList } from '@/lib/saved';
 import { CompareDialog } from './CompareDialog';
 import { RecentlyViewed } from './RecentlyViewed';
@@ -43,40 +43,40 @@ const POPULAR_FOR: Record<Platform, string[]> = {
   desktop: ['timer', 'clipboard', 'offline', 'ledger'],
   digital: ['figma', 'notion', 'n8n', 'chatbot'],
 };
-const COPY: Record<Platform, { noun: string; plural: string; h1a: string; lead: string; ph: string }> = {
-  web: { noun: 'site', plural: 'sites', h1a: 'ready-made sites for you.', lead: 'Pick one, add your domain, and go live in 1 to 7 days.', ph: 'Search for a site' },
+const COPY: Record<Platform, { noun: string; plural: string; title: string; lead: string; ph: string }> = {
+  web: { noun: 'site', plural: 'sites', title: 'Ready-made websites', lead: 'Pick one, add your domain, and go live in 1 to 7 days.', ph: 'Search for a site' },
   android: {
     noun: 'app',
     plural: 'apps',
-    h1a: 'Android apps, ready for Google Play.',
+    title: 'Android apps, ready for Google Play',
     lead: 'Pick one. The seller rebrands it, builds it and puts it on your own Google Play account in 1 to 7 days.',
     ph: 'Search for an app',
   },
   ios: {
     noun: 'app',
     plural: 'apps',
-    h1a: 'iPhone & iPad apps, ready for the App Store.',
+    title: 'iPhone & iPad apps, ready for the App Store',
     lead: 'Pick one. The seller rebrands it, builds it and sends it to your own App Store account in 1 to 7 days. Apple reviews it after that.',
     ph: 'Search for an app',
   },
   webapp: {
     noun: 'app',
     plural: 'apps',
-    h1a: 'web apps, deployed on your domain.',
+    title: 'Web apps, deployed on your domain',
     lead: 'Pick one. The seller rebrands it and puts it live on your own domain in 1 to 7 days.',
     ph: 'Search for a web app',
   },
   desktop: {
     noun: 'app',
     plural: 'apps',
-    h1a: 'desktop apps for Windows, Mac and Linux.',
+    title: 'Desktop apps for Windows, Mac and Linux',
     lead: 'Pick one. The seller rebrands it and sends you installers in 1 to 7 days. No store needed.',
     ph: 'Search for a desktop app',
   },
   digital: {
     noun: 'product',
     plural: 'products',
-    h1a: 'digital products, ready to use.',
+    title: 'Digital products, ready to use',
     lead: 'Figma kits, templates, plugins, scripts, automations, chatbots, AI prompts and video templates. You get the files as soon as you pay, then 48 hours to check them while your money is held.',
     ph: 'Search for a product',
   },
@@ -335,7 +335,7 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
           Clear all
         </button>
         <button type="button" className="btn btn-blue btn-sm" onClick={() => setDrawer(false)}>
-          Show {list.length} {list.length === 1 ? 'site' : 'sites'}
+          Show {list.length} {list.length === 1 ? copy.noun : copy.plural}
         </button>
       </div>
     </aside>
@@ -343,47 +343,53 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
 
   return (
     <div data-browse>
-      <section className="bhero" data-kind={kind}>
+      <section className="mk-shelfhead" data-kind={kind}>
         <div className="wrap">
-          <PlatformTabs kind={kind} />
-          {kind === 'web' ? (
-            <h1>
-              Don&apos;t start from zero.
-              <br />
-              <b>{PRODUCTS.length} ready-made</b> sites for you.
-            </h1>
-          ) : (
-            <h1>
-              <b>{PRODUCTS.length}</b> {copy.h1a}
-            </h1>
-          )}
-          <p className="lead">{copy.lead}</p>
-          <div className="bsearch-wrap">
-            <label className="search bsearch">
+          <nav className="mk-crumbs" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <span aria-hidden="true">/</span>
+            <Link href="/categories">Categories</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{shelfLabel(kind)}</span>
+          </nav>
+          <div className="mk-shelfhead-row">
+            <div className="mk-shelfhead-copy">
+              <h1>{copy.title}</h1>
+              <p className="lead">{copy.lead}</p>
+            </div>
+            <label className="search bsearch mk-shelfsearch">
               <span className="sr">Search {copy.plural}</span>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5E6485" strokeWidth="2" strokeLinecap="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5E6485" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-4-4" />
               </svg>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={copy.ph} autoComplete="off" />
+              <input type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={copy.ph} autoComplete="off" />
               {q && (
                 <button type="button" className="clr" aria-label="Clear search" onClick={() => setQ('')}>
                   Clear
                 </button>
               )}
-              <span className="pop">
-                Popular:{' '}
-                {POPULAR.map((w, i) => (
-                  <span key={w}>
-                    <button type="button" onClick={() => setQ(w)}>
-                      {w}
-                    </button>
-                    {i < POPULAR.length - 1 ? ', ' : ''}
-                  </span>
-                ))}
-              </span>
             </label>
           </div>
+          <div className="mk-catchips" role="group" aria-label="Categories">
+            {CATLIST.map((c) => (
+              <button key={c} type="button" aria-pressed={cat === c} onClick={() => setCat(c)}>
+                {c === 'All' ? `All ${copy.plural}` : c}
+                <em>{countIn(c)}</em>
+              </button>
+            ))}
+          </div>
+          <p className="mk-popular">
+            Popular:{' '}
+            {POPULAR.map((w, i) => (
+              <span key={w}>
+                <button type="button" onClick={() => setQ(w)}>
+                  {w}
+                </button>
+                {i < POPULAR.length - 1 ? ', ' : ''}
+              </span>
+            ))}
+          </p>
         </div>
       </section>
 

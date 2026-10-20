@@ -1000,17 +1000,13 @@ dialog.pv::backdrop{background:rgba(15,19,48,.55);backdrop-filter:blur(3px)}
 @media (max-width:760px){.pf-stage{padding:14px;border-radius:22px}.pf-scroll{height:520px}.pf-phone{width:100%;max-width:372px}}
 
 /* ---------- Browse: hero, explore, tall cards ---------- */
-.bhero{background:linear-gradient(180deg,#EEF1FF 0%,#fff 100%);padding:76px 0 40px;text-align:center}
-.bhero h1{font-size:clamp(2.4rem,5.2vw,4.6rem);font-weight:800;font-variation-settings:'wdth' 88;letter-spacing:-.045em;line-height:1.02}
-.bhero h1 b{color:var(--cobalt)}
-.bhero .lead{color:var(--mute);font-size:1.2rem;margin:18px auto 0;max-width:42ch}
-.bsearch-wrap{max-width:720px;margin:34px auto 0}
 .bsearch{display:flex;align-items:center;gap:12px;padding:0 22px;height:64px;background:#fff;border-radius:18px;box-shadow:0 0 0 1px var(--line),0 26px 44px -30px rgba(15,19,48,.45);width:100%;max-width:none;margin:0}
 .bsearch input{flex:1;font-size:1.1rem;border:0;outline:0;background:none;min-width:0;padding:0}
 .bsearch .pop{font-size:13.5px;color:var(--mute);white-space:nowrap}
 .bsearch .pop button{background:none;border:0;padding:0;color:var(--cobalt);font-weight:600;cursor:pointer}
 .bsearch .pop button:hover{text-decoration:underline}
-@media (max-width:700px){.bsearch .pop{display:none}.bhero{padding:48px 0 28px}}
+.bsearch-wrap{max-width:720px;margin:34px auto 0}
+@media (max-width:700px){.bsearch .pop{display:none}}
 .explore h2{font-size:1.9rem;margin:34px 0 18px}
 .explore .pills button{padding:12px 20px;border-radius:14px;background:var(--fog);border-color:transparent;font-size:15.5px}
 .explore .pills button[aria-pressed=true]{background:var(--ink);color:#fff}
@@ -1371,17 +1367,8 @@ dialog.cmpd::backdrop{background:rgba(15,19,48,.55);-webkit-backdrop-filter:blur
 .app-badge svg{width:15px;height:15px;flex:none}
 
 /* ---------- shelves: Websites | Android apps | Apple apps ---------- */
-.ptabs{display:inline-flex;gap:4px;padding:5px;border-radius:99px;background:rgba(15,19,48,.06);margin-bottom:26px}
-.ptabs a{padding:10px 20px;border-radius:99px;font-weight:700;font-size:15.5px;color:var(--ink-2);transition:background .15s,color .15s}
-.ptabs a:hover{background:rgba(255,255,255,.7)}
-.ptabs a[aria-current=page]{background:var(--ink);color:#fff}
-.bhero[data-kind=android]{background:linear-gradient(180deg,#DDF6EC 0%,#fff 100%)}
-.bhero[data-kind=android] h1 b{color:var(--mint)}
-.bhero[data-kind=ios]{background:linear-gradient(180deg,#FFE3EA 0%,#fff 100%)}
-.bhero[data-kind=ios] h1 b{color:var(--rose)}
 .rv-app{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:#fff;font-family:var(--display);font-weight:800;font-size:1.3rem;flex:none}
 .ap-real{position:relative;display:block;width:50%;aspect-ratio:9/19;border-radius:14px;overflow:hidden;box-shadow:0 0 0 3px #101226,0 18px 30px -12px rgba(8,12,60,.7);background:#fff}
-@media (max-width:620px){.ptabs{display:flex;width:100%;overflow-x:auto}.ptabs a{padding:10px 14px;white-space:nowrap;flex:1;text-align:center}}
 
 /* ---------- app preview on the product page ---------- */
 .apv{margin:6px 0 60px}
@@ -1484,12 +1471,7 @@ dialog.cmpd::backdrop{background:rgba(15,19,48,.55);-webkit-backdrop-filter:blur
 .oses input{accent-color:var(--cobalt)}
 
 /* hero tints for the new shelves */
-.bhero[data-kind=webapp]{background:linear-gradient(180deg,#EDE5FF 0%,#fff 100%)}
-.bhero[data-kind=webapp] h1 b{color:#7A3CFF}
-.bhero[data-kind=desktop]{background:linear-gradient(180deg,#FFEFCB 0%,#fff 100%)}
-.bhero[data-kind=desktop] h1 b{color:var(--gold-d)}
 .seg3{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));border-radius:20px}
-.ptabs{flex-wrap:wrap;justify-content:center}
 
 /* App templates menu in the top bar */
 
@@ -2578,10 +2560,6 @@ html{scroll-padding-top:92px}
 .ex-tabs::-webkit-scrollbar{display:none}
 .ex-tabs a{white-space:nowrap;flex:none}
 /* The six shelf tabs: two neat columns on a phone instead of a squashed pill that cuts the last one off. */
-@media (max-width:620px){
-  .ptabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;border-radius:20px;overflow:visible}
-  .ptabs a{padding:10px 8px;font-size:14.5px;white-space:nowrap;text-align:center}
-}
 /* Boxes inside boxes lose some padding on a phone, so the words inside get the width. */
 @media (max-width:560px){
   .panel{padding:20px 18px}
