@@ -43,14 +43,15 @@ export async function sendMessage(o: Order, role: Role, viewerId: string | null,
   const [count, minutes] = CONFIG.chat.perUserBurst;
   if (!allow(`chat:${viewerId ?? o.id}:${role}`, count, minutes * 60_000)) return fail(429, 'You are sending messages very fast. Wait a moment.');
 
+  const usePg = await pg();
+  if (usePg && (!viewerId || !UUID.test(viewerId))) return fail(401, 'Sign in to message about this order.');
   const verdict = checkMessage(body);
   if (!verdict.ok) {
     await saveBlocked({ senderId: viewerId ?? `demo:${o.id}`, sellerId: o.sellerId, productKey: o.productKey ?? '', body, reason: verdict.reason, ip, context: 'order' });
     return fail(422, BLOCKED_MESSAGE, true);
   }
   const m: ChatMessage = { id: crypto.randomUUID(), orderId: o.id, role, senderId: viewerId, body, at: now };
-  if (await pg()) {
-    if (!viewerId || !UUID.test(viewerId)) return fail(401, 'Sign in to message about this order.');
+  if (usePg) {
     const { error } = await createAdminClient()
       .from('messages')
       .insert({ id: m.id, order_id: o.id, sender_id: viewerId, sender_role: role, body, created_at: new Date(now).toISOString() });

@@ -87,7 +87,9 @@ export async function saveQuestion(q: { buyerId: string; sellerId: string | null
 
 export async function saveBlocked(b: { senderId: string; sellerId: string | null; productKey: string; body: string; reason: string; ip: string; context?: string }): Promise<void> {
   const context = b.context ?? 'presale';
-  if (!supabaseConfigured) {
+  // The table needs a real account as the sender, so a signed-out demo sender ("demo:<order>") is kept on this server instead.
+  const account = /^[0-9a-f-]{36}$/i.test(b.senderId);
+  if (!supabaseConfigured || !account) {
     memBlocked().push({
       id: memBlocked().length + 1,
       sender_id: b.senderId,
@@ -99,17 +101,16 @@ export async function saveBlocked(b: { senderId: string; sellerId: string | null
       ip: b.ip,
       created_at: new Date().toISOString(),
     });
+    if (supabaseConfigured) return;
     const since = await strikesSince(b.senderId);
     await applyStrikes(b.senderId, memBlocked().filter((m) => m.sender_id === b.senderId && Date.parse(m.created_at) > since).length);
     return;
   }
   const db = createAdminClient();
   await db.from('blocked_messages').insert({ sender_id: b.senderId, seller_id: b.sellerId, product_key: b.productKey, body: b.body, reason: b.reason, context, ip: b.ip });
-  if (/^[0-9a-f-]{36}$/i.test(b.senderId)) {
-    const since = new Date(await strikesSince(b.senderId)).toISOString();
-    const { count } = await db.from('blocked_messages').select('id', { count: 'exact', head: true }).eq('sender_id', b.senderId).gte('created_at', since);
-    await applyStrikes(b.senderId, count ?? 0);
-  }
+  const since = new Date(await strikesSince(b.senderId)).toISOString();
+  const { count } = await db.from('blocked_messages').select('id', { count: 'exact', head: true }).eq('sender_id', b.senderId).gte('created_at', since);
+  await applyStrikes(b.senderId, count ?? 0);
 }
 
 export async function blockedList(limit = 30): Promise<Blocked[]> {
