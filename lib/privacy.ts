@@ -4,6 +4,7 @@ import { acct, sellerKey } from './ledger';
 import { ledgerStore } from './ledgerStore';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
+import { forgetLiveProducts } from './catalog';
 
 /*
  * Your data (GDPR and CCPA). Export: a JSON file with what we hold about the signed-in person, nothing about anybody else and no secrets.
@@ -191,6 +192,7 @@ export async function processDeletion(adminId: string | null, requestId: string)
   await step('blocked messages', db.from('blocked_messages').update({ body: '[deleted]', ip: null }).eq('sender_id', userId));
   await step('hire briefs', db.from('hire_requests').update({ brief: "[deleted at the person's request]" }).eq('buyer_id', userId));
   await step('live listings', db.from('products').update({ status: 'paused', review_note: 'Paused: the seller deleted their account.' }).eq('seller_id', userId).eq('status', 'live'));
+  forgetLiveProducts();
   // Unpublished listings go, except those that past orders or reviews point to: those are kept as rejected so the records stay whole.
   const { data: unpublished, error: listErr } = await db.from('products').select('id').eq('seller_id', userId).in('status', ['draft', 'in_review', 'rejected']);
   if (listErr) failed.push(`unpublished listings: ${listErr.message}`);

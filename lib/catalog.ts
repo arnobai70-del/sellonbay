@@ -7,6 +7,7 @@ import { createAdminClient } from './supabase/server';
 import { mayViewUnreleased } from './supabase/viewer';
 import { isLicenceType } from './licences';
 import { thirdPartySchema } from './schemas';
+import { CONFIG } from './config';
 
 /* Listings that sellers created live in the database. The twelve starter listings stay in code. Both come out as the same Product shape. */
 type Row = {
@@ -141,14 +142,56 @@ async function names(admin: ReturnType<typeof createAdminClient>, ids: string[])
   return new Map((data ?? []).map((p) => [p.id, p.full_name || 'Seller']));
 }
 
-export async function getLiveDbProducts(platform: Platform = 'web'): Promise<Product[]> {
+async function readLive(platform: Platform): Promise<Product[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.from('products').select(COLS).eq('status', 'live').eq('platform', platform).order('created_at', { ascending: false });
+  if (error) throw new Error('Could not read the live listings.');
+  const rows = (data ?? []) as Row[];
+  const who = await names(admin, [...new Set(rows.map((r) => r.seller_id))]);
+  return rows.map((r) => toProduct(r, who.get(r.seller_id) ?? 'Seller'));
+}
+
+/*
+ * The public shelf lists (home, shelves, categories, finder) are the same for every visitor, so each copy of the server keeps them for
+ * CONFIG.catalogCacheSeconds instead of reading every live listing on every page view. Only this list is kept: a single listing, checkout,
+ * orders and anything about the visitor are always read fresh (productRecord, visibleProduct). A failed read is not kept.
+ */
+type Kept = { at: number; list: Product[] };
+const g = globalThis as { __liveProducts?: { kept: Map<Platform, Kept>; reading: Map<Platform, Promise<Product[]>>; gen: number } };
+const cache = () => (g.__liveProducts ??= { kept: new Map(), reading: new Map(), gen: 0 });
+
+/* Forget the kept lists on this copy, after a listing goes live, is paused or changes. Other copies catch up within the cache time. */
+export function forgetLiveProducts(): void {
+  const c = cache();
+  c.kept.clear();
+  c.reading.clear();
+  c.gen++;
+}
+
+export async function getLiveDbProducts(platform: Platform = 'web', nowMs = Date.now()): Promise<Product[]> {
   if (!supabaseConfigured || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+  const c = cache();
+  const k = c.kept.get(platform);
+  if (k && nowMs - k.at < CONFIG.catalogCacheSeconds * 1000) return k.list;
+  // Visitors who arrive while the list is being read share that one read.
+  let reading = c.reading.get(platform);
+  if (!reading) {
+    const gen = c.gen;
+    reading = readLive(platform);
+    c.reading.set(platform, reading);
+    reading.then(
+      (list: Product[]) => {
+        if (c.gen !== gen) return; // forgotten while reading: do not keep the older list
+        c.reading.delete(platform);
+        c.kept.set(platform, { at: nowMs, list });
+      },
+      () => {
+        if (c.gen === gen) c.reading.delete(platform);
+      },
+    );
+  }
   try {
-    const admin = createAdminClient();
-    const { data } = await admin.from('products').select(COLS).eq('status', 'live').eq('platform', platform).order('created_at', { ascending: false });
-    const rows = (data ?? []) as Row[];
-    const who = await names(admin, [...new Set(rows.map((r) => r.seller_id))]);
-    return rows.map((r) => toProduct(r, who.get(r.seller_id) ?? 'Seller'));
+    return await reading;
   } catch {
     return [];
   }
