@@ -1,19 +1,28 @@
 'use client';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { supabaseConfigured } from '@/lib/supabase/env';
-import { findAny, platformOf } from '@/lib/apps';
+import { DIGITAL_TOPICS, findAny, platformOf } from '@/lib/apps';
 import { SiteNav } from './SiteNav';
+
+/* The digital shelf's topic lives in the address (?topic=audio). Read apart, under its own Suspense, so the rest of the bar still renders on the server. */
+function TopicWatch({ set }: { set: (t: string) => void }) {
+  const topic = useSearchParams().get('topic') ?? '';
+  useEffect(() => set(topic), [topic, set]);
+  return null;
+}
 
 /* Picks the highlighted nav item from the URL and swaps Sign in for My dashboard when signed in.
    The check runs in the browser so public pages stay static and fast. */
 export function SiteNavByPath() {
   const path = usePathname();
   const [dash, setDash] = useState<string>();
+  const [topic, setTopic] = useState('');
   const slugKey: Record<string, string> = { android: 'android', ios: 'ios', web: 'webapp', desktop: 'desktop', digital: 'digital' };
   const productKey = () => {
     const pl = findAny(path.split('/')[2]);
+    if (pl && platformOf(pl) === 'digital') return DIGITAL_TOPICS.find((t) => t.cats.includes(pl.cat))?.key ?? 'digital';
     return pl && platformOf(pl) !== 'web' ? platformOf(pl) : 'browse';
   };
   const active = path.startsWith('/sell')
@@ -26,13 +35,15 @@ export function SiteNavByPath() {
           ? 'find'
           : path.startsWith('/how-it-works')
             ? 'how'
-            : path.startsWith('/apps/')
-              ? (slugKey[path.split('/')[2]] ?? 'apps')
-              : path.startsWith('/product/')
-                ? productKey()
-                : /^\/(browse|checkout)/.test(path)
-                  ? 'browse'
-                  : '';
+            : path === '/apps/digital' && DIGITAL_TOPICS.some((t) => t.key === topic)
+              ? topic
+              : path.startsWith('/apps/')
+                ? (slugKey[path.split('/')[2]] ?? 'apps')
+                : path.startsWith('/product/')
+                  ? productKey()
+                  : /^\/(browse|checkout)/.test(path)
+                    ? 'browse'
+                    : '';
 
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -47,5 +58,12 @@ export function SiteNavByPath() {
     })();
   }, [path]);
 
-  return <SiteNav active={active} dashHref={dash} />;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <TopicWatch set={setTopic} />
+      </Suspense>
+      <SiteNav active={active} dashHref={dash} />
+    </>
+  );
 }

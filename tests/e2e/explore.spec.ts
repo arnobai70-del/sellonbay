@@ -104,7 +104,8 @@ test('with reduced motion the home page shows everything at once', async ({ page
 
 test('the all-categories page lists every shelf with counts, and links only categories that have products', async ({ page }) => {
   await page.goto(`${DEMO}/categories`);
-  for (const name of ['Websites', 'Android apps', 'Digital products', 'Hire a developer']) await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
+  for (const name of ['Websites', 'Android apps', 'AI tools', 'Fonts', 'Templates, plugins and scripts', 'Hire a developer'])
+    await expect(page.getByRole('heading', { level: 2, name, exact: true })).toBeVisible();
   const web = page.locator('.mk-allcat').first();
   await expect(web).toContainText(/\d+ products/);
   for (const a of await page.locator('.mk-allcat li a:has(span)').all()) {

@@ -18,8 +18,8 @@ test.describe('category bar', () => {
   });
 
   test('a panel opens on hover, stays open while the pointer is on it, and closes after it leaves', async ({ page }) => {
-    const btn = page.getByRole('button', { name: 'Android apps menu' });
-    const all = bar(page).getByRole('link', { name: 'All android apps' });
+    const btn = page.getByRole('button', { name: 'Audio menu' });
+    const all = bar(page).getByRole('link', { name: 'All audio' });
     await expect(all).toBeHidden();
     await bar(page).locator('.mk-cat', { has: btn }).hover();
     await expect(all).toBeVisible();
@@ -30,29 +30,50 @@ test.describe('category bar', () => {
     await expect(all).toBeHidden();
   });
 
-  test('moving to another entry switches the panel, and its links go to the shelf with the category picked', async ({ page }) => {
-    const entry = (name: string) => bar(page).locator('.mk-cat', { has: page.getByRole('button', { name: `${name} menu` }) });
-    await entry('Desktop apps').hover();
-    await expect(bar(page).getByRole('link', { name: 'All desktop apps' })).toBeVisible();
-    await entry('Digital products').hover();
-    await expect(bar(page).getByRole('link', { name: 'All desktop apps' })).toBeHidden();
-    await bar(page).locator('#mk-panel-digital').getByRole('link', { name: 'AI automations' }).click();
-    await expect(page).toHaveURL(/\/apps\/digital\?cat=AI(\+|%20)automations/);
+  test('moving to another entry switches the panel, and its links go to the topic with the kind picked', async ({ page }) => {
+    const entry = (name: string) => bar(page).locator('.mk-cat', { has: page.getByRole('button', { name: `${name} menu`, exact: true }) });
+    await entry('Fonts').hover();
+    await expect(bar(page).getByRole('link', { name: 'All fonts' })).toBeVisible();
+    await entry('AI tools').hover();
+    await expect(bar(page).getByRole('link', { name: 'All fonts' })).toBeHidden();
+    await bar(page).locator('#mk-panel-ai').getByRole('link', { name: 'AI automations' }).click();
+    await expect(page).toHaveURL(/\/apps\/digital\?topic=ai&cat=AI(\+|%20)automations/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('AI tools');
+    await expect(page.locator('.mk-catchips').getByRole('button', { name: /^AI automations/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('AI tools');
+  });
+
+  test('a topic with nothing in it yet invites sellers, and removing the topic shows the whole shelf', async ({ page }) => {
+    await page.goto(`${DEMO}/apps/digital?topic=fonts`);
+    await dismissNotice(page);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Fonts');
+    await expect(page.getByText('Nothing in Fonts yet')).toBeVisible();
+    await expect(page.locator('.bl-empty').getByRole('link', { name: 'Sell yours here' })).toHaveAttribute('href', '/sell');
+    await page.getByRole('button', { name: 'Remove filter Fonts' }).click();
+    await expect(page).toHaveURL(/\/apps\/digital$/);
+    await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Fonts');
+    await expect(page.locator('.bl-grid .tall').first()).toBeVisible();
   });
 
   test('the keyboard toggles a panel and Escape closes it', async ({ page }) => {
-    const btn = page.getByRole('button', { name: 'Websites menu' });
-    await btn.focus();
-    await page.keyboard.press('Enter');
-    await expect(btn).toHaveAttribute('aria-expanded', 'true');
+    const btn = page.getByRole('button', { name: 'Web menu' });
+    // A key press before the bar has hydrated does nothing, so press again until it opens.
+    await expect(async () => {
+      await btn.press('Enter');
+      await expect(btn).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 });
+    }).toPass();
     await page.keyboard.press('Escape');
     await expect(btn).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('the page you are on is marked in the bar', async ({ page }) => {
-    await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('Websites');
+    await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('Web');
     await page.goto(`${DEMO}/developers`);
     await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('Hire a developer');
+    await page.goto(`${DEMO}/apps/ios`);
+    await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('Apps');
+    await page.goto(`${DEMO}/apps/digital?topic=audio`);
+    await expect(bar(page).locator('.mk-cat-link[aria-current]')).toHaveText('Audio');
   });
 });
 
@@ -75,8 +96,8 @@ test.describe('on a phone', () => {
     await page.getByRole('button', { name: 'Open menu' }).click();
     const sheet = page.locator('#mk-sheet');
     await expect(sheet).toBeVisible();
-    await sheet.locator('summary', { hasText: 'Android apps' }).click();
-    await expect(sheet.getByRole('link', { name: 'All android apps' })).toBeVisible();
+    await sheet.locator('summary', { hasText: 'Audio' }).click();
+    await expect(sheet.getByRole('link', { name: 'All audio' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.keyboard.press('Escape');
     await expect(sheet).toBeHidden();

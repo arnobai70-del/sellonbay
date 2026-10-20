@@ -61,6 +61,20 @@ const ACCENT: Record<string, [string, string, string]> = {
   Chatbots: ['#0891B2', '#F0FBFE', '#07262E'],
   'AI prompts': ['#7A3CFF', '#F4EEFF', '#1E0F3D'],
   'Video templates': ['#E23C61', '#FFF5F7', '#2D0A14'],
+  'Motion graphics': ['#E4572E', '#FFF6EA', '#2B1608'],
+  'Stock video': ['#0F1330', '#F3F5FA', '#0F1330'],
+  Music: ['#7A3CFF', '#F4EEFF', '#1E0F3D'],
+  'Sound effects': ['#0891B2', '#F0FBFE', '#07262E'],
+  Graphics: ['#F0476B', '#FFF5F7', '#2D0A14'],
+  'Add-ons': ['#12B886', '#F4FCF9', '#06281E'],
+  'Presentation templates': ['#2B3DFF', '#F1F3FF', '#0F1330'],
+  'Print templates': ['#E4572E', '#FFF6EA', '#2B1608'],
+  Mockups: ['#0E9F76', '#F2FBF8', '#07271E'],
+  'Social media templates': ['#E23C61', '#FFF5F7', '#2D0A14'],
+  'Logo templates': ['#7A3CFF', '#F4EEFF', '#1E0F3D'],
+  Photos: ['#0891B2', '#F0FBFE', '#07262E'],
+  '3D models': ['#2B3DFF', '#F1F3FF', '#0F1330'],
+  Fonts: ['#0F1330', '#F3F5FA', '#0F1330'],
 };
 
 function toProduct(r: Row, seller: string): Product {

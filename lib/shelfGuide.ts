@@ -43,7 +43,7 @@ export const SHELF_GUIDE: Record<Platform, ShelfGuide> = {
     included: [`Installers for the systems you pick in ${days}`, 'Your name, icon and colours', 'Code signing uses your own accounts', check],
   },
   digital: {
-    what: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, AI prompts and video templates. Files you use, not sites to put live.',
+    what: 'AI tools, video templates, stock video, music and sound effects, graphics, design templates, photos, 3D models, fonts, plugins and scripts. Files you use, not sites to put live.',
     who: 'Designers, marketers, founders and developers who want a head start on their next piece of work.',
     included: ['The files through a private link as soon as you pay', 'Your own licence key', check, 'Optional setup help from the seller'],
   },

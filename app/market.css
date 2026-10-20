@@ -31,10 +31,10 @@
 .mk-cats-in{display:flex;align-items:stretch;gap:2px;height:48px;overflow-x:auto;scrollbar-width:none}
 .mk-cats-in::-webkit-scrollbar{display:none}
 .mk-cat{display:flex;align-items:center;flex:none}
-.mk-cat-link{display:flex;align-items:center;height:100%;padding:0 4px 0 12px;font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap;border-bottom:3px solid transparent;border-top:3px solid transparent}
+.mk-cat-link{display:flex;align-items:center;height:100%;padding:0 2px 0 8px;font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap;border-bottom:3px solid transparent;border-top:3px solid transparent}
 .mk-cat-link:hover,.mk-cat.open .mk-cat-link{color:var(--cobalt)}
 .mk-cat-link[aria-current]{color:var(--ink);border-bottom-color:var(--gold)}
-.mk-cat-btn{width:26px;height:30px;border:0;background:transparent;color:var(--mute);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:4px}
+.mk-cat-btn{width:24px;height:30px;border:0;background:transparent;color:var(--mute);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:2px}
 .mk-cat-btn svg{transition:transform .2s}
 .mk-cat.open .mk-cat-btn svg{transform:rotate(180deg)}
 .mk-cat-btn:hover{background:var(--fog);color:var(--ink)}
