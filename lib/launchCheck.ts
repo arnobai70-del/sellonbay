@@ -10,6 +10,7 @@ import { aiProvider } from './providers/ai';
 import { allowedAiBudget } from './ai/budget';
 import { isStale, lastBeat } from './heartbeat';
 import { sharedLimitsConfigured } from './rateLimit';
+import { emailConfirmationOn } from './authSettings';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -20,6 +21,8 @@ const set = (k: string, min = 1) => (process.env[k] ?? '').length >= min;
 
 export async function launchChecks(): Promise<Check[]> {
   const s = await getSettings();
+  const confirm = await emailConfirmationOn();
+  const ipSource = Boolean(process.env.CLIENT_IP_HEADER?.trim()) || Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? '', 10) > 0;
   const [orders, payouts] = await Promise.all([lastBeat('orders'), lastBeat('payouts')]);
   const when = (t: number | null) => (t === null ? 'never yet' : new Date(t).toISOString().replace('T', ' ').slice(0, 16) + ' UTC');
   const late = (job: 'orders' | 'payouts', t: number | null) => (isStale(job, t) ? ' (late)' : '');
@@ -41,6 +44,19 @@ export async function launchChecks(): Promise<Check[]> {
       'Shared rate limits (Redis)',
       sharedLimitsConfigured() && set('UPSTASH_REDIS_REST_TOKEN'),
       'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN: needed once the site runs as two or more copies (blue-green, load balancer). Without them each copy counts limits on its own.',
+      'warn',
+    ),
+    c(
+      'Email confirmation',
+      confirm === true,
+      confirm === null
+        ? 'Could not read the Supabase auth settings. Turn on Authentication > Providers > Email > Confirm email so fake addresses cannot open accounts.'
+        : 'Supabase Authentication > Providers > Email > Confirm email: new accounts must confirm their address before they sign in.',
+    ),
+    c(
+      'Visitor address',
+      ipSource,
+      'Set CLIENT_IP_HEADER=cf-connecting-ip behind Cloudflare, or TRUSTED_PROXY_HOPS to the number of proxies. Without it a visitor can fake their address and slip past rate limits.',
       'warn',
     ),
     c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),
