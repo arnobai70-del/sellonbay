@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { SaveButton } from './SaveButton';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { THEMES, money, daysLabel, imageFor, isNew, type Photo, type Product, type SiteImage, type ThemeKey } from '@/lib/data';
 
 type MiniOpts = { brand?: string; h?: string; url?: string; image?: SiteImage; sizes?: string; photo?: Photo };
@@ -91,7 +92,7 @@ export function ProductCard({ p }: { p: Product }) {
         <Frame theme={p.theme} image={imageFor(p.id)} />
         <div className="row">
           <h3>{p.name}</h3>
-          <span className="price">{money(p.price)}</span>
+          {SHOW_LIST_PRICES && <span className="price">{money(p.price)}</span>}
         </div>
         <div className="meta">
           {p.reviews > 0 ? (

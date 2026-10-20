@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { ALL_PRODUCTS, isApp, platformOf, type Platform } from '@/lib/apps';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { useList } from '@/lib/saved';
 import { ThumbS } from './MiniSite';
 
@@ -26,7 +27,7 @@ export function RecentlyViewed({ kind = 'web' }: { kind?: Platform }) {
             )}
             <span>
               <b>{p.name}</b>
-              <small>${p.price}</small>
+              {SHOW_LIST_PRICES && <small>${p.price}</small>}
             </span>
           </Link>
         ))}

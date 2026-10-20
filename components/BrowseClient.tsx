@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CATS, FEATURES as WEB_FEATURES, doesFeature, imageFor, isNew, type Product } from '@/lib/data';
 import { APP_FEATURES, catsFor, shelfHref, shelfLabel, topicFor, type Platform } from '@/lib/apps';
 import { demoLift } from '@/lib/demoQuality';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { flags } from '@/lib/flags';
 import { useList } from '@/lib/saved';
 import { CompareDialog } from './CompareDialog';
@@ -20,7 +21,7 @@ const SORTS: [Sort, string][] = [
   ['low', 'Price: low to high'],
   ['high', 'Price: high to low'],
   ['az', 'Name: A to Z'],
-];
+].filter(([k]) => SHOW_LIST_PRICES || (k !== 'low' && k !== 'high')) as [Sort, string][]; // no price order while lists hide prices
 const DAYS: [string, string][] = [
   ['', 'Any time'],
   ['1', '1 day'],
@@ -125,8 +126,8 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
   const [cat, setCat] = useState(CATLIST.includes(initial.cat ?? '') ? initial.cat! : 'All');
   const [q, setQ] = useState(initial.q ?? '');
   const [feature, setFeature] = useState<string | null>(FEATURES.some((f) => f.key === initial.feat) ? initial.feat! : null);
-  const [min, setMin] = useState(num(initial.min));
-  const [max, setMax] = useState(num(initial.max));
+  const [min, setMin] = useState(SHOW_LIST_PRICES ? num(initial.min) : '');
+  const [max, setMax] = useState(SHOW_LIST_PRICES ? num(initial.max) : '');
   const [days, setDays] = useState(DAYS.some(([k]) => k === initial.days) ? initial.days! : '');
   const [rating, setRating] = useState(RATINGS.some(([k]) => k === initial.rating) ? initial.rating! : '');
   const [sort, setSort] = useState<Sort>(SORTS.some(([k]) => k === initial.sort) ? (initial.sort as Sort) : 'best');
@@ -283,41 +284,43 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
           </label>
         ))}
       </fieldset>
-      <fieldset>
-        <legend>Price</legend>
-        <div className="price-in">
-          <label>
-            <span className="sr">Lowest price</span>
-            <i>$</i>
-            <input type="number" inputMode="numeric" min={0} max={hi} placeholder="0" value={min} onChange={(e) => setMin(e.target.value)} />
-          </label>
-          <span aria-hidden="true">to</span>
-          <label>
-            <span className="sr">Highest price</span>
-            <i>$</i>
-            <input type="number" inputMode="numeric" min={0} max={hi} placeholder={String(hi)} value={max} onChange={(e) => setMax(e.target.value)} />
-          </label>
-        </div>
-        <div className="quick">
-          {[
-            ['Under $25', '', '24'],
-            ['$25 to $50', '25', '50'],
-            ['Over $50', '51', ''],
-          ].map(([l, a, b]) => (
-            <button
-              key={l}
-              type="button"
-              aria-pressed={min === a && max === b}
-              onClick={() => {
-                setMin(a);
-                setMax(b);
-              }}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      {SHOW_LIST_PRICES && (
+        <fieldset>
+          <legend>Price</legend>
+          <div className="price-in">
+            <label>
+              <span className="sr">Lowest price</span>
+              <i>$</i>
+              <input type="number" inputMode="numeric" min={0} max={hi} placeholder="0" value={min} onChange={(e) => setMin(e.target.value)} />
+            </label>
+            <span aria-hidden="true">to</span>
+            <label>
+              <span className="sr">Highest price</span>
+              <i>$</i>
+              <input type="number" inputMode="numeric" min={0} max={hi} placeholder={String(hi)} value={max} onChange={(e) => setMax(e.target.value)} />
+            </label>
+          </div>
+          <div className="quick">
+            {[
+              ['Under $25', '', '24'],
+              ['$25 to $50', '25', '50'],
+              ['Over $50', '51', ''],
+            ].map(([l, a, b]) => (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={min === a && max === b}
+                onClick={() => {
+                  setMin(a);
+                  setMax(b);
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <fieldset>
         <legend>Ready in</legend>
         {DAYS.map(([k, l]) => (

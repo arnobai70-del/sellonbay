@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PRODUCTS, THEMES, daysLabel, imageFor, money, type Product, type ThemeKey } from '@/lib/data';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 
 /*
  * One click gives answers. Pick what you do and the best sites show up straight away; the two extra choices only sharpen
@@ -53,7 +54,7 @@ function rank(all: Product[], biz: Biz, goal: Goal | null, pref: Pref | null) {
       }
       if (pref?.key === 'cheap') {
         s += (60 - Math.min(60, p.price)) / 20;
-        if (p.price < 30) why.push(`only ${money(p.price)}`);
+        if (p.price < 30) why.push(SHOW_LIST_PRICES ? `only ${money(p.price)}` : 'lower price');
       }
       if (pref?.key === 'fast') {
         s += p.days === 1 ? 3 : 3 - p.days;
@@ -176,7 +177,8 @@ export function SolutionFinder({ extra = [] }: { extra?: Product[] }) {
                             : p.tag}
                         </span>
                         <small>
-                          {money(p.price)} · {daysLabel(p.days)}
+                          {SHOW_LIST_PRICES && <>{money(p.price)} · </>}
+                          {daysLabel(p.days)}
                         </small>
                       </span>
                       <span className="ff-go" aria-hidden="true">

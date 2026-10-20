@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { Turnstile } from './Turnstile';
 
 type Out = {
@@ -59,7 +60,9 @@ export function SiteIdeasTool() {
             autoComplete="off"
           />
           <small>No personal details needed. The same idea gives the same answer.</small>
-          <p className="muted" style={{ marginTop: 8 }}>Suggestions currently use predefined templates, not a live AI model. Domain names are unverified ideas, not available domains.</p>
+          <p className="muted" style={{ marginTop: 8 }}>
+            Suggestions currently use predefined templates, not a live AI model. Domain names are unverified ideas, not available domains.
+          </p>
         </div>
         <Turnstile key={round} onToken={setToken} />
         <button className="btn btn-blue" type="submit" disabled={busy || idea.trim().length < 3 || !token} style={{ marginTop: 12 }}>
@@ -116,7 +119,8 @@ export function SiteIdeasTool() {
                   <b>{p.name}</b>
                 </Link>
                 <span>
-                  {p.tag} · ${p.price}
+                  {p.tag}
+                  {SHOW_LIST_PRICES && <> · ${p.price}</>}
                 </span>
               </li>
             ))}

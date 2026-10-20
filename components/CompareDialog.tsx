@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { daysLabel, doesFeature, imageFor, money, type Product } from '@/lib/data';
 import { APP_FEATURES, FEATURES, isApp } from '@/lib/apps';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 
 /* Side-by-side comparison of up to three sites. The best value in each row is marked. */
 export function CompareDialog({ items, open, onClose }: { items: Product[]; open: boolean; onClose: () => void }) {
@@ -93,11 +94,12 @@ export function CompareDialog({ items, open, onClose }: { items: Product[]; open
             </tr>
           </thead>
           <tbody>
-            {row(
-              'Price',
-              items.map((p) => money(p.price)),
-              cheapest,
-            )}
+            {SHOW_LIST_PRICES &&
+              row(
+                'Price',
+                items.map((p) => money(p.price)),
+                cheapest,
+              )}
             {row(
               'Ready in',
               items.map((p) => daysLabel(p.days)),

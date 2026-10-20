@@ -36,6 +36,7 @@ Later the same day the owner asked for the category bar to carry the same topics
 
 ## Browse and preview
 
+Prices (owner, 2026-10-20): lists show no prices (home, shelves, cards, compare, finder, site ideas; no price filter or price sort); the price shows on the product page beside Buy and in full at checkout, always before payment. One switch: `SHOW_LIST_PRICES` in `lib/config.ts`. Developer gigs still show their package prices.
 `/browse` has a left filter sidebar (a bottom sheet on phones), removable filter chips, URL-synced state (every filter is in the address and junk values are ignored), search where every word must match and name beats description, "Show more" paging (12 at a time), and a compare tray (up to 3 sites, best value per row marked). Unrated listings rank with a neutral score plus a small "new" lift. What a site does is the explicit `does` list in `lib/data.ts` (category default for seller listings), never a text guess.
 `/browse` is a gallery: hero with search, "Explore by category", tall cards (`TallCard`, page glides down on hover, badges, View details). The product page opens with `PreviewFrame`: a full scrollable site in a desktop or phone frame, optionally on the buyer's own domain. The preview is generated from the listing's own data by `TemplatePage` (one 1280px layout that folds down with container queries). When sellers supply a real `demo_url`, swap the frame content for an iframe of that URL. Headings inside previews are plain `div`s so every page keeps exactly one `h1`.
 
