@@ -18,6 +18,7 @@ import { getSettings } from '@/lib/settings';
 import { audit } from '@/lib/admin/audit';
 import { FUNDED_STATES } from '@/lib/orders/machine';
 import { maintenanceFor } from '@/lib/maintenance/service';
+import { forgetLiveProducts } from '@/lib/catalog';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -446,9 +447,11 @@ export async function POST(req: Request) {
       return fail('The screenshots could not be stored. Nothing was saved, please try again.', 500);
     }
     if (draftSlug) await admin.from('products').delete().eq('slug', draftSlug).eq('seller_id', user.id).eq('status', 'draft');
+    if (editing) forgetLiveProducts(); // an edit of a live listing shows on the shelves at once on this copy
     return NextResponse.json({ ok: true, slug, hosted: false, files: names.length, edited: !!editing, status: editing ? editStatus : 'in_review' });
   }
   if (draftSlug) await admin.from('products').delete().eq('slug', draftSlug).eq('seller_id', user.id).eq('status', 'draft');
+  if (editing) forgetLiveProducts();
   return NextResponse.json({ ok: true, slug, hosted: !!opened || keptZip, files: opened?.count ?? 0, edited: !!editing, status: editing ? editStatus : 'in_review' });
 }
 
