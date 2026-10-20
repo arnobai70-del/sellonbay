@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { BLOCKED_MESSAGE, checkMessage } from '@/lib/chatFilter';
-import { allow, clientIp } from '@/lib/delivery/service';
+import { clientIp } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { saveBlocked, saveReply } from '@/lib/presale/service';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   if (!me || cannotAct(me) || (me.role !== 'seller' && me.role !== 'admin')) return fail('Only the seller can reply.', 403);
   const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal?.currentLevel !== 'aal2') return fail('Enter your authenticator code first.', 403);
-  if (!allow(`reply:${user.id}`, 20, 60 * 60_000)) return fail('Too many replies. Try again in a while.', 429);
+  if (!(await limit(`reply:${user.id}`, 20, 60 * 60_000))) return fail('Too many replies. Try again in a while.', 429);
 
   const parsed = await readJson(req, replySchema);
   if (!parsed.ok) return parsed.res;

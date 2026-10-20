@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { decideRelease, releaseConfigFromEnv } from '@/lib/delivery/policy';
-import { allow, deliverySecret, ensureLicense, ttlSeconds } from '@/lib/delivery/service';
+import { deliverySecret, ensureLicense, ttlSeconds } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { signToken } from '@/lib/delivery/token';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { CONFIG, HOUR_MS } from '@/lib/config';
@@ -47,7 +48,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (d.reason === 'not_funded') return NextResponse.json({ error: 'Your files are available once your payment is held in escrow.' }, { status: 403 });
     return NextResponse.json({ error: 'Your files are almost ready.', availableAt: new Date(d.availableAtMs).toISOString() }, { status: 403 });
   }
-  if (!allow(`source:${user.id}:${id}`, CONFIG.download.linksPerHourPerOrder, HOUR_MS))
+  if (!(await limit(`source:${user.id}:${id}`, CONFIG.download.linksPerHourPerOrder, HOUR_MS)))
     return NextResponse.json({ error: 'Too many download links requested. Try again in an hour.' }, { status: 429 });
 
   const { data: product } = await admin.from('products').select('code_url').eq('id', order.product_id).single();

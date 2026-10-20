@@ -21,7 +21,7 @@ export function deliverySecret(): string {
 }
 export const ttlSeconds = () => Math.max(1, Number(process.env.DELIVERY_TTL_SECONDS) || CONFIG.download.linkHours * 3600);
 
-/* Sliding window limiter, kept in memory. Fine for one server; use Redis or Upstash when there are several. */
+/* Sliding window limiter, kept in this server's memory. Callers use limit() in lib/rateLimit.ts, which uses Redis when it is set up and this otherwise. */
 export function allow(key: string, max: number, windowMs: number, nowMs = Date.now()): boolean {
   const map = (g.__limits ??= new Map<string, number[]>());
   const hits = (map.get(key) ?? []).filter((t) => nowMs - t < windowMs);
