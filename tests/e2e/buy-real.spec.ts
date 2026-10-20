@@ -95,11 +95,13 @@ test.describe('buying a seller listing', () => {
 
   const order = (data: object) => buyer.request.post(`${REAL}/api/demo/orders`, { data: { productId: slug, pkg: 'asis', ...data } });
 
-  test('a visitor who is not signed in cannot buy it, and the seller cannot buy their own', async ({ request }) => {
+  test('a visitor who is not signed in cannot buy it, and a seller account cannot buy at all', async ({ request }) => {
     const res = await request.post(`${REAL}/api/demo/orders`, { data: { productId: slug, pkg: 'asis' } });
     expect(res.status()).toBe(401);
     expect((await res.json()).error).toMatch(/Sign in/);
-    expect((await own.request.post(`${REAL}/api/demo/orders`, { data: { productId: slug, pkg: 'asis' } })).status()).toBe(400);
+    const mine = await own.request.post(`${REAL}/api/demo/orders`, { data: { productId: slug, pkg: 'asis' } });
+    expect(mine.status()).toBe(403); // only buyer accounts buy
+    expect((await mine.json()).error).toMatch(/Only buyer accounts/);
   });
 
   // The real-provider happy path must be restored once D1 connects a verified PSP.

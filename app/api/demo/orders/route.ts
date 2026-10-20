@@ -8,7 +8,8 @@ import { deliveryTypeOf, licenceOf } from '@/lib/handover';
 import { infoOf } from '@/lib/productInfo';
 import { createOrder } from '@/lib/orders/service';
 import { orderCreateSchema } from '@/lib/schemas';
-import { accountLockedOut, getViewerId, viewerBlocked } from '@/lib/supabase/viewer';
+import { accountLockedOut, getViewerId, viewerBlocked, viewerMayBuy } from '@/lib/supabase/viewer';
+import { BUYERS_ONLY } from '@/lib/accounts';
 import { examplesBuyable } from '@/lib/examples';
 import { readJson } from '@/lib/validate';
 import { isPkg } from '@/lib/data';
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
   const b = parsed.data;
   const buyerId = (await getViewerId()) ?? null;
   if (await viewerBlocked(buyerId)) return fail('This account cannot place orders.', 403);
+  if (!(await viewerMayBuy(buyerId))) return fail(BUYERS_ONLY, 403);
   const g = await guard('order', buyerId);
   if (!g.ok) return fail(g.error, g.status);
   if (await checkoutPausedFor(buyerId)) return fail(PAUSED_TEXT, 503);

@@ -13,7 +13,7 @@ const money = (c: number) => '$' + (c / 100).toLocaleString('en-US', { minimumFr
 const day = (t?: number) => (t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '');
 
 export default async function BuyerDashboard() {
-  const viewer = await requireViewer({ path: '/dashboard/buyer' });
+  const viewer = await requireViewer({ path: '/dashboard/buyer', roles: ['buyer'] });
   const id = await getViewerId();
   const v = id ? await buyerDashboard(id) : null;
   const first = viewer?.name?.split(' ')[0];
