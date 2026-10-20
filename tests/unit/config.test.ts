@@ -18,6 +18,7 @@ describe('rules in one place', () => {
     expect(CONFIG.ai.freeRunsPerDay).toBe(5);
     expect(CONFIG.domain.reminderDays).toEqual([30, 7, 1]);
     expect(CONFIG.abuse).toEqual({ autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 });
+    expect(CONFIG.orderReuseMinutes).toBe(10); // a second Buy of the same thing opens the unpaid order (lib/orders/service.ts)
     expect(CONFIG.listing.periodDays).toEqual([0, 30, 90, 180, 365]);
     expect(CONFIG.listing.requirementsMax).toBe(600);
     expect(CONFIG.repo).toEqual({ inviteDays: 7, reminderHours: 24, maxResends: 5, autoConfirmDays: 10 });

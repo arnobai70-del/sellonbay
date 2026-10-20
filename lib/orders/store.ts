@@ -23,6 +23,8 @@ export interface OrderStore {
   creditClaimed(trialId: string): Promise<boolean>;
   /* Orders where this person is the buyer or the seller, newest first. */
   forUser(userId: string): Promise<Order[]>;
+  /* This buyer's orders still waiting for payment, created at or after sinceMs, newest first. */
+  unpaidSince(buyerId: string, sinceMs: number): Promise<Order[]>;
   /* Orders in any of these states (the payout batch looks for payout_pending). */
   byState(states: string[]): Promise<Order[]>;
   /* Orders that could have something due: funded or in delivery, delivered, or accepted. */
@@ -65,6 +67,12 @@ export const memoryStore: OrderStore = {
   async forUser(userId) {
     return [...mem.orders.values()]
       .filter((o) => o.buyerId === userId || o.sellerId === userId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((o) => ({ ...o }));
+  },
+  async unpaidSince(buyerId, sinceMs) {
+    return [...mem.orders.values()]
+      .filter((o) => o.buyerId === buyerId && o.state === 'awaiting_payment' && o.createdAt >= sinceMs)
       .sort((a, b) => b.createdAt - a.createdAt)
       .map((o) => ({ ...o }));
   },
@@ -257,6 +265,17 @@ export const postgresStore: OrderStore = {
   },
   async forUser(userId) {
     const { data } = await createAdminClient().from('orders').select('*').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(2000); // the seller dashboard counts on every open order being here
+    return (data ?? []).map(fromRow);
+  },
+  async unpaidSince(buyerId, sinceMs) {
+    const { data } = await createAdminClient()
+      .from('orders')
+      .select('*')
+      .eq('buyer_id', buyerId)
+      .eq('status', 'awaiting_payment')
+      .gte('created_at', new Date(sinceMs).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(20);
     return (data ?? []).map(fromRow);
   },
   async byState(states) {

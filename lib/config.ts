@@ -56,6 +56,7 @@ export const CONFIG = {
   abuse: { autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 }, // different reporters in the window that pause a listing by themselves
   notify: { dueSoonHours: 6, reviewEndingHours: 12 }, // reminders before a delivery is due and before a review ends
   ai: { freeRunsPerDay: 5, cacheDays: 30 },
+  orderReuseMinutes: 10, // a second Buy of the same thing by the same buyer within this time opens the unpaid order instead of a new one
   cron: { ordersStaleMinutes: 30, payoutsStaleDays: 8 }, // the launch check warns when a scheduled job has not finished for this long
   extras: { aiContentCents: 300, hostingMonthCents: 400, storeListingCents: 900, installerSetupCents: 1500 },
   listing: { periodDays: [0, 30, 90, 180, 365] as readonly number[], requirementsMax: 600, minShots: 1, maxShots: 6, minDescChars: 20, minIncluded: 1, maxIncluded: 8 },
