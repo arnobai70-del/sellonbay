@@ -12,6 +12,7 @@ Run these on every change. CI runs them on every pull request.
 | Types | `npm run typecheck` |
 | Unit tests | `npm test` |
 | Every migration, in order, in an in-process Postgres | `npm run check:migrations` |
+| No new migration loses data or breaks the running site | `npm run check:migration-safety` |
 | Production build | `npm run build` |
 | No secret in the browser bundle | `npm run check:bundle` (after a build) |
 | Demo server smoke test | `npm run smoke:demo` |
@@ -83,6 +84,18 @@ Apply the files in `supabase/migrations/` strictly in number order, each one onc
 | 0049_module_maintenance.sql | Module maintenance and its history |
 
 Almost every file only adds or tightens. One exception: 0016 drops the old `wallets` and `ledger_entries` tables from 0001 and rebuilds the ledger, so on a database that already holds money records, back up and read 0016 before running it. Files 0043, 0045 and 0047 remove client write rights. After them, check that sellers can still save listings through the site, because the site writes through the server.
+
+### Migration safety
+
+During a deploy the old site keeps running for a while on the new database (and with blue-green both versions run at once), so every new migration must leave the old code working. `npm run check:migration-safety` (in CI, rules in `scripts/lib/migration-safety.mjs`) fails when a migration after 0049 drops a table, column, type or schema, empties a table, deletes rows, renames a table or column, changes a column type, makes a column required, or adds a required column with no default. Files up to 0049 are history and are not checked again; the ones that did such steps are listed above.
+
+Do these changes in steps instead:
+
+- **Rename:** add the new column, copy the data, let the code write both, and drop the old column only in a later release.
+- **Required column:** add it with a default, or add it as optional, fill it, and make it required in a later release.
+- **Remove a table or column:** first ship code that no longer uses it, then remove it in a later migration.
+
+If a destructive step is really needed, take a backup, get the owner's written agreement, and put `-- destructive-ok: <why, who agreed and when>` on the line just above that one statement.
 
 ## 4. Applying migrations (only with permission)
 

@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check:migrations": "node scripts/check-migrations.mjs",
+    "check:migration-safety": "node scripts/check-migration-safety.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "smoke:demo": "node scripts/smoke-demo.mjs",
     "db:backup": "node scripts/db-backup.mjs",
