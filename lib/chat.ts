@@ -1,7 +1,7 @@
 import 'server-only';
 import { BLOCKED_MESSAGE, checkMessage } from './chatFilter';
 import { CONFIG, DAY_MS } from './config';
-import { allow } from './delivery/service';
+import { limit } from './rateLimit';
 import { notify } from './notify';
 import type { Order } from './orders/machine';
 import { orderStore } from './orders/store';
@@ -41,7 +41,7 @@ export async function sendMessage(o: Order, role: Role, viewerId: string | null,
   if (!body) return fail(400, 'Write a message first.');
   if (body.length > CONFIG.chat.maxChars) return fail(400, `Keep a message under ${CONFIG.chat.maxChars} characters.`);
   const [count, minutes] = CONFIG.chat.perUserBurst;
-  if (!allow(`chat:${viewerId ?? o.id}:${role}`, count, minutes * 60_000)) return fail(429, 'You are sending messages very fast. Wait a moment.');
+  if (!(await limit(`chat:${viewerId ?? o.id}:${role}`, count, minutes * 60_000))) return fail(429, 'You are sending messages very fast. Wait a moment.');
 
   const usePg = await pg();
   if (usePg && (!viewerId || !UUID.test(viewerId))) return fail(401, 'Sign in to message about this order.');

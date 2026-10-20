@@ -1,7 +1,7 @@
 import 'server-only';
 import { supabaseConfigured } from '../supabase/env';
 import { createAdminClient } from '../supabase/server';
-import { allow } from '../delivery/service';
+import { limit } from '../rateLimit';
 import { CONFIG } from '../config';
 import { applyStrikes, strikesSince } from '../strikes';
 
@@ -36,9 +36,9 @@ const dayAgo = () => new Date(Date.now() - 86_400_000).toISOString();
 export type AskResult = { ok: true; id: string } | { ok: false; status: number; error: string };
 
 /* The cheap checks that need no database: rate limits per person and per address. */
-export function burstLimit(userId: string, ip: string): AskResult | null {
-  if (!allow(`ask-user:${userId}`, ...LIMITS.perUserBurst)) return { ok: false, status: 429, error: 'You are asking too fast. Wait a few minutes and try again.' };
-  if (!allow(`ask-ip:${ip}`, ...LIMITS.perIpBurst)) return { ok: false, status: 429, error: 'Too many questions from this connection. Try again later.' };
+export async function burstLimit(userId: string, ip: string): Promise<AskResult | null> {
+  if (!(await limit(`ask-user:${userId}`, ...LIMITS.perUserBurst))) return { ok: false, status: 429, error: 'You are asking too fast. Wait a few minutes and try again.' };
+  if (!(await limit(`ask-ip:${ip}`, ...LIMITS.perIpBurst))) return { ok: false, status: 429, error: 'Too many questions from this connection. Try again later.' };
   return null;
 }
 

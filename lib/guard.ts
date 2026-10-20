@@ -2,7 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { audit } from './admin/audit';
 import { CONFIG, DAY_MS, HOUR_MS } from './config';
-import { allow } from './delivery/service';
+import { limit } from './rateLimit';
 import { bump } from './metrics';
 import { notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
@@ -15,7 +15,7 @@ import { clientAddress } from './clientIp';
  *  - too many: the limits in CONFIG.limits, per person AND per connection, lower for an account younger than newAccountDays (429),
  *  - ok: the event is written down (hashed connection and device, never the raw address) and the admins are alerted when many accounts share one
  *    connection or device, or when one connection keeps hitting a limit.
- * The device is a random id in the lb_dev cookie (set by the proxy). Limits are counted in memory, fine for one server; use Redis when there are several.
+ * The device is a random id in the lb_dev cookie (set by the proxy). Limits are counted by limit() in lib/rateLimit.ts (Redis when set up, else memory).
  */
 export type Action = keyof typeof CONFIG.limits.actions;
 export type Subject = { userId: string | null; ip: string; device: string | null; email?: string | null };
@@ -191,8 +191,8 @@ export async function check(action: Action, s: Subject, now = Date.now()): Promi
   const windowMs = cfg.hours * HOUR_MS;
   const fresh = s.userId ? await isNewAccount(s.userId, now) : false;
   const userMax = fresh ? cfg.newMax : cfg.perUser;
-  const userOk = !s.userId || userMax <= 0 || allow(`g:${action}:u:${s.userId}`, userMax, windowMs, now);
-  const ipOk = !ip || cfg.perIp <= 0 || allow(`g:${action}:ip:${ip}`, cfg.perIp, windowMs, now);
+  const userOk = !s.userId || userMax <= 0 || (await limit(`g:${action}:u:${s.userId}`, userMax, windowMs, now));
+  const ipOk = !ip || cfg.perIp <= 0 || (await limit(`g:${action}:ip:${ip}`, cfg.perIp, windowMs, now));
   if (!userOk || !ipOk) {
     await record({ userId: s.userId, action: `limit:${action}`, ip, device, at: now });
     await alertBurst(ip, now);

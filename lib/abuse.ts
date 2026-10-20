@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { audit } from './admin/audit';
 import { isBlocked } from './chatFilter';
 import { CONFIG, DAY_MS } from './config';
-import { allow } from './delivery/service';
+import { limit } from './rateLimit';
 import { notify, notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
@@ -50,7 +50,7 @@ export async function fileReport(i: { url: string; reason: string; detail: strin
   if (!url || !REASONS.includes(i.reason)) return fail(400, 'Check the address and the reason.');
   const detail = i.detail.trim().slice(0, 1000);
   // Too many reports from one address is itself a sign of abuse of this form.
-  if (!allow(`abuse-ip:${i.ip}`, CONFIG.abuse.perIpPerHour, 3_600_000)) return fail(429, 'You have sent a lot of reports. Try again later.');
+  if (!(await limit(`abuse-ip:${i.ip}`, CONFIG.abuse.perIpPerHour, 3_600_000))) return fail(429, 'You have sent a lot of reports. Try again later.');
   const key = reporterKey(i.userId, i.ip);
   const text = detail ? `${i.reason}: ${detail}` : i.reason;
   const slug = slugOf(url);
