@@ -36,6 +36,7 @@ import { isOrderId, orderStore } from './store';
 import { heldReason, maybeHold } from '../holdStore';
 import { bump } from '../metrics';
 import { CONFIG, DAY_MS } from '../config';
+import { sharedLock } from '../rateLimit';
 import { inviteState, noteInvite, requestRevocation } from '../repoAccess';
 import { recordReserve, releaseAtFor, reserveRule } from '../reserve';
 
@@ -202,10 +203,16 @@ export async function createOrder(i: NewOrder, now = Date.now()): Promise<Order>
   if (!i.buyerId) return insertOrder(i, now);
   const buyerId = i.buyerId;
   return oneAtATime(buyerId, async () => {
-    const want = choiceOf(i);
-    const recent = await (await orderStore()).unpaidSince(buyerId, now - CONFIG.orderReuseMinutes * 60_000);
-    const same = recent.find((o) => o.sellerId === (i.sellerId ?? null) && choiceOf(o) === want);
-    return same ?? insertOrder(i, now);
+    // The same, across copies of the site when Redis is set (lib/rateLimit.ts).
+    const release = await sharedLock(`buy:${buyerId}`);
+    try {
+      const want = choiceOf(i);
+      const recent = await (await orderStore()).unpaidSince(buyerId, now - CONFIG.orderReuseMinutes * 60_000);
+      const same = recent.find((o) => o.sellerId === (i.sellerId ?? null) && choiceOf(o) === want);
+      return same ?? (await insertOrder(i, now));
+    } finally {
+      await release();
+    }
   });
 }
 
