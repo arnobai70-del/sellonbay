@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATS, money } from '@/lib/data';
-import { NEEDS_DEMO, catsFor, toolsFor } from '@/lib/apps';
+import { NEEDS_DEMO, NEEDS_RELEASE, catsFor, toolsFor } from '@/lib/apps';
 import { missingForReview, reviewMessage } from '@/lib/listingRules';
 import { BRAND_NAME } from '@/lib/brand';
 import { FEE_SALE_TEXT, feeCents, sellerNetCents } from '@/lib/config';
@@ -188,6 +188,7 @@ export function SellForm({
       shots: app ? shots.length || kept.shots : 0,
       codeUrl: str('code'),
       clean: str('clean') === 'on',
+      release: str('release') === 'on',
       requirements: str('requirements'),
       docsUrl: str('docsUrl'),
     });
@@ -721,6 +722,15 @@ export function SellForm({
                 <label className="clean-check">
                   <input type="checkbox" name="clean" required />
                   <span>I confirm these files contain no malware or hidden code, and I have the right to sell them. We review every product before it goes live.</span>
+                </label>
+              )}
+              {dig && NEEDS_RELEASE.includes(cat) && (
+                <label className="clean-check">
+                  <input type="checkbox" name="release" required />
+                  <span>
+                    Everything in these files is mine or licensed to me for resale (music, footage, fonts, samples). Anyone who can be recognised, and any private place or artwork shown, has signed a
+                    release, and I can show it if asked.
+                  </span>
                 </label>
               )}
               <div className="field">
