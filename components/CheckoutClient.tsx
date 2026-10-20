@@ -95,8 +95,8 @@ export function CheckoutClient({ p, pkg: asked, domain, newDomainsEnabled = fals
                   <small>You have {REVIEW_HOURS} hours after delivery</small>
                 </li>
                 <li>
-                  <b>{dv === 'store' ? 'You accept, the seller sends it to the store' : app ? 'You accept and get the source files' : 'Seller is paid'}</b>
-                  <small>{app ? 'Source files are released when you accept' : 'In the weekly payout, 7 days after you accept'}</small>
+                  <b>{dv === 'store' ? 'You accept, the seller sends it to the store' : app ? 'You accept and the seller is paid' : 'Seller is paid'}</b>
+                  <small>{app ? 'Your source files are ready to download as soon as you pay' : 'In the weekly payout, 7 days after you accept'}</small>
                 </li>
                 {app && (
                   <li>
