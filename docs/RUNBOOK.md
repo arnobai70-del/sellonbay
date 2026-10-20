@@ -42,6 +42,11 @@ Reports come in at `/report-abuse`. Open reports are at `/dashboard/admin/abuse`
 
 `/dashboard/admin/risk`. Check it daily: the table shows the last 14 days and flags an unusual rise (alerts also arrive as admin notifications). During a flood of fake buyers turn on "Pause checkout for new buyers" (turn it off again when it is over; both are in the audit log). Orders from new or flagged buyers appear under "waiting for a safety check": look at the buyer and the payment, then release or cancel. Clean-up bans fake accounts and removes their reviews and reports, but keeps all evidence. Keep the audit log, `order_events`, `download_events` and `security_events` if you ever need a lawyer's notice.
 
+## Module maintenance (migration 0049)
+
+One part of the site (seller dashboard, checkout, SEO...) can be closed while the rest keeps working. The modules and which pages and APIs belong to each are in `lib/maintenance/config.ts`; the saved state is the `module_maintenance` table, and every change is copied into `module_maintenance_history` by the database. Payment webhooks, the scheduled jobs, `/api/health`, the audit log and the maintenance screen itself are never closed.
+If a mistake leaves everything stuck and no admin screen opens, reopen every module from the Supabase SQL editor: `update module_maintenance set enabled = false;` (the history keeps the record).
+
 ## Ledger risk, evidence and chargebacks
 
 The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a rule for one seller on the Risk page. A seller can owe money (shown on their dashboard) after a refund or fee the ledger could not take from them; new earnings pay it off. In Disputes, always say whose fault it was and the fee the dispute cost: a seller at fault is charged the fee. Download the evidence PDF (order page, seller dashboard or Disputes) when answering a chargeback or a dispute. A lost chargeback bans the buyer for good; the seller's money for that order is your decision in Disputes.
