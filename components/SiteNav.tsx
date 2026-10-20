@@ -177,7 +177,7 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
             <Heart />
             {saved > 0 && <i>{saved}</i>}
           </Link>
-          <Link className="mk-ico mk-ico-acct" href={account} aria-label={accountLabel}>
+          <Link className={'mk-ico mk-ico-acct' + (dashHref ? '' : ' mk-ico-guest')} href={dashHref ?? '/guest'} aria-label={dashHref ? accountLabel : 'Your visit'}>
             <Person />
           </Link>
           <Link className="mk-sell" href="/sell" aria-current={active === 'sell' ? 'page' : undefined}>
@@ -272,9 +272,9 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
           </svg>
           Sell
         </Link>
-        <Link href={account} aria-current={path.startsWith('/login') ? 'page' : undefined}>
+        <Link href={dashHref ?? '/guest'} aria-current={path.startsWith('/guest') || path.startsWith('/login') ? 'page' : undefined}>
           <Person />
-          {dashHref ? 'Account' : 'Sign in'}
+          {dashHref ? 'Account' : 'You'}
         </Link>
       </nav>
     </header>
