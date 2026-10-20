@@ -10,6 +10,8 @@ User=sellonbay
 WorkingDirectory=/srv/sellonbay/%i
 EnvironmentFile=/etc/sellonbay/env
 EnvironmentFile=/etc/sellonbay/port-%i
+# Error reports say which copy failed (lib/monitor.ts).
+Environment=SOB_COPY=%i
 ExecStart=/usr/bin/env npx next start -p ${PORT}
 Restart=on-failure
 RestartSec=3
