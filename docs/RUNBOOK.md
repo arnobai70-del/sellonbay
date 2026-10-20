@@ -76,6 +76,8 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 5. Run `npm run test:e2e` against it, and open one order and one listing (with its demo) by hand.
 6. Write the date of the test here: ______
 
+The full set of timed drills (restore, point-in-time recovery, rollback, maintenance, outside services down) is in `docs/RECOVERY_DRILL.md`.
+
 ## Cloudflare (put it in front before launch)
 
 - Proxy DNS (orange cloud), SSL mode Full (strict).
@@ -94,7 +96,7 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 - [x] Uploaded files: type and size limits, random names, never served from the app origin with scripts (hosted demos are sandboxed)
 - [x] Webhooks: signature checked, age checked, each event processed once
 - [x] Audit log for every admin action (`audit_log`, append-only, `/dashboard/admin/audit`)
-- [ ] Daily database backups, and a restore tested once (above)
+- [ ] Daily database backups, and a restore tested once (above; timed drills in `docs/RECOVERY_DRILL.md`)
 - [x] Dependency audit: CI fails on a high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`); Dependabot is enabled (`.github/`).
 - [x] Privacy: cookie notice, data export and delete request flow (`/account/privacy`, admins process deletions under Accounts), retention note on the Privacy page
 - [ ] Real Turnstile keys set (the test keys check nothing)
