@@ -6,6 +6,7 @@ import { runDueJobs } from '@/lib/orders/service';
 import { checkAnomalies } from '@/lib/metrics';
 import { releaseDueReserves } from '@/lib/reserve';
 import { beat } from '@/lib/heartbeat';
+import { sendQueued } from '@/lib/emailQueue';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
     purgedEvents: await purgeSecurityEvents(),
     anomalies: (await checkAnomalies()).length,
     reservesReleased: await releaseDueReserves(),
+    emails: await sendQueued(),
   };
   await beat('orders');
   return NextResponse.json(done);

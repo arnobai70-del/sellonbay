@@ -271,4 +271,30 @@ if (!failed) {
   }
 }
 
+if (!failed) {
+  // 0051: the email queue is server only, a claimed email is held (not given to a second copy), and comes back after its five-minute hold.
+  try {
+    const priv = async (role, mode) => (await db.query(`select has_table_privilege('${role}', 'email_outbox', '${mode}') as p`)).rows[0].p;
+    for (const r of ['anon', 'authenticated']) if ((await priv(r, 'select')) || (await priv(r, 'insert'))) throw new Error(`${r} can reach email_outbox`);
+    const fn = async (role) => (await db.query(`select has_function_privilege('${role}', 'claim_email_outbox(int, bigint)', 'execute') as p`)).rows[0].p;
+    if ((await fn('anon')) || (await fn('authenticated'))) throw new Error('clients can claim emails');
+    const user = '00000000-0000-4000-8000-0000000051aa';
+    await db.exec(`insert into auth.users (id, email) values ('${user}', 'mail@example.test')`);
+    const n = (await db.query(`insert into notifications (user_id, kind) values ('${user}', 'repo_invite_resent') returning id`)).rows[0].id;
+    await db.exec(`insert into email_outbox (notification_id) values ('${n}')`);
+    const first = (await db.query(`select * from claim_email_outbox(10)`)).rows;
+    if (first.length !== 1 || first[0].attempts !== 1) throw new Error(`first claim gave ${JSON.stringify(first)}`);
+    if ((await db.query(`select * from claim_email_outbox(10)`)).rows.length) throw new Error('a held email was claimed twice');
+    await db.exec(`update email_outbox set next_at = now() - interval '1 second'`);
+    const again = (await db.query(`select * from claim_email_outbox(10, ${first[0].id})`)).rows;
+    if (again.length !== 1 || again[0].attempts !== 2) throw new Error('a stuck email did not come back');
+    await db.exec(`delete from notifications where id = '${n}'`);
+    if ((await db.query(`select count(*)::int as c from email_outbox`)).rows[0].c) throw new Error('queue row outlived its notification');
+    console.log('ok   email queue: server only, one sender per email, stuck emails come back');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL email queue:', e.message);
+  }
+}
+
 process.exit(failed ? 1 : 0);
