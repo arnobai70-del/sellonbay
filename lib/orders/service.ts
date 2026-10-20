@@ -158,7 +158,58 @@ export async function refundAtProvider(o: Order): Promise<number> {
   return amount;
 }
 
+/* What a buyer chose, as one string: two orders with the same choice and price are the same purchase. */
+type Choice = Pick<NewOrder, 'kind' | 'pkg' | 'lines' | 'domain' | 'appName' | 'oses' | 'express' | 'instant' | 'githubUsername' | 'brief' | 'trialCreditFor'> & {
+  productKey?: string | null;
+  devKey?: string | null;
+};
+const choiceOf = (o: Choice) =>
+  JSON.stringify([
+    o.kind,
+    o.pkg,
+    o.productKey ?? null,
+    o.devKey ?? null,
+    o.lines,
+    o.domain ?? null,
+    o.appName ?? null,
+    o.oses ?? null,
+    !!o.express,
+    !!o.instant,
+    o.githubUsername ?? null,
+    o.brief ?? null,
+    o.trialCreditFor ?? null,
+  ]);
+
+/* One Buy at a time per buyer on this server, so a double click cannot slip two orders past the check below. */
+const buying = ((globalThis as { __buying?: Map<string, Promise<unknown>> }).__buying ??= new Map());
+async function oneAtATime<T>(key: string, run: () => Promise<T>): Promise<T> {
+  const before = buying.get(key) ?? Promise.resolve();
+  const mine = before.then(run, run);
+  const settled = mine.catch(() => undefined);
+  buying.set(key, settled);
+  try {
+    return await mine;
+  } finally {
+    if (buying.get(key) === settled) buying.delete(key);
+  }
+}
+
+/*
+ * A signed-in buyer who presses Buy again for the same thing (a double click, a reload, a second tab) within CONFIG.orderReuseMinutes gets the
+ * order already waiting for payment, so they cannot end up paying twice. Signed-out demo orders have no buyer to match on and are always new.
+ */
 export async function createOrder(i: NewOrder, now = Date.now()): Promise<Order> {
+  if (!i.buyerId) return insertOrder(i, now);
+  const buyerId = i.buyerId;
+  return oneAtATime(buyerId, async () => {
+    const want = choiceOf(i);
+    const recent = await (await orderStore()).unpaidSince(buyerId, now - CONFIG.orderReuseMinutes * 60_000);
+    const same = recent.find((o) => o.sellerId === (i.sellerId ?? null) && choiceOf(o) === want);
+    return same ?? insertOrder(i, now);
+  });
+}
+
+async function insertOrder(i: NewOrder, now: number): Promise<Order> {
   const total = i.lines.reduce((s, l) => s + l[1], 0);
   const o: Order = {
     id: crypto.randomUUID(),
