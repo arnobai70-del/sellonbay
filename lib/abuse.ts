@@ -8,6 +8,7 @@ import { notify, notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
 import { bump } from './metrics';
+import { forgetLiveProducts } from './catalog';
 
 /*
  * Abuse reports for hosted sites (spec 8.8). Anyone can report; every report reaches the admins. When enough DIFFERENT verified people (a verified-email account or
@@ -104,6 +105,7 @@ async function pauseListing(slug: string, note: string): Promise<boolean> {
       .eq('status', 'live')
       .select('seller_id');
     if (!data?.length) return false;
+    forgetLiveProducts();
     await notify(data[0].seller_id, 'listing_decision', { name: slug, decision: 'paused', note });
     return true;
   }
@@ -163,6 +165,7 @@ export async function decideReport(adminId: string | null, id: string, decision:
       .update({ status, note: n || null, decided_by: adminId, decided_at: new Date().toISOString() })
       .eq('id', id)
       .eq('status', 'open');
+    if (changed) forgetLiveProducts();
     await audit(adminId, `abuse_${decision}`, 'abuse_report', id, { url: r.site_url, listing: changed, note: n });
     return { ok: true };
   }
