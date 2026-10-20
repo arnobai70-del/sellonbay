@@ -8,7 +8,7 @@ import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { presaleSchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
-import { cannotAct } from '@/lib/accounts';
+import { BUYERS_ONLY, cannotAct, mayBuy } from '@/lib/accounts';
 
 export const runtime = 'nodejs';
 const fail = (error: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error, ...extra }, { status, headers: { 'cache-control': 'no-store' } });
@@ -38,8 +38,9 @@ export async function POST(req: Request) {
     } = await sb.auth.getUser();
     if (!user) return fail('Sign in to ask a question.', 401);
     userId = user.id;
-    const { data: me } = await sb.from('profiles').select('banned, suspended_until').eq('id', user.id).single();
+    const { data: me } = await sb.from('profiles').select('banned, suspended_until, role').eq('id', user.id).single();
     banned = cannotAct(me);
+    if (!banned && !mayBuy(me?.role)) return fail(BUYERS_ONLY, 403);
   }
   if (banned) return fail('This account cannot send messages.', 403);
 

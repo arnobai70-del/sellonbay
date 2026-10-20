@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { mayUseDemoAdmin } from '@/lib/admin/mode';
 import { createAdminClient, createClient } from './server';
 import { supabaseConfigured } from './env';
-import { cannotAct } from '@/lib/accounts';
+import { cannotAct, mayBuy } from '@/lib/accounts';
 
 export type ViewerRole = 'buyer' | 'seller' | 'admin';
 
@@ -44,6 +44,14 @@ export async function requireViewer(opts: { path: string; roles?: ViewerRole[] }
     if (aal?.currentLevel !== 'aal2') redirect('/login/mfa?next=' + encodeURIComponent(opts.path));
   }
   return { name: p.full_name || user.email || 'You', role };
+}
+
+/* Can this signed-in account buy? Only buyer accounts can; signed out (or demo mode) is left to each route. */
+export async function viewerMayBuy(id: string | null | undefined): Promise<boolean> {
+  if (!supabaseConfigured || !id) return true;
+  const sb = await createClient();
+  const { data: p } = await sb.from('profiles').select('role').eq('id', id).single();
+  return mayBuy(p?.role);
 }
 
 /* Is this signed-in account banned or suspended right now? Signed out (or demo mode) is not: those routes check their own access. */

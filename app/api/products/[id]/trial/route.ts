@@ -7,7 +7,7 @@ import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { CONFIG, DAY_MS } from '@/lib/config';
 import { idOf } from '@/lib/validate';
-import { cannotAct } from '@/lib/accounts';
+import { BUYERS_ONLY, cannotAct, mayBuy } from '@/lib/accounts';
 
 export const runtime = 'nodejs';
 const TRIAL_TTL = CONFIG.trialCopy.linkMinutes * 60;
@@ -25,8 +25,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return fail('Sign in to try a limited copy.', 401);
-  const { data: me } = await sb.from('profiles').select('banned, suspended_until').eq('id', user.id).single();
+  const { data: me } = await sb.from('profiles').select('banned, suspended_until, role').eq('id', user.id).single();
   if (cannotAct(me)) return fail('This account cannot download trials.', 403);
+  if (!mayBuy(me?.role)) return fail(BUYERS_ONLY, 403);
 
   const admin = createAdminClient();
   const { data: p } = await admin.from('products').select('id, seller_id, status, category, platform, trial_url').eq('slug', id).maybeSingle();

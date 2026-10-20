@@ -5,7 +5,7 @@ import { examplesBuyable } from '@/lib/examples';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { hireSchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
-import { cannotAct } from '@/lib/accounts';
+import { BUYERS_ONLY, cannotAct, mayBuy } from '@/lib/accounts';
 import { accountLockedOut } from '@/lib/supabase/viewer';
 import { guard } from '@/lib/guard';
 import { PAUSED_TEXT, checkoutPausedFor } from '@/lib/switches';
@@ -20,8 +20,9 @@ export async function POST(req: Request) {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return fail('Sign in first.', 401);
-  const { data: me } = await sb.from('profiles').select('banned, suspended_until').eq('id', user.id).single();
+  const { data: me } = await sb.from('profiles').select('banned, suspended_until, role').eq('id', user.id).single();
   if (cannotAct(me)) return fail('This account cannot place orders.', 403);
+  if (!mayBuy(me?.role)) return fail(BUYERS_ONLY, 403);
   const g = await guard('hire', user.id);
   if (!g.ok) return fail(g.error, g.status);
   if (await checkoutPausedFor(user.id)) return fail(PAUSED_TEXT, 503);
