@@ -75,3 +75,10 @@ describe('submit for review: blocked, and the message says what is missing', () 
     expect(reviewMessage(['a name of 3 to 60 characters', 'at least 1 screenshot'])).toBe('Before you submit for review, add: a name of 3 to 60 characters; at least 1 screenshot.');
   });
 });
+
+describe('stock media needs the licences and releases tick', () => {
+  const photos: ReviewInput = { ...figma, category: 'Photos' };
+  it('photos without the tick are held back, with a plain reason', () => expect(missingForReview(photos)).toEqual(['the tick that you hold the licences and signed releases for what the files show']));
+  it('photos with the tick can go to review', () => expect(missingForReview({ ...photos, release: true })).toEqual([]));
+  it('kinds that are not stock media never ask for it', () => expect(missingForReview(figma)).toEqual([]));
+});

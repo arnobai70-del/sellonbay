@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CATS, type ThemeKey } from '@/lib/data';
-import { NEEDS_DEMO, catsFor, toolsFor } from '@/lib/apps';
+import { NEEDS_DEMO, NEEDS_RELEASE, catsFor, toolsFor } from '@/lib/apps';
 import { DemoZipError, LIMITS, openDemoZip } from '@/lib/demoZip';
 import { removeDemo, saveDemo } from '@/lib/demoStore';
 import { allow } from '@/lib/delivery/service';
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
     price: text('price'),
     days: text('days'),
     clean: text('clean'),
+    release: text('release'),
     licenceType: text('licenceType'),
     third: text('third'),
     delivery: text('delivery'),
@@ -245,6 +246,7 @@ export async function POST(req: Request) {
     shots: shotFiles.length || keptShots,
     codeUrl,
     clean: text('clean') === 'on',
+    release: text('release') === 'on',
     requirements,
     docsUrl,
   });
@@ -263,6 +265,7 @@ export async function POST(req: Request) {
   if (platform === 'digital' && NEEDS_DEMO.includes(category) && !(demoUrl && isHttps(demoUrl)))
     return fail('Add a demo link (a short video, a view-only link or a sample result) so buyers can see it working.');
   if (platform === 'digital' && text('clean') !== 'on') return fail('Confirm that the files are clean and yours to sell.');
+  if (platform === 'digital' && NEEDS_RELEASE.includes(category) && text('release') !== 'on') return fail('Confirm that you hold the licences and signed releases for everything the files show.');
   if (desc.length < 20 || desc.length > 600) return fail('Describe the site in 20 to 600 characters.');
   if (!(price * 100 >= lim.priceMinCents && price * 100 <= lim.priceMaxCents)) return fail(`Price must be between $${lim.priceMinCents / 100} and $${lim.priceMaxCents / 100} for now.`);
   if (!fits(setupCents) || !fits(customCents))

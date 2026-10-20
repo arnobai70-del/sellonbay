@@ -90,6 +90,7 @@ export const listingFieldsSchema = z.object({
   price: text(12),
   days: text(30),
   clean: text(10),
+  release: text(10).optional(),
   licenceType: text(30).optional(),
   third: text(3000).optional(),
   delivery: text(20).optional(),
