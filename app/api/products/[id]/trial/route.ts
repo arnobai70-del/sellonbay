@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NEEDS_DEMO } from '@/lib/apps';
-import { allow, deliverySecret } from '@/lib/delivery/service';
+import { deliverySecret } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { signToken } from '@/lib/delivery/token';
 import { flags } from '@/lib/flags';
 import { supabaseConfigured } from '@/lib/supabase/env';
@@ -36,7 +37,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { data: p } = await admin.from('products').select('id, seller_id, status, category, platform, trial_url').eq('slug', id).maybeSingle();
   if (!p || p.status !== 'live' || !p.trial_url || p.platform !== 'digital' || !NEEDS_DEMO.includes(p.category)) return fail('This listing has no trial copy.', 404);
   if (p.seller_id === user.id) return fail('This is your own listing.', 400);
-  if (!allow(`trial:${user.id}:${p.id}`, CONFIG.trialCopy.requestsPerDay, DAY_MS)) return fail('Too many requests for this trial. Try again tomorrow.', 429);
+  if (!(await limit(`trial:${user.id}:${p.id}`, CONFIG.trialCopy.requestsPerDay, DAY_MS))) return fail('Too many requests for this trial. Try again tomorrow.', 429);
   const week = new Date(Date.now() - CONFIG.trialCopy.perBuyerProductDays * DAY_MS).toISOString();
   const { count } = await admin.from('download_events').select('id', { count: 'exact', head: true }).eq('kind', 'trial').eq('order_id', p.id).eq('user_id', user.id).gte('created_at', week);
   if ((count ?? 0) >= 1) return fail('You already tried this one this week. Buy it to get the full version.', 429);

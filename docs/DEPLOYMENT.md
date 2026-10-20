@@ -125,6 +125,7 @@ One-time setup (with the owner's permission):
 4. Adapt `deploy/nginx-sellonbay.conf.example` (server name, certificates) and create `/etc/nginx/sellonbay-upstream.conf` with `server 127.0.0.1:3101;`.
 5. Behind nginx, set `TRUSTED_PROXY_HOPS=1` so rate limits see the visitor's address (`lib/clientIp.ts`); add one more hop if Cloudflare is in front too.
 6. Point the cron jobs at the public address (as today), so they always reach the copy that is serving.
+7. Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (an Upstash Redis database) in `/etc/sellonbay/env`, so both copies share one count for rate limits (`lib/rateLimit.ts`). Without them each copy counts on its own, which doubles the limits while both run.
 
 Each release:
 

@@ -2,7 +2,7 @@ import 'server-only';
 import { audit } from './admin/audit';
 import { isBlocked } from './chatFilter';
 import { DAY_MS } from './config';
-import { allow } from './delivery/service';
+import { limit } from './rateLimit';
 import { notify, notifyAdmins } from './notify';
 import { FUNDED_STATES } from './orders/machine';
 import { orderStore } from './orders/store';
@@ -154,7 +154,7 @@ export async function publishVersion(sellerId: string, slug: string, i: { versio
   if (p.status !== 'live') return fail(409, 'You can publish a new version once the listing is live.');
   const bad = checkNewVersion(i);
   if (bad) return fail(400, bad);
-  if (!allow(`version:${sellerId}`, 10, 24 * 3_600_000)) return fail(429, 'You published a lot of versions today. Try again tomorrow.');
+  if (!(await limit(`version:${sellerId}`, 10, 24 * 3_600_000))) return fail(429, 'You published a lot of versions today. Try again tomorrow.');
   const version = i.version.trim();
   const all = await versionsOf(slug);
   if (all.some((v) => v.version.toLowerCase() === version.toLowerCase())) return fail(409, `Version ${version} already exists. Pick a new number.`);

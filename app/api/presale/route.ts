@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   if (banned) return fail('This account cannot send messages.', 403);
 
   if (!(await verifyTurnstile(b.token, ip))) return fail('The bot check did not pass. Reload the page and try again.', 400);
-  const limited = burstLimit(userId, ip);
+  const limited = await burstLimit(userId, ip);
   if (limited && !limited.ok) return fail(limited.error, limited.status);
 
   const productKey = String(b.productKey ?? '').slice(0, 80);

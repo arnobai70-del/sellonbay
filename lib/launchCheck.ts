@@ -9,6 +9,7 @@ import { clamavReady } from './scan/clamav';
 import { aiProvider } from './providers/ai';
 import { allowedAiBudget } from './ai/budget';
 import { isStale, lastBeat } from './heartbeat';
+import { sharedLimitsConfigured } from './rateLimit';
 import { emailConfirmationOn } from './authSettings';
 
 /*
@@ -39,6 +40,12 @@ export async function launchChecks(): Promise<Check[]> {
       `CRON_SECRET, and a scheduler calling POST /api/cron/orders every 5 to 10 minutes and /api/cron/payouts on Sundays. Orders job last finished: ${when(orders)}${late('orders', orders)}. Payout job last finished: ${when(payouts)}${late('payouts', payouts)}.`,
     ),
     c('Abuse hashing salt', set('GUARD_SALT', 32), 'GUARD_SALT: a random value of 32 or more characters. Set it once; changing it later forgets blocks.'),
+    c(
+      'Shared rate limits (Redis)',
+      sharedLimitsConfigured() && set('UPSTASH_REDIS_REST_TOKEN'),
+      'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN: needed once the site runs as two or more copies (blue-green, load balancer). Without them each copy counts limits on its own.',
+      'warn',
+    ),
     c(
       'Email confirmation',
       confirm === true,

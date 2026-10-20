@@ -3,11 +3,12 @@ import { createHash } from 'node:crypto';
 import { audit } from './admin/audit';
 import { isBlocked } from './chatFilter';
 import { CONFIG, DAY_MS } from './config';
-import { allow } from './delivery/service';
+import { limit } from './rateLimit';
 import { notify, notifyAdmins } from './notify';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
 import { bump } from './metrics';
+import { forgetLiveProducts } from './catalog';
 
 /*
  * Abuse reports for hosted sites (spec 8.8). Anyone can report; every report reaches the admins. When enough DIFFERENT verified people (a verified-email account or
@@ -50,7 +51,7 @@ export async function fileReport(i: { url: string; reason: string; detail: strin
   if (!url || !REASONS.includes(i.reason)) return fail(400, 'Check the address and the reason.');
   const detail = i.detail.trim().slice(0, 1000);
   // Too many reports from one address is itself a sign of abuse of this form.
-  if (!allow(`abuse-ip:${i.ip}`, CONFIG.abuse.perIpPerHour, 3_600_000)) return fail(429, 'You have sent a lot of reports. Try again later.');
+  if (!(await limit(`abuse-ip:${i.ip}`, CONFIG.abuse.perIpPerHour, 3_600_000))) return fail(429, 'You have sent a lot of reports. Try again later.');
   const key = reporterKey(i.userId, i.ip);
   const text = detail ? `${i.reason}: ${detail}` : i.reason;
   const slug = slugOf(url);
@@ -104,6 +105,7 @@ async function pauseListing(slug: string, note: string): Promise<boolean> {
       .eq('status', 'live')
       .select('seller_id');
     if (!data?.length) return false;
+    forgetLiveProducts();
     await notify(data[0].seller_id, 'listing_decision', { name: slug, decision: 'paused', note });
     return true;
   }
@@ -163,6 +165,7 @@ export async function decideReport(adminId: string | null, id: string, decision:
       .update({ status, note: n || null, decided_by: adminId, decided_at: new Date().toISOString() })
       .eq('id', id)
       .eq('status', 'open');
+    if (changed) forgetLiveProducts();
     await audit(adminId, `abuse_${decision}`, 'abuse_report', id, { url: r.site_url, listing: changed, note: n });
     return { ok: true };
   }

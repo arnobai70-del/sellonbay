@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { orderFor } from '@/lib/commerce/access';
-import { allow, deliverySecret, ensureLicense, ttlSeconds } from '@/lib/delivery/service';
+import { deliverySecret, ensureLicense, ttlSeconds } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { signToken } from '@/lib/delivery/token';
 import { decideRelease, releaseConfigFromEnv } from '@/lib/delivery/policy';
 import { HELD_TEXT, heldReason } from '@/lib/holds';
@@ -38,7 +39,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     );
     if (!d.allowed) return NextResponse.json({ error: 'Your files are almost ready.', availableAt: d.reason === 'delay' ? new Date(d.availableAtMs).toISOString() : undefined }, { status: 403 });
   }
-  if (!allow(`source:${o.buyerId ?? 'anon'}:${id}`, 5, 60 * 60 * 1000)) return NextResponse.json({ error: 'Too many download links requested. Try again in an hour.' }, { status: 429 });
+  if (!(await limit(`source:${o.buyerId ?? 'anon'}:${id}`, 5, 60 * 60 * 1000))) return NextResponse.json({ error: 'Too many download links requested. Try again in an hour.' }, { status: 429 });
   const licenseKey = await ensureLicense(id);
   const ttl = ttlSeconds();
   // A seller's real files come through the real route (signed in as the buyer); only a made-up starter gets the harmless dummy file.

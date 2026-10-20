@@ -6,6 +6,7 @@ import { unsuspend } from '../strikes';
 import { createAdminClient } from '../supabase/server';
 import { approvalBlock, latestScan, requireRealMalwareScanner, runScan, summarise } from '../scan';
 import { audit } from './audit';
+import { forgetLiveProducts } from '../catalog';
 
 /*
  * What admins review and decide: new listings, developer profiles, accounts and abuse reports. Each decision is written to the audit log
@@ -143,6 +144,7 @@ export async function decideListing(adminId: string | null, slug: string, decisi
   if (decision === 'approve' && hasFiles) update = update.eq('code_url', p.code_url);
   const { data: upd } = await update.select('id');
   if (!upd?.length) return fail(409, 'This listing has just changed.');
+  forgetLiveProducts();
   await audit(adminId, `listing_${decision}`, 'product', slug, { note: note.trim(), filesChecked, platform: p.platform });
   await notify(p.seller_id, 'listing_decision', { name: p.name, decision: WORD[decision], note: note.trim() || 'Your listing is live.' });
   return { ok: true };

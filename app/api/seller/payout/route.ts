@@ -5,7 +5,7 @@ import { notify } from '@/lib/notify';
 import { checkPayoutDetails, payoutLabel } from '@/lib/payoutDetails';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
-import { allow } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   if (p.role !== 'seller' && p.role !== 'admin') return no('Only sellers are paid out.', 403);
   const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal?.currentLevel !== 'aal2') return no('Enter your authenticator code first.', 403);
-  if (!allow(`payout-details:${user.id}`, 5, 24 * 3_600_000)) return no('You changed your payout details a few times today. Try again tomorrow.', 429);
+  if (!(await limit(`payout-details:${user.id}`, 5, 24 * 3_600_000))) return no('You changed your payout details a few times today. Try again tomorrow.', 429);
 
   const body = (await req.json().catch(() => null)) as { method?: unknown; account?: unknown } | null;
   const c = checkPayoutDetails(body?.method, body?.account);

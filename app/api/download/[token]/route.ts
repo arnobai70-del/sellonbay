@@ -3,7 +3,8 @@ import { isFundedState } from '@/lib/orders/machine';
 import { getOrder } from '@/lib/orders/service';
 import { decideRelease, releaseConfigFromEnv } from '@/lib/delivery/policy';
 import { baseEvent, filenameFromUrl, sendBuffer, sendUpstream } from '@/lib/delivery/serve';
-import { allow, clientIp, deliverySecret, dummyFile, ensureLicense } from '@/lib/delivery/service';
+import { clientIp, deliverySecret, dummyFile, ensureLicense } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { safeFetch } from '@/lib/delivery/ssrf';
 import { verifyToken } from '@/lib/delivery/token';
 import { createAdminClient } from '@/lib/supabase/server';
@@ -29,7 +30,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   if (closed) return closed;
   const t = tokenParam.safeParse((await params).token);
   const token = t.success ? t.data : '';
-  if (!allow(`dl-ip:${clientIp(req)}`, CONFIG.download.ipPerHour, HOUR_MS)) return no('Too many downloads from this address. Try again later.', 429);
+  if (!(await limit(`dl-ip:${clientIp(req)}`, CONFIG.download.ipPerHour, HOUR_MS))) return no('Too many downloads from this address. Try again later.', 429);
   const v = verifyToken(deliverySecret(), token);
   if (!v.ok) return v.error === 'expired' ? no('This download link has expired. Open your order and get a new one.', 410) : no('This download link is not valid.', 403);
   const { o: orderId, u: userId, k } = v.claims;

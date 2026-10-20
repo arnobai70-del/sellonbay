@@ -3,7 +3,7 @@ import { CATS, type ThemeKey } from '@/lib/data';
 import { NEEDS_DEMO, NEEDS_RELEASE, catsFor, toolsFor } from '@/lib/apps';
 import { DemoZipError, LIMITS, openDemoZip } from '@/lib/demoZip';
 import { removeDemo, saveDemo } from '@/lib/demoStore';
-import { allow } from '@/lib/delivery/service';
+import { limit } from '@/lib/rateLimit';
 import { flags } from '@/lib/flags';
 import { missingForReview, reviewMessage } from '@/lib/listingRules';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
@@ -18,6 +18,7 @@ import { getSettings } from '@/lib/settings';
 import { audit } from '@/lib/admin/audit';
 import { FUNDED_STATES } from '@/lib/orders/machine';
 import { maintenanceFor } from '@/lib/maintenance/service';
+import { forgetLiveProducts } from '@/lib/catalog';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -164,7 +165,7 @@ export async function POST(req: Request) {
   if (intent === 'draft') {
     // Soft save: only a name is needed. Files are not kept in drafts, and nothing here is shown to buyers.
     if (name.length < 3 || name.length > 60) return fail('Give your draft a name of 3 to 60 characters so you can find it later.');
-    if (!allow(`draft:${user.id}`, 40, 60 * 60_000)) return fail('You are saving drafts very fast. Try again in a minute.', 429);
+    if (!(await limit(`draft:${user.id}`, 40, 60 * 60_000))) return fail('You are saving drafts very fast. Try again in a minute.', 429);
     const admin = createAdminClient();
     const cats = isApp ? catsFor(platform) : CATS.filter((c) => c !== 'All');
     const row = {
@@ -296,7 +297,7 @@ export async function POST(req: Request) {
   // Only a listing that passed the cheap checks counts against the limit; opening a zip and storing files is the costly part.
   // An edit is not a new listing: it has its own, looser limit.
   if (editing) {
-    if (!allow(`edit:${user.id}`, 20, 60 * 60_000)) return fail('You are sending changes very fast. Try again in a few minutes.', 429);
+    if (!(await limit(`edit:${user.id}`, 20, 60 * 60_000))) return fail('You are sending changes very fast. Try again in a few minutes.', 429);
   } else {
     const g = await guard('listing', user.id);
     if (!g.ok) return fail(g.error, g.status);
@@ -446,9 +447,11 @@ export async function POST(req: Request) {
       return fail('The screenshots could not be stored. Nothing was saved, please try again.', 500);
     }
     if (draftSlug) await admin.from('products').delete().eq('slug', draftSlug).eq('seller_id', user.id).eq('status', 'draft');
+    if (editing) forgetLiveProducts(); // an edit of a live listing shows on the shelves at once on this copy
     return NextResponse.json({ ok: true, slug, hosted: false, files: names.length, edited: !!editing, status: editing ? editStatus : 'in_review' });
   }
   if (draftSlug) await admin.from('products').delete().eq('slug', draftSlug).eq('seller_id', user.id).eq('status', 'draft');
+  if (editing) forgetLiveProducts();
   return NextResponse.json({ ok: true, slug, hosted: !!opened || keptZip, files: opened?.count ?? 0, edited: !!editing, status: editing ? editStatus : 'in_review' });
 }
 
