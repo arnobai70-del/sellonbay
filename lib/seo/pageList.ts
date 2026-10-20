@@ -1,5 +1,6 @@
 import { BRAND_NAME } from '../brand';
-import { SELLER_KEEP_TEXT } from '../config';
+import { DIGITAL_TOPICS } from '../apps';
+import { BUGFIX_DAYS, REVIEW_HOURS, SELLER_KEEP_TEXT } from '../config';
 
 /*
  * The public pages whose title and description an admin can change at /dashboard/admin/seo/pages, with the built-in words each page uses
@@ -14,8 +15,16 @@ import { SELLER_KEEP_TEXT } from '../config';
 export type WordsSpec = { heading: string; intro?: string; body?: boolean };
 export type SeoPage = { path: string; name: string; title: string; description: string; words?: WordsSpec };
 
+/* A topic page's address: the digital shelf with ?topic= (also its canonical address). */
+export const topicPath = (key: string) => `/apps/digital?topic=${key}`;
+
 export const SEO_PAGES: SeoPage[] = [
-  { path: '/welcome', name: 'About (welcome)', title: 'Websites and apps ready for your domain', description: '' },
+  {
+    path: '/welcome',
+    name: 'About (welcome)',
+    title: 'Websites and apps ready for your domain',
+    description: `${BRAND_NAME} sells ready-made websites, apps and digital files. Pick one, give your domain, and the seller puts it live, paid into escrow.`,
+  },
   {
     path: '/browse',
     name: 'Browse websites',
@@ -30,7 +39,15 @@ export const SEO_PAGES: SeoPage[] = [
     path: '/apps/digital',
     name: 'Digital products',
     title: 'Digital products',
-    description: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, AI prompts and video templates. Files right after payment, money held in escrow until you accept.',
+    description: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, prompts and video templates. Files right after payment, money held in escrow until you accept.',
+  },
+  // One page per topic of the category bar (AI tools, Audio, Fonts...): the digital shelf narrowed to that topic.
+  ...DIGITAL_TOPICS.map((t) => ({ path: topicPath(t.key), name: `${t.label} (topic)`, title: t.label, description: t.lead })),
+  {
+    path: '/categories',
+    name: 'All categories',
+    title: 'All categories',
+    description: 'Every shelf and category on SellOnBay: websites, apps, AI tools, video, audio, graphics, design templates, photos, 3D, fonts, developers and domains.',
   },
   {
     path: '/developers',
@@ -42,7 +59,7 @@ export const SEO_PAGES: SeoPage[] = [
     path: '/developers/join',
     name: 'Become a developer',
     title: 'Become a developer',
-    description: '',
+    description: `Make a developer profile on ${BRAND_NAME}: your languages, skills and three fixed packages, paid through escrow when buyers accept your work.`,
     words: {
       heading: 'Create your developer profile',
       intro: 'Buyers filter by language and skill, so be specific. Prices are fixed per package, and payment is held in escrow until the buyer accepts.',
@@ -73,7 +90,7 @@ export const SEO_PAGES: SeoPage[] = [
     path: '/faq',
     name: 'Questions and answers',
     title: 'Questions and answers',
-    description: '',
+    description: `Short answers about buying and selling on ${BRAND_NAME}: escrow, delivery times, refunds, disputes, domains and payouts.`,
     words: { heading: 'Questions people ask', intro: 'Short answers about buying, selling, money and safety.' },
   },
   {
@@ -101,17 +118,53 @@ export const SEO_PAGES: SeoPage[] = [
         'Tell us what your business does in one line. We give you five pages your site should have, ten domain names to try, and ready-made sites that fit. Suggestions currently come from predefined templates, not a live AI model.',
     },
   },
-  { path: '/terms', name: 'Terms of service', title: 'Terms of service', description: '', words: { heading: 'Terms of service', body: true } },
-  { path: '/privacy', name: 'Privacy policy', title: 'Privacy policy', description: '', words: { heading: 'Privacy policy', body: true } },
-  { path: '/refunds', name: 'Refunds', title: 'Refunds', description: '', words: { heading: 'Refunds', body: true } },
-  { path: '/acceptable-use', name: 'Acceptable use', title: 'Acceptable use', description: '', words: { heading: 'Acceptable use', body: true } },
-  { path: '/seller-agreement', name: 'Seller agreement', title: 'Seller agreement', description: '', words: { heading: 'Seller agreement', body: true } },
-  { path: '/dmca', name: 'Copyright complaints', title: 'Copyright complaints', description: '', words: { heading: 'Copyright complaints', body: true } },
+  {
+    path: '/terms',
+    name: 'Terms of service',
+    title: 'Terms of service',
+    description: `The terms for buying and selling on ${BRAND_NAME}: accounts, orders, escrow, delivery, reviews, disputes and what each side agrees to.`,
+    words: { heading: 'Terms of service', body: true },
+  },
+  {
+    path: '/privacy',
+    name: 'Privacy policy',
+    title: 'Privacy policy',
+    description: `What ${BRAND_NAME} stores about you and why, how long we keep it, who we share it with, and how to export or delete your data.`,
+    words: { heading: 'Privacy policy', body: true },
+  },
+  {
+    path: '/refunds',
+    name: 'Refunds',
+    title: 'Refunds',
+    description: `When you can get your money back on ${BRAND_NAME}: the ${REVIEW_HOURS}-hour check, the ${BUGFIX_DAYS}-day bug-fix guarantee and disputes with evidence.`,
+    words: { heading: 'Refunds', body: true },
+  },
+  {
+    path: '/acceptable-use',
+    name: 'Acceptable use',
+    title: 'Acceptable use',
+    description: `What you may and may not sell or do on ${BRAND_NAME}: banned content, harmful code, copied work, spam, and how the rules are enforced.`,
+    words: { heading: 'Acceptable use', body: true },
+  },
+  {
+    path: '/seller-agreement',
+    name: 'Seller agreement',
+    title: 'Seller agreement',
+    description: `The agreement for selling on ${BRAND_NAME}: what you promise, licences, stock media releases, fees, payouts and what happens after a sale.`,
+    words: { heading: 'Seller agreement', body: true },
+  },
+  {
+    path: '/dmca',
+    name: 'Copyright complaints',
+    title: 'Copyright complaints',
+    description: `How to report copied work on ${BRAND_NAME}, what a copyright complaint must include, and how a seller can answer it.`,
+    words: { heading: 'Copyright complaints', body: true },
+  },
   {
     path: '/report-abuse',
     name: 'Report abuse',
     title: 'Report abuse',
-    description: '',
+    description: `Report a site, listing or account on ${BRAND_NAME} that looks like phishing, fraud or stolen work. We review every report.`,
     words: { heading: 'Report abuse', intro: `Tell us about a site hosted through ${BRAND_NAME} that looks like phishing, fraud or stolen work. We review every report.` },
   },
 ];

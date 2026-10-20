@@ -24,8 +24,10 @@ import { questionsForBuyer } from '@/lib/presale/service';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { getViewerId } from '@/lib/supabase/viewer';
 import { headers } from 'next/headers';
-import { deliveryOf, findAny, platformOf, shelfHref, shelfLabel, storeOf } from '@/lib/apps';
+import { deliveryOf, platformOf, shelfHref, shelfLabel, storeOf } from '@/lib/apps';
 import { getLiveDbProducts, visibleProduct } from '@/lib/catalog';
+import { listingMetadata, listingPath } from '@/lib/seo/listingMeta';
+import { allPageSeo } from '@/lib/seo/pageMeta';
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -34,8 +36,9 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const p = findAny(id);
-  return { title: p?.name ?? 'Details', description: p?.desc };
+  const found = await visibleProduct(id);
+  if (!found) return { title: 'Not found', robots: { index: false } };
+  return listingMetadata(found.product, found.status, (await allPageSeo())[listingPath(found.product.id)]);
 }
 
 export default async function Product({ params }: Props) {

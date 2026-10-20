@@ -1,16 +1,12 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DIGITAL_CATS, DIGITAL_TOPICS, catsFor, platformOf, shelfHref, shelfLabel, type Platform } from '@/lib/apps';
 import { CATS } from '@/lib/data';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { starterProducts } from '@/lib/examples';
 import { MARKET_MENU, topicHref } from '@/lib/marketMenu';
+import { pageMetadata } from '@/lib/seo/pageMeta';
 
-export const metadata: Metadata = {
-  title: 'All categories',
-  description: 'Every shelf and category on SellOnBay: websites, apps, AI tools, video, audio, graphics, design templates, photos, 3D, fonts, developers and domains.',
-  alternates: { canonical: '/categories' },
-};
+export const generateMetadata = () => pageMetadata('/categories', { alternates: { canonical: '/categories' } });
 export const dynamic = 'force-dynamic';
 
 const SHELF_ORDER: Platform[] = ['web', 'android', 'ios', 'webapp', 'desktop', 'digital'];

@@ -5,6 +5,7 @@ import { AdminForm } from '@/components/AdminForm';
 import { DashShell } from '@/components/DashShell';
 import { PageWordsForm } from '@/components/PageWordsForm';
 import { PAGE_SEO_GOOD, PAGE_SEO_MAX, PAGE_WORDS_MAX, seoPage } from '@/lib/seo/pageList';
+import { listingPage } from '@/lib/seo/listingMeta';
 import { allPageSeo } from '@/lib/seo/pageMeta';
 import { allPageWords } from '@/lib/seo/pageWords';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
@@ -17,8 +18,9 @@ export const dynamic = 'force-dynamic';
 export default async function EditPage({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
   const { path = '' } = await searchParams;
   const viewer = await requireViewer({ path: `/dashboard/admin/seo/pages/edit?path=${encodeURIComponent(path)}`, roles: ['admin'] });
-  const page = seoPage(path);
+  const page = seoPage(path) ?? (await listingPage(path));
   if (!page) notFound();
+  const isListing = 'product' in page;
   const [seo, words] = await Promise.all([allPageSeo(0), allPageWords(0)]);
   const s = seo[path] ?? { title: '', description: '' };
   const w = words[path] ?? { heading: '', intro: '', body: '' };
@@ -35,8 +37,8 @@ export default async function EditPage({ searchParams }: { searchParams: Promise
               </a>
             </p>
           </div>
-          <Link className="btn btn-line btn-sm" href="/dashboard/admin/seo/pages">
-            All pages
+          <Link className="btn btn-line btn-sm" href={isListing ? '/dashboard/admin/seo/listings' : '/dashboard/admin/seo/pages'}>
+            {isListing ? 'All listings' : 'All pages'}
           </Link>
         </div>
         <h3 className="pw-h">In Google</h3>
@@ -74,11 +76,13 @@ export default async function EditPage({ searchParams }: { searchParams: Promise
           <div>
             <h2>On the page</h2>
             <p className="sub">
-              {page.words
-                ? page.words.body
-                  ? 'The heading and the whole text of this page. Leave a box empty to keep the built-in words.'
-                  : 'The heading and the line under it. The rest of this page is built from live parts (lists, prices, forms) and stays as it is.'
-                : 'This page is built from live parts (products, developers, counts), so only its meta title and description can be changed here.'}
+              {isListing
+                ? "The listing's own words (name, description, pictures) are the seller's; change them from the seller's listing form."
+                : page.words
+                  ? page.words.body
+                    ? 'The heading and the whole text of this page. Leave a box empty to keep the built-in words.'
+                    : 'The heading and the line under it. The rest of this page is built from live parts (lists, prices, forms) and stays as it is.'
+                  : 'This page is built from live parts (products, developers, counts), so only its meta title and description can be changed here.'}
             </p>
           </div>
         </div>

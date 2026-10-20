@@ -91,3 +91,38 @@ test.describe('page words an admin rewrites (demo mode)', () => {
     expect((await request.get(`${DEMO}/dashboard/admin/seo/pages/edit?path=/nope`)).status()).toBe(404);
   });
 });
+
+test.describe('search words for listings and topics (demo mode)', () => {
+  test('a listing has automatic words, an admin can replace them, and the SEO check lists every address', async ({ page, request }) => {
+    const before = await (await request.get(`${DEMO}/product/saffron-table`)).text();
+    expect(before).toMatch(/<meta name="description" content="[^"]{70,}"/); // automatic, never empty
+    expect(before).toContain('<link rel="canonical" href="https://sellonbay.com/product/saffron-table"');
+
+    await page.goto(`${DEMO}/dashboard/admin/seo/listings`);
+    await page
+      .locator('.adm-card', { has: page.locator('a[href="/product/saffron-table"]') })
+      .getByRole('link', { name: 'Edit title and description' })
+      .click();
+    await expect(page).toHaveURL(/edit\?path=%2Fproduct%2Fsaffron-table/);
+    await page.getByLabel('Meta title').fill('Saffron Table restaurant site, ready in days');
+    await page.getByRole('button', { name: 'Save meta title and description' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Done.' })).toBeVisible();
+    await expect(async () => {
+      const html = await (await request.get(`${DEMO}/product/saffron-table`)).text();
+      expect(html).toContain('<title>Saffron Table restaurant site, ready in days</title>');
+    }).toPass({ timeout: 45_000 });
+    const reset = await request.post(`${DEMO}/api/admin/seo/pages`, { data: { path: '/product/saffron-table', title: '', description: '' }, headers: { origin: DEMO } });
+    expect(reset.status()).toBe(200); // back to the automatic words
+
+    const topic = await (await request.get(`${DEMO}/apps/digital?topic=fonts`)).text();
+    expect(topic).toContain('<link rel="canonical" href="https://sellonbay.com/apps/digital?topic=fonts"');
+    const xml = await (await request.get(`${DEMO}/sitemap.xml`)).text();
+    expect(xml).toContain('/apps/digital?topic=fonts</loc>');
+    expect(xml).toContain('/categories</loc>');
+
+    await page.goto(`${DEMO}/dashboard/admin/seo/check`);
+    await expect(page.getByRole('heading', { name: 'Every page, topic and listing' })).toBeVisible();
+    await expect(page.getByText('Listing: Saffron Table', { exact: false }).first()).toBeVisible();
+    expect((await request.get(`${DEMO}/dashboard/admin/seo/pages/edit?path=%2Fproduct%2Fno-such-thing`)).status()).toBe(404);
+  });
+});
