@@ -318,14 +318,14 @@ export default async function Product({ params }: Props) {
           <h2>How delivery works</h2>
           <p className="muted" style={{ maxWidth: '60ch' }}>
             {dv === 'store'
-              ? `After you pay, the seller rebrands the app and sends you a test build (${pl === 'ios' ? 'through TestFlight' : 'an install link for your phone'}). You have 48 hours to try it. Your payment stays with SellOnBay until you accept. Then the seller submits it to ${store} from your account, and the source files are released to you.`
+              ? `After you pay, the seller rebrands the app and sends you a test build (${pl === 'ios' ? 'through TestFlight' : 'an install link for your phone'}). You have 48 hours to try it. Your source files are ready to download as soon as you pay, and your payment stays with SellOnBay until you accept. Then the seller submits it to ${store} from your account.`
               : dv === 'installer'
-                ? 'After you pay, the seller rebrands the app and sends you installers to try on your own computer. You have 48 hours to try them. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'
+                ? 'After you pay, the seller rebrands the app and sends you installers to try on your own computer. You have 48 hours to try them. Your source files are ready to download as soon as you pay, and your payment stays with SellOnBay until you accept.'
                 : dv === 'download'
                   ? `After you pay, your files are ready at once through a secure link that lasts 24 hours (you can get a new one any time) with your own licence key. You have ${REVIEW_HOURS} hours to check them, and your payment stays with SellOnBay until you accept. Accept, or open a dispute (not as described, does not work, harmful code). If you do nothing, it is accepted after ${REVIEW_HOURS} hours. The seller is paid ${PAYOUT_HOLD_DAYS} days after acceptance. If you picked setup help or customisation, the seller works on it first.`
                   : dv === 'host'
-                    ? 'After you pay, the seller rebrands the app, deploys it on your domain and sends you a private test link. You have 48 hours to try it. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'
-                    : 'After you pay, the seller sets the site up on your domain and sends it for review. You have 48 hours to check the live site. Your payment stays with SellOnBay until you accept, and the source files are released when you do.'}
+                    ? 'After you pay, the seller rebrands the app, deploys it on your domain and sends you a private test link. You have 48 hours to try it. Your source files are ready to download as soon as you pay, and your payment stays with SellOnBay until you accept.'
+                    : 'After you pay, the seller sets the site up on your domain and sends it for review. You have 48 hours to check the live site. Your source files are ready to download as soon as you pay, and your payment stays with SellOnBay until you accept.'}
           </p>
         </div>
         <BuyBox p={p} locked={p.example && !examplesBuyable() ? EXAMPLE_NOTE : ''} />

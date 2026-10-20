@@ -26,7 +26,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: 'When do I get the source files?',
-        a: 'During the 48-hour review you check the live site on your own domain. The source files are released to you when you accept, or when the review ends and the order is accepted for you.',
+        a: 'As soon as your payment is in escrow, through a private download link that expires after 24 hours (you can ask for a new one). Sometimes a short safety check comes first. Your payment still goes to the seller only after you accept.',
       },
       {
         q: "Why can't we chat or pay outside SellOnBay?",
