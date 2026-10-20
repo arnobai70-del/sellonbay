@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BrowseClient, type Initial } from '@/components/BrowseClient';
 import { ShelfGuide } from '@/components/ShelfGuide';
-import { SHELVES, SLUG_TO_PLATFORM, appsFor } from '@/lib/apps';
+import { SHELVES, SLUG_TO_PLATFORM, appsFor, topicFor } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { showExamples } from '@/lib/examples';
 import { pageMetadata } from '@/lib/seo/pageMeta';
+import { topicPath } from '@/lib/seo/pageList';
 
 type Props = { params: Promise<{ platform: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -18,8 +19,11 @@ const DESC = {
     'AI tools, video templates, stock video, audio, graphics, design templates, photos, 3D models, fonts, plugins and scripts. Files right after payment, money held in escrow until you accept.',
 } as const;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const pl = SLUG_TO_PLATFORM[(await params).platform];
+  // A topic of the digital shelf (?topic=audio) is its own page in search, with its own words and address.
+  const t = pl === 'digital' ? topicFor(String((await searchParams).topic ?? '')) : undefined;
+  if (t) return pageMetadata(topicPath(t.key), { alternates: { canonical: topicPath(t.key) } });
   return pl ? pageMetadata(`/apps/${SHELVES[pl].slug}`, { title: SHELVES[pl].label, description: DESC[pl] }) : {};
 }
 

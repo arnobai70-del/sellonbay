@@ -11,7 +11,7 @@ describe('page titles and descriptions an admin can change', () => {
     expect(new Set(paths).size).toBe(paths.length);
     for (const p of SEO_PAGES) {
       expect(p.title.length).toBeGreaterThan(0);
-      expect(p.path).toMatch(/^\/[a-z/-]+$/);
+      expect(p.path).toMatch(/^\/[a-z/-]+(\?topic=[a-z0-9-]+)?$/);
     }
     // Every page file that calls pageMetadata names a listed path (a typo would silently keep the built-in words).
     const files: string[] = [];

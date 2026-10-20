@@ -5,7 +5,8 @@ import { audit } from '../admin/audit';
 import { orderStore } from '../orders/store';
 import { SITE_NAME } from '../site';
 import { createAdminClient } from '../supabase/server';
-import { SEO_PAGES, pageSeoProblem, seoPage, type PageSeo } from './pageList';
+import { listingPage } from './listingMeta';
+import { pageSeoProblem, seoPage, type PageSeo } from './pageList';
 
 /*
  * Title and description an admin saved for a public page (/dashboard/admin/seo/pages), kept in `app_settings` under "seo:page:<path>".
@@ -38,13 +39,7 @@ export async function allPageSeo(now = Date.now()): Promise<Record<string, PageS
   if (g.__pageSeoCache && now - g.__pageSeoCache.at < 30_000) return g.__pageSeoCache.value;
   let value: Record<string, PageSeo> = { ...mem.saved };
   if (await settingsTableReady()) {
-    const { data } = await createAdminClient()
-      .from('app_settings')
-      .select('key, value')
-      .in(
-        'key',
-        SEO_PAGES.map((p) => KEY(p.path)),
-      );
+    const { data } = await createAdminClient().from('app_settings').select('key, value').like('key', 'seo:page:%'); // the listed pages and any listing page (/product/<id>) an admin gave its own words
     value = Object.fromEntries((data ?? []).map((r) => [String(r.key).slice('seo:page:'.length), clean(r.value)]));
   }
   g.__pageSeoCache = { at: now, value };
@@ -72,7 +67,7 @@ export async function pageMetadata(path: string, extra: Metadata = {}): Promise<
 }
 
 export async function setPageSeo(adminId: string | null, path: string, v: PageSeo): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  if (!seoPage(path)) return { ok: false, status: 404, error: 'That page cannot be changed here.' };
+  if (!seoPage(path) && !(await listingPage(path))) return { ok: false, status: 404, error: 'That page cannot be changed here.' };
   const next = { title: v.title.trim(), description: v.description.trim() };
   const bad = pageSeoProblem(next);
   if (bad) return { ok: false, status: 400, error: bad };
@@ -88,7 +83,7 @@ export async function setPageSeo(adminId: string | null, path: string, v: PageSe
   g.__pageSeoCache = undefined;
   await audit(adminId, 'seo_page_changed', 'settings', path, { from: before, to: next });
   try {
-    revalidatePath(path);
+    revalidatePath(path.split('?')[0]); // a topic page (/apps/digital?topic=x) is refreshed through its shelf
   } catch {
     // outside a request (tests): nothing is cached to refresh
   }

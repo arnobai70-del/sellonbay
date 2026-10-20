@@ -73,6 +73,30 @@ export default async function SeoAdmin() {
       <div className="dp">
         <div className="hd">
           <div>
+            <h2>Every listing: title and description</h2>
+            <p className="sub">Each live listing gets them automatically from its name, category and description. Replace them for any listing.</p>
+          </div>
+          <Link className="btn btn-dark btn-sm" href="/dashboard/admin/seo/listings">
+            Edit listings
+          </Link>
+        </div>
+      </div>
+
+      <div className="dp">
+        <div className="hd">
+          <div>
+            <h2>SEO check</h2>
+            <p className="sub">Checks every page, topic and live listing for missing, too long, too short and repeated titles and descriptions, worst first.</p>
+          </div>
+          <Link className="btn btn-dark btn-sm" href="/dashboard/admin/seo/check">
+            Run the check
+          </Link>
+        </div>
+      </div>
+
+      <div className="dp">
+        <div className="hd">
+          <div>
             <h2>Home page in Google</h2>
             <p className="sub">The title and description search engines show for {SITE_URL}. Empty uses the built-in words.</p>
           </div>
@@ -133,11 +157,12 @@ export default async function SeoAdmin() {
         </div>
         <ul className="lst">
           {[
-            ['Sitemap', `${SITE_URL}/sitemap.xml lists every page, live listing, category page and published post.`, '/sitemap.xml'],
+            ['Sitemap', `${SITE_URL}/sitemap.xml lists every page, digital topic, live listing, category page and published post.`, '/sitemap.xml'],
             ['Robots file', 'Search engines are kept out of private pages (dashboard, orders, checkout, sign-in).', '/robots.txt'],
             ['Blog feed', `${live.length} published post${live.length === 1 ? '' : 's'} in the feed readers and some search tools use.`, '/blog/feed.xml'],
             ['Structured data', 'Products carry Product data with real reviews; posts carry Article data and a breadcrumb.', null],
             ['Share cards', 'Every page has a title, description and picture for Google, Facebook, LinkedIn and X.', null],
+            ['Automatic words', 'Pages, digital topics and listings all have their own title, description and canonical address; listings not live are kept out of search.', null],
             ['Category pages', 'A category gets its own page once it has 3 or more real products, so there are no thin pages.', null],
           ].map(([t, d, href]) => (
             <li key={t}>
