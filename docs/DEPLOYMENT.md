@@ -16,6 +16,7 @@ Run these on every change. CI runs them on every pull request.
 | Production build | `npm run build` |
 | No secret in the browser bundle | `npm run check:bundle` (after a build) |
 | Demo server smoke test | `npm run smoke:demo` |
+| Blue-green script plan and switch (stand-ins, no server) | `node --test deploy/blue-green.test.mjs` |
 | Browser tests in demo mode (no database) | build with `LAUNCHBAY_DEMO=1`, start on port 3002, `npm run test:e2e` (the real-server tests fail without port 3000; that is expected) |
 
 ## 2. What needs a staging database (later)
@@ -109,12 +110,33 @@ If a destructive step is really needed, take a backup, get the owner's written a
 The hosting plan is not decided yet: a Hostinger VPS or Hostinger's Node.js web hosting.
 
 - **Today (one app instance):** pull `main`, `npm ci`, `npm run build`, restart the Node process. The site is down for the few seconds the restart takes. Before a risky change, put only the affected module into maintenance (Admin → System → Maintenance Manager), not the whole site.
-- **Zero downtime (needs a VPS or two instances):** blue-green. Build the new version in a new folder, start it on a second port, and check that `/api/health` answers. Then switch the reverse proxy (nginx) to the new port and keep the old one running so you can switch back. Both versions run at once for a short time, so migrations must stay backward compatible (add first, remove later), and both instances need the same environment variables. Scripts for this will be added once the hosting is known.
+- **Zero downtime (needs a VPS):** blue-green with `deploy/blue-green.sh`. Hostinger's Node.js web hosting runs one copy only, so there the "today" way above stays. The scripts are ready in the repository but have not been run on any server.
+
+### Blue-green on a VPS
+
+Two copies of the site live side by side, `blue` (port 3101) and `green` (port 3102), each in its own folder under `/srv/sellonbay`. nginx sends visitors to one of them. A deploy builds the new version in the copy that is not serving, starts it, checks `/api/health` on its own port, and only then points nginx at it (nginx checks the new setting with `nginx -t` first and keeps the old one if it is refused). The old copy keeps running, so going back is one switch. If the new copy does not answer, visitors never leave the old one.
+
+One-time setup (with the owner's permission):
+
+1. Install Node 22, nginx and git. Create a `sellonbay` user and `/srv/sellonbay` owned by it.
+2. Put the production variables in `/etc/sellonbay/env` (readable only by `sellonbay` and root). Create `/etc/sellonbay/port-blue` containing `PORT=3101` and `/etc/sellonbay/port-green` containing `PORT=3102`.
+3. Copy `deploy/sellonbay@.service` to `/etc/systemd/system/`, then `systemctl daemon-reload` and `systemctl enable sellonbay@blue sellonbay@green`.
+4. Adapt `deploy/nginx-sellonbay.conf.example` (server name, certificates) and create `/etc/nginx/sellonbay-upstream.conf` with `server 127.0.0.1:3101;`.
+5. Behind nginx, set `TRUSTED_PROXY_HOPS=1` so rate limits see the visitor's address (`lib/clientIp.ts`); add one more hop if Cloudflare is in front too.
+6. Point the cron jobs at the public address (as today), so they always reach the copy that is serving.
+
+Each release:
+
+1. Apply any new migrations first (section 4). `npm run check:migration-safety` keeps them safe for the copy that is still running.
+2. `deploy/blue-green.sh deploy` (or `deploy/blue-green.sh deploy <tag or commit>`). `DRY_RUN=1` prints the plan without doing anything.
+3. Check the site. If something is wrong: `deploy/blue-green.sh rollback`. `deploy/blue-green.sh status` shows which copy serves and whether each one answers.
+
+Both copies read the same database, so module maintenance applies to both within 10 seconds (the cache in `lib/maintenance/state.ts`). Orders and payments are written by whichever copy gets the request, through the same state machine and ledger, so a switch does not lose or double them.
 
 Environment variables are set on the host, never in GitHub. `/dashboard/admin/launch` lists which ones are set (names only, never values).
 
 ## 6. Rolling back
 
-- **Code:** go back to the previous build (blue-green: switch the proxy back; one instance: check out the previous commit, build, restart).
+- **Code:** go back to the previous build (blue-green: `deploy/blue-green.sh rollback`; one instance: check out the previous commit, build, restart).
 - **Database:** migrations are not reversed. Fix forward with a new migration. Restore a backup only as a last resort, with the owner (RUNBOOK "Restore a backup"), because it loses everything written since the backup.
 - **One module misbehaving:** close only that module in the Maintenance Manager. If no admin screen opens, run `update module_maintenance set enabled = false;` in the SQL editor to reopen every module.
