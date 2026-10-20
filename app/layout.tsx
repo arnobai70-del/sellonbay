@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import './market.css';
 import { CookieNotice } from '@/components/CookieNotice';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
