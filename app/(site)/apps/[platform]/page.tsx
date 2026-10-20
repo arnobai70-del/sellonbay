@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BrowseClient, type Initial } from '@/components/BrowseClient';
+import { ShelfGuide } from '@/components/ShelfGuide';
 import { SHELVES, SLUG_TO_PLATFORM, appsFor } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
 import { showExamples } from '@/lib/examples';
@@ -33,5 +34,16 @@ export default async function Apps({ params, searchParams }: Props) {
     return Array.isArray(v) ? v[0] : v;
   };
   const initial: Initial = { cat: one('cat'), q: one('q'), feat: one('feat'), min: one('min'), max: one('max'), days: one('days'), rating: one('rating'), sort: one('sort'), saved: one('saved') };
-  return <BrowseClient initial={initial} items={[...(await getLiveDbProducts(pl)), ...((await showExamples()) ? appsFor(pl) : [])]} kind={pl} />;
+  // A search from the top bar lands here again with new words: the key starts the list over with them.
+  return (
+    <>
+      <BrowseClient
+        key={`${initial.q ?? ''}|${initial.cat ?? ''}|${initial.saved ?? ''}`}
+        initial={initial}
+        items={[...(await getLiveDbProducts(pl)), ...((await showExamples()) ? appsFor(pl) : [])]}
+        kind={pl}
+      />
+      <ShelfGuide kind={pl} />
+    </>
+  );
 }
