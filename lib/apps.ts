@@ -111,6 +111,8 @@ export const DIGITAL_TOOLS = [
 /* Things a buyer cannot judge from a picture: the seller must show them working (a video, a view-only link or a sample result). */
 /* A buyer cannot judge these from pictures alone. Prompts and video templates need sample results or a preview video. */
 export const NEEDS_DEMO = ['Plugins', 'Scripts', 'AI automations', 'Chatbots', 'AI prompts', 'Video templates', 'Motion graphics'];
+/* Stock media: anything in them may belong to someone else or show a real person, so the seller confirms licences and signed releases. */
+export const NEEDS_RELEASE = ['Stock video', 'Photos', 'Music', 'Sound effects', 'Fonts'];
 export const catsFor = (pl: Platform) => (pl === 'digital' ? DIGITAL_CATS : APP_CATS);
 export const toolsFor = (pl: Platform) => (pl === 'digital' ? DIGITAL_TOOLS : STACKS);
 export const STACKS = ['Flutter', 'React Native', 'Kotlin', 'Swift', 'SwiftUI', 'Java', 'Unity', 'Next.js', 'React', 'Vue', 'Laravel', 'Electron', 'Tauri', '.NET', 'Python', 'Other'];

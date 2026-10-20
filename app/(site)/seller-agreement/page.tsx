@@ -39,6 +39,16 @@ export default function SellerAgreement() {
         released to the buyer once the order is paid. Every download is logged.
       </p>
 
+      <h2>Stock video, photos, music and fonts</h2>
+      <p className="muted">[LAWYER REVIEW] Draft wording for stock media, added October 2026.</p>
+      <ul>
+        <li>Everything in your files is yours, or licensed to you in a way that lets you sell it on. That covers music, footage, photos, fonts, samples and any AI tool you used.</li>
+        <li>Anyone who can be recognised in a photo or video has signed a model release. Private property, buildings that need permission, and artwork have a property release.</li>
+        <li>You keep the releases and show them to us when asked, for example during a dispute or a copyright complaint.</li>
+        <li>No logos, brands or trademarks that you do not own, unless the listing says the file is for editorial use only.</li>
+        <li>If a release or licence turns out to be missing, we can pause the listing, refund the buyer and recover the money from your earnings.</li>
+      </ul>
+
       <h2>App templates and store rules</h2>
       <p>Apple and Google can reject rebranded template apps. You tell the buyer about that risk before they order. Store approval is not part of the delivery time.</p>
 
