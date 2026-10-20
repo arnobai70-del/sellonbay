@@ -130,7 +130,7 @@ An admin can close one module (13 in `MODULES`, `lib/maintenance/config.ts`) whi
 
 ## GitHub only (owner, 2026-10-20)
 
-All work is built, tested and committed in this repository. Never apply a migration, change the live Supabase database, reset or delete data, deploy or restart the live site, or change production environment variables without the owner's written permission. Tests that need a database wait for a staging project. The migration order and the deployment and rollback steps are in `docs/DEPLOYMENT.md` (a test keeps its list in step with `supabase/migrations`).
+All work is built, tested and committed in this repository. Never apply a migration, change the live Supabase database, reset or delete data, deploy or restart the live site, or change production environment variables without the owner's written permission. Tests that need a database wait for a staging project. The migration order and the deployment and rollback steps are in `docs/DEPLOYMENT.md` (a test keeps its list in step with `supabase/migrations`). New migrations must keep the running site working: `npm run check:migration-safety` (CI) refuses drops, deletes, renames, type changes and new required columns after 0049 unless the line above says `-- destructive-ok: <why, who agreed>`.
 
 ## Verify before launch
 
