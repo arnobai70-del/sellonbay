@@ -6,6 +6,7 @@ import { decide, getDispute } from '@/lib/disputes';
 import { refundAtProvider } from '@/lib/orders/service';
 import { paymentProvider } from '@/lib/providers/payment';
 import { idOf, readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({
@@ -18,6 +19,8 @@ const schema = z.object({
 
 /* The admin's decision on a dispute. Moves the order and the ledger, tells the payment provider about a refund, tells both sides, and is written to the audit log. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('disputes'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const id = await idOf(params);

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminOnly } from '@/lib/admin/guard';
 import { LIMITS, deletePost, savePost } from '@/lib/posts';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const text = (max: number) => z.string().max(max).default('');
@@ -26,6 +27,8 @@ const schema = z.discriminatedUnion('action', [
 
 /* Saves (creates, edits, publishes, unpublishes) or deletes a post. Admins only; every change is in the audit log. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('seo'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const body = await readJson(req, schema);

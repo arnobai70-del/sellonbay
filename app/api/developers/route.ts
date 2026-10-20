@@ -6,6 +6,7 @@ import { developerSchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
 import { cannotAct } from '@/lib/accounts';
 import { guard } from '@/lib/guard';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
@@ -25,6 +26,8 @@ const inList = <T extends string>(v: unknown, list: readonly T[], max: number): 
 /* Creates or replaces the signed-in person's developer profile. Everything is re-validated here; the client form is only a convenience.
    Any save puts the profile back in review, so approved text cannot be swapped for something else afterwards. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('seller'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const sb = await createClient();
   const {
     data: { user },

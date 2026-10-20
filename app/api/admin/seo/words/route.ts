@@ -4,6 +4,7 @@ import { adminOnly } from '@/lib/admin/guard';
 import { PAGE_WORDS_MAX } from '@/lib/seo/pageList';
 import { setPageWords } from '@/lib/seo/pageWords';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({
@@ -15,6 +16,8 @@ const schema = z.object({
 
 /* Saves the heading, intro and (policy pages) page text an admin rewrote for one public page (empty = the built-in words). Admins only; audited. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('seo'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const body = await readJson(req, schema);

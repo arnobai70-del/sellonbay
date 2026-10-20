@@ -16,6 +16,7 @@ import { fileForOrder } from '@/lib/versions';
 import { cleanFileHashes, requireRealMalwareScanner, trialCopyRefusal } from '@/lib/scan';
 import { audit } from '@/lib/admin/audit';
 import { notifyAdmins } from '@/lib/notify';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -24,6 +25,8 @@ const no = (error: string, status: number) => NextResponse.json({ error }, { sta
 
 /* Opens a signed download link. The link must be genuine and not expired, and the order is checked again every single time. */
 export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const t = tokenParam.safeParse((await params).token);
   const token = t.success ? t.data : '';
   if (!allow(`dl-ip:${clientIp(req)}`, CONFIG.download.ipPerHour, HOUR_MS)) return no('Too many downloads from this address. Try again later.', 429);

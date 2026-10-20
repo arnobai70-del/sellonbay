@@ -9,6 +9,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { presaleSchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
 import { BUYERS_ONLY, cannotAct, mayBuy } from '@/lib/accounts';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const fail = (error: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error, ...extra }, { status, headers: { 'cache-control': 'no-store' } });
@@ -19,6 +20,8 @@ const fail = (error: string, status: number, extra: Record<string, unknown> = {}
  * a daily cap per buyer per seller, then the same chat filter as order chat. Blocked attempts are stored for admins, with the reason.
  */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('messaging'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const ip = clientIp(req);
   const parsed = await readJson(req, presaleSchema);
   if (!parsed.ok) return parsed.res;

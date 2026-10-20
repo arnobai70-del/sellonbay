@@ -6,9 +6,12 @@ import { createClient } from '@/lib/supabase/server';
 import { viewerBlocked } from '@/lib/supabase/viewer';
 import { idOf, readJson } from '@/lib/validate';
 import { guard } from '@/lib/guard';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 /* The seller of an order asks the buyer for extra work: a title, a price and extra days. The buyer approves and pays it into escrow before any work starts. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const sb = await createClient();
   const {

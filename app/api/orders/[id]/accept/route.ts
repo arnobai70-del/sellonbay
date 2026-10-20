@@ -4,11 +4,14 @@ import { recordConsent, whoIs } from '@/lib/consent';
 import { accept, getOrder } from '@/lib/orders/service';
 import { createClient } from '@/lib/supabase/server';
 import { idOf, readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 const schema = z.object({ consent: z.literal(true) });
 
 /* The buyer accepts a delivered order. Only the buyer of that order can, with the box ticked (logged as evidence). The state machine decides whether it is allowed now. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const supabase = await createClient();
   const {

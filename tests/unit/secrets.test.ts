@@ -17,10 +17,11 @@ for (const d of SOURCE_DIRS) walk(path.join(root, d));
 sources.push({ file: 'proxy.ts', text: fs.readFileSync(path.join(root, 'proxy.ts'), 'utf8') });
 
 const SECRETS = ['SUPABASE_SERVICE_ROLE_KEY', 'DELIVERY_SECRET', 'PAYMENT_WEBHOOK_SECRET', 'CRON_SECRET', 'TURNSTILE_SECRET_KEY', 'GUARD_SALT'];
-/* The only files that may read a secret. Each is server code. lib/launchCheck.ts only checks whether a secret is set and how long it is, never shows it. */
+/* The only files that may read a secret. Each is server code. lib/launchCheck.ts only checks whether a secret is set and how long it is, never shows it.
+   lib/maintenance/state.ts reads module maintenance for proxy.ts, which cannot use the server client. */
 const CHECK = 'lib/launchCheck.ts';
 const ALLOWED: Record<string, string[]> = {
-  SUPABASE_SERVICE_ROLE_KEY: ['lib/supabase/server.ts', 'lib/catalog.ts', 'lib/delivery/service.ts', 'app/demo/[id]/[[...path]]/route.ts', CHECK],
+  SUPABASE_SERVICE_ROLE_KEY: ['lib/supabase/server.ts', 'lib/catalog.ts', 'lib/delivery/service.ts', 'app/demo/[id]/[[...path]]/route.ts', 'lib/maintenance/state.ts', CHECK],
   DELIVERY_SECRET: ['lib/delivery/service.ts', CHECK],
   PAYMENT_WEBHOOK_SECRET: ['lib/providers/payment/fake.ts', CHECK],
   CRON_SECRET: ['app/api/cron/orders/route.ts', 'app/api/cron/payouts/route.ts', CHECK],

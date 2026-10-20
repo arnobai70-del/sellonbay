@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/admin/guard';
 import { exportPayouts, payoutsCsv, weekStartOf } from '@/lib/payouts';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +10,8 @@ export const runtime = 'nodejs';
  * a GET could be fired by a link or an image on another page. Payout details are the sellers' own and stay admin-only.
  */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('admin'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const week = new URL(req.url).searchParams.get('week') ?? weekStartOf(Date.now());

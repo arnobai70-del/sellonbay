@@ -4,12 +4,15 @@ import { allow } from '@/lib/delivery/service';
 import { requestDeletion } from '@/lib/privacy';
 import { getViewerId, staffNeedsCode } from '@/lib/supabase/viewer';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({ confirm: z.literal('DELETE') });
 
 /* The signed-in person asks for their account to be deleted. Refused while orders, disputes or payouts are open. An admin then processes it. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('auth'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await getViewerId();
   if (!id) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
   if (await staffNeedsCode()) return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });

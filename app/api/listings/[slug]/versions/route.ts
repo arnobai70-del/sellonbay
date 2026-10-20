@@ -4,6 +4,7 @@ import { cannotAct } from '@/lib/accounts';
 import { createClient } from '@/lib/supabase/server';
 import { readJson } from '@/lib/validate';
 import { publishVersion } from '@/lib/versions';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({ version: z.string().max(40), changelog: z.string().max(4000), fileUrl: z.string().max(1000) });
@@ -11,6 +12,8 @@ const no = (error: string, status: number) => NextResponse.json({ error }, { sta
 
 /* The seller of a live digital listing publishes a new version. Needs the authenticator code. It is scanned, then an admin approves it. */
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const closed = await maintenanceFor('upload'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const { slug } = await params;
   const sb = await createClient();
   const {

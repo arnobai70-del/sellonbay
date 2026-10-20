@@ -6,6 +6,7 @@ import { getOrder } from '@/lib/orders/service';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { idOf } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const no = (error: string, status: number) => NextResponse.json({ error }, { status });
@@ -15,6 +16,8 @@ const no = (error: string, status: number) => NextResponse.json({ error }, { sta
  * parties see them with the last part hidden). Every admin download is written to the audit log.
  */
 export async function GET(_r: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('disputes'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const o = await getOrder(id);
   if (!o || !o.fundedAt) return no('Order not found.', 404);

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminOnly } from '@/lib/admin/guard';
 import { blockEmail, blockKey } from '@/lib/guard';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z
@@ -19,6 +20,8 @@ const schema = z
 
 /* Blocks a connection or a device (by its hash) or an email address (the address is hashed here). A reason is required and goes in the audit log. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('admin'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const body = await readJson(req, schema);

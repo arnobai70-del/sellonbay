@@ -4,6 +4,9 @@ import { mayUseDemoAdmin } from '@/lib/admin/mode';
 import { createAdminClient, createClient } from './server';
 import { supabaseConfigured } from './env';
 import { cannotAct, mayBuy } from '@/lib/accounts';
+import { moduleOfPage } from '@/lib/maintenance/config';
+import { maintenancePage } from '@/lib/maintenance/guard';
+import { closedRow } from '@/lib/maintenance/state';
 
 export type ViewerRole = 'buyer' | 'seller' | 'admin';
 
@@ -25,6 +28,10 @@ export async function getViewer() {
  * roles: who may open this page. Sellers and admins must also have passed the authenticator code (aal2).
  */
 export async function requireViewer(opts: { path: string; roles?: ViewerRole[] }) {
+  // Module maintenance, checked here too because a Server Action redirect skips proxy.ts. Only an admin with the code passes (not for the admin module).
+  const mod = moduleOfPage(opts.path);
+  const closed = mod ? await closedRow(mod) : null;
+  if (mod && closed && (!supabaseConfigured || mod === 'admin')) redirect(maintenancePage(mod));
   if (!supabaseConfigured) {
     if (opts.roles && !opts.roles.includes('buyer') && !mayUseDemoAdmin(process.env)) notFound();
     return null;
@@ -43,6 +50,7 @@ export async function requireViewer(opts: { path: string; roles?: ViewerRole[] }
     const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal?.currentLevel !== 'aal2') redirect('/login/mfa?next=' + encodeURIComponent(opts.path));
   }
+  if (mod && closed && role !== 'admin') redirect(maintenancePage(mod));
   return { name: p.full_name || user.email || 'You', role };
 }
 

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminOnly } from '@/lib/admin/guard';
 import { removeSellerReserve, setSellerReserve } from '@/lib/reserve';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({
@@ -16,6 +17,8 @@ const schema = z.object({
 
 /* Sets or removes one seller's reserve rule (a share of earnings kept back for some days). A reason is required and goes in the audit log. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('admin'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const body = await readJson(req, schema);

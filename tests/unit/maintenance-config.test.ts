@@ -43,6 +43,9 @@ const OPEN_PAGES = [
   '/report-abuse',
   '/dashboard',
   '/dashboard/admin/audit',
+  '/maintenance/x',
+  '/login',
+  '/login/mfa',
 ];
 
 describe('module registry', () => {
@@ -70,6 +73,8 @@ describe('module registry', () => {
     for (const p of ['/api/webhooks/payment', '/api/cron/orders', '/api/cron/payouts', '/api/health', '/api/admin/maintenance']) expect(moduleOfApi(p)).toBeNull();
     expect(moduleOfPage('/dashboard/admin/maintenance')).toBeNull();
     expect(moduleOfPage('/dashboard/admin/audit')).toBeNull();
+    expect(moduleOfPage('/login')).toBeNull(); // nobody, admins included, is locked out
+    expect(moduleOfPage('/reset-password')).toBe('auth');
   });
 
   it('matches the owner examples: one module closed leaves the others', () => {

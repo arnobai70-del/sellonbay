@@ -8,11 +8,14 @@ import { isFundedState } from '@/lib/orders/machine';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient } from '@/lib/supabase/server';
 import { idOf } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 
 /* Demo orders follow the same rule as real ones: nothing before the order is funded, then a signed 24-hour link and a licence key. */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const o = await orderFor(id);
   if (!o) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
