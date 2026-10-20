@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { CATS, FEATURES as WEB_FEATURES, doesFeature, imageFor, isNew, type Product } from '@/lib/data';
-import { APP_FEATURES, catsFor, shelfLabel, type Platform } from '@/lib/apps';
+import { APP_FEATURES, catsFor, shelfHref, shelfLabel, topicFor, type Platform } from '@/lib/apps';
 import { demoLift } from '@/lib/demoQuality';
 import { flags } from '@/lib/flags';
 import { useList } from '@/lib/saved';
@@ -84,7 +84,7 @@ const COPY: Record<Platform, { noun: string; plural: string; title: string; lead
 const PAGE = 12;
 const MAX_COMPARE = 3;
 
-export type Initial = { cat?: string; q?: string; feat?: string; min?: string; max?: string; days?: string; rating?: string; sort?: string; saved?: string; domain?: string };
+export type Initial = { cat?: string; q?: string; feat?: string; min?: string; max?: string; days?: string; rating?: string; sort?: string; saved?: string; domain?: string; topic?: string };
 
 /* A price from the address bar or a text box: digits only, anything else counts as empty. */
 const num = (v?: string) => (v && /^\d{1,4}$/.test(v) ? v : '');
@@ -113,7 +113,13 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
   const POPULAR = POPULAR_FOR[kind];
   const copy = COPY[kind];
   const FEATURES = kind === 'web' ? WEB_FEATURES : APP_FEATURES.filter((f) => items.some((p) => doesFeature(p, f.key))); // only options that exist on this shelf
-  const CATLIST = useMemo(() => (kind === 'web' ? CATS : ['All', ...catsFor(kind).filter((c) => items.some((p) => p.cat === c))]), [kind, items]);
+  // A topic (AI tools, Audio, Fonts...) narrows the digital shelf to its few kinds; each of them shows even before it has a product.
+  const [topic, setTopic] = useState(kind === 'digital' ? topicFor(initial.topic) : undefined);
+  const CATLIST = useMemo(
+    () => (kind === 'web' ? CATS : ['All', ...(topic ? topic.cats : catsFor(kind).filter((c) => c === initial.cat || items.some((p) => p.cat === c)))]),
+    [kind, items, topic, initial.cat],
+  );
+  const inScope = useMemo(() => (topic ? PRODUCTS.filter((p) => topic.cats.includes(p.cat)) : PRODUCTS), [PRODUCTS, topic]);
   const hi = useMemo(() => Math.max(10, Math.ceil(Math.max(...PRODUCTS.map((p) => p.price)) / 10) * 10), [PRODUCTS]);
 
   const [cat, setCat] = useState(CATLIST.includes(initial.cat ?? '') ? initial.cat! : 'All');
@@ -133,11 +139,12 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
 
   const lo = num(min) === '' ? 0 : +min,
     top = num(max) === '' ? Infinity : +max;
-  const countIn = (c: string) => (c === 'All' ? PRODUCTS.length : PRODUCTS.filter((p) => p.cat === c).length);
+  const countIn = (c: string) => (c === 'All' ? inScope.length : inScope.filter((p) => p.cat === c).length);
 
   // Keep the address in step with the filters, so a filtered view can be shared, bookmarked and reached with the Back button.
   useEffect(() => {
     const sp = new URLSearchParams();
+    if (topic) sp.set('topic', topic.key);
     if (cat !== 'All') sp.set('cat', cat);
     if (q) sp.set('q', q);
     if (feature) sp.set('feat', feature);
@@ -150,11 +157,11 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
     if (initial.domain) sp.set('domain', initial.domain);
     const qs = sp.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
-  }, [cat, q, feature, min, max, days, rating, sort, onlySaved, initial.domain]);
+  }, [topic, cat, q, feature, min, max, days, rating, sort, onlySaved, initial.domain]);
 
   useEffect(() => {
     setShown(PAGE);
-  }, [cat, q, feature, min, max, days, rating, sort, onlySaved]);
+  }, [topic, cat, q, feature, min, max, days, rating, sort, onlySaved]);
   useEffect(() => {
     if (!drawer) return;
     const k = (e: KeyboardEvent) => {
@@ -170,37 +177,44 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return PRODUCTS.filter(
-      (p) =>
-        (cat === 'All' || p.cat === cat) &&
-        p.price >= lo &&
-        p.price <= top &&
-        (!feature || doesFeature(p, feature)) &&
-        (!days || p.days <= +days) &&
-        (!rating || (p.reviews > 0 && p.rating >= +rating)) &&
-        (!onlySaved || saved.includes(p.id)) &&
-        (!needle || score(p, needle) > 0),
-    ).sort((a, b) => {
-      switch (sort) {
-        case 'low':
-          return a.price - b.price;
-        case 'high':
-          return b.price - a.price;
-        case 'sold':
-          return b.sold - a.sold;
-        case 'new':
-          return b.added.localeCompare(a.added);
-        case 'az':
-          return a.name.localeCompare(b.name);
-        case 'best':
-          return needle ? score(b, needle) * 10 + fair(b) - (score(a, needle) * 10 + fair(a)) : fair(b) - fair(a);
-        default:
-          return b.rating - a.rating;
-      }
-    });
-  }, [PRODUCTS, cat, q, sort, lo, top, feature, days, rating, onlySaved, saved]);
+    return inScope
+      .filter(
+        (p) =>
+          (cat === 'All' || p.cat === cat) &&
+          p.price >= lo &&
+          p.price <= top &&
+          (!feature || doesFeature(p, feature)) &&
+          (!days || p.days <= +days) &&
+          (!rating || (p.reviews > 0 && p.rating >= +rating)) &&
+          (!onlySaved || saved.includes(p.id)) &&
+          (!needle || score(p, needle) > 0),
+      )
+      .sort((a, b) => {
+        switch (sort) {
+          case 'low':
+            return a.price - b.price;
+          case 'high':
+            return b.price - a.price;
+          case 'sold':
+            return b.sold - a.sold;
+          case 'new':
+            return b.added.localeCompare(a.added);
+          case 'az':
+            return a.name.localeCompare(b.name);
+          case 'best':
+            return needle ? score(b, needle) * 10 + fair(b) - (score(a, needle) * 10 + fair(a)) : fair(b) - fair(a);
+          default:
+            return b.rating - a.rating;
+        }
+      });
+  }, [inScope, cat, q, sort, lo, top, feature, days, rating, onlySaved, saved]);
 
   const chips: { key: string; label: string; clear: () => void }[] = [];
+  const leaveTopic = () => {
+    setTopic(undefined);
+    setCat('All');
+  };
+  if (topic) chips.push({ key: 'topic', label: topic.label, clear: leaveTopic });
   if (cat !== 'All') chips.push({ key: 'cat', label: cat, clear: () => setCat('All') });
   if (q) chips.push({ key: 'q', label: `"${q}"`, clear: () => setQ('') });
   if (feature) chips.push({ key: 'feat', label: FEATURES.find((f) => f.key === feature)!.label, clear: () => setFeature(null) });
@@ -217,6 +231,7 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
   if (rating) chips.push({ key: 'rating', label: `Rated ${rating}+`, clear: () => setRating('') });
   if (onlySaved) chips.push({ key: 'saved', label: 'Saved only', clear: () => setOnlySaved(false) });
   const reset = () => {
+    setTopic(undefined);
     setCat('All');
     setQ('');
     setFeature(null);
@@ -227,6 +242,8 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
     setOnlySaved(false);
   };
 
+  // A topic or kind with no products yet: say so plainly and invite sellers, instead of "no match".
+  const fresh = kind === 'digital' && (!!topic || cat !== 'All') && countIn(cat) === 0;
   const toggleCmp = (id: string) => setPicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length < MAX_COMPARE ? [...s, id] : s));
   const pickedItems = picked.map((id) => PRODUCTS.find((p) => p.id === id)).filter((p): p is Product => !!p);
   const visible = list.slice(0, shown);
@@ -350,12 +367,22 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
             <span aria-hidden="true">/</span>
             <Link href="/categories">Categories</Link>
             <span aria-hidden="true">/</span>
-            <span aria-current="page">{shelfLabel(kind)}</span>
+            {topic ? (
+              <>
+                <Link href={shelfHref(kind)} onClick={leaveTopic}>
+                  {shelfLabel(kind)}
+                </Link>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{topic.label}</span>
+              </>
+            ) : (
+              <span aria-current="page">{shelfLabel(kind)}</span>
+            )}
           </nav>
           <div className="mk-shelfhead-row">
             <div className="mk-shelfhead-copy">
-              <h1>{copy.title}</h1>
-              <p className="lead">{copy.lead}</p>
+              <h1>{topic ? topic.label : copy.title}</h1>
+              <p className="lead">{topic ? topic.lead : copy.lead}</p>
             </div>
             <label className="search bsearch mk-shelfsearch">
               <span className="sr">Search {copy.plural}</span>
@@ -374,7 +401,7 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
           <div className="mk-catchips" role="group" aria-label="Categories">
             {CATLIST.map((c) => (
               <button key={c} type="button" aria-pressed={cat === c} onClick={() => setCat(c)}>
-                {c === 'All' ? `All ${copy.plural}` : c}
+                {c === 'All' ? (topic ? `All in ${topic.label}` : `All ${copy.plural}`) : c}
                 <em>{countIn(c)}</em>
               </button>
             ))}
@@ -411,7 +438,7 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
             <div className="bl-bar">
               <p className="muted" aria-live="polite">
                 <b>{list.length}</b> {list.length === 1 ? copy.noun : copy.plural}
-                {list.length !== PRODUCTS.length && <> of {PRODUCTS.length}</>}
+                {list.length !== inScope.length && <> of {inScope.length}</>}
               </p>
               <div className="bl-bar-r">
                 <button type="button" className="btn btn-line btn-sm bl-fbtn" onClick={() => setDrawer(true)}>
@@ -451,28 +478,45 @@ export function BrowseClient({ initial, items, kind = 'web' }: { initial: Initia
                 visible.map((p) => <TallCard key={p.id} p={p} compare={{ on: picked.includes(p.id), full: picked.length >= MAX_COMPARE, toggle: () => toggleCmp(p.id) }} />)
               ) : (
                 <div className="empty bl-empty" style={{ gridColumn: '1/-1' }}>
-                  <b>{onlySaved && !saved.length ? 'Nothing saved yet' : `No ${copy.plural} match these filters`}</b>
-                  <p>{onlySaved && !saved.length ? 'Tap the heart on a site to keep it here.' : 'Try fewer filters or a different word.'}</p>
-                  <div className="bl-empty-btns">
-                    {chips.length > 0 && (
-                      <button type="button" className="btn btn-blue btn-sm" onClick={reset}>
-                        Clear all filters
-                      </button>
-                    )}
-                    {POPULAR.slice(0, 3).map((w) => (
-                      <button
-                        key={w}
-                        type="button"
-                        className="btn btn-line btn-sm"
-                        onClick={() => {
-                          reset();
-                          setQ(w);
-                        }}
-                      >
-                        Try &ldquo;{w}&rdquo;
-                      </button>
-                    ))}
-                  </div>
+                  {fresh ? (
+                    <>
+                      <b>Nothing in {cat === 'All' ? topic!.label : cat} yet</b>
+                      <p>This part of the store is new. Sellers can list here now, and every order is held in escrow like the rest.</p>
+                      <div className="bl-empty-btns">
+                        <Link className="btn btn-blue btn-sm" href="/sell">
+                          Sell yours here
+                        </Link>
+                        <button type="button" className="btn btn-line btn-sm" onClick={reset}>
+                          See all {copy.plural}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <b>{onlySaved && !saved.length ? 'Nothing saved yet' : `No ${copy.plural} match these filters`}</b>
+                      <p>{onlySaved && !saved.length ? 'Tap the heart on a site to keep it here.' : 'Try fewer filters or a different word.'}</p>
+                      <div className="bl-empty-btns">
+                        {chips.length > 0 && (
+                          <button type="button" className="btn btn-blue btn-sm" onClick={reset}>
+                            Clear all filters
+                          </button>
+                        )}
+                        {POPULAR.slice(0, 3).map((w) => (
+                          <button
+                            key={w}
+                            type="button"
+                            className="btn btn-line btn-sm"
+                            onClick={() => {
+                              reset();
+                              setQ(w);
+                            }}
+                          >
+                            Try &ldquo;{w}&rdquo;
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

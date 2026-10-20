@@ -14,7 +14,8 @@ const DESC = {
   ios: 'Ready-made iPhone and iPad apps, rebranded and sent to your own App Store account in 1 to 7 days.',
   webapp: 'Ready-made web apps, rebranded and deployed on your own domain in 1 to 7 days.',
   desktop: 'Ready-made desktop apps for Windows, Mac and Linux, rebranded and sent as installers in 1 to 7 days.',
-  digital: 'Figma kits, no-code templates, plugins, scripts, AI automations, chatbots, AI prompts and video templates. Files right after payment, money held in escrow until you accept.',
+  digital:
+    'AI tools, video templates, stock video, audio, graphics, design templates, photos, 3D models, fonts, plugins and scripts. Files right after payment, money held in escrow until you accept.',
 } as const;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,12 +34,23 @@ export default async function Apps({ params, searchParams }: Props) {
     const v = sp[k];
     return Array.isArray(v) ? v[0] : v;
   };
-  const initial: Initial = { cat: one('cat'), q: one('q'), feat: one('feat'), min: one('min'), max: one('max'), days: one('days'), rating: one('rating'), sort: one('sort'), saved: one('saved') };
+  const initial: Initial = {
+    cat: one('cat'),
+    q: one('q'),
+    feat: one('feat'),
+    min: one('min'),
+    max: one('max'),
+    days: one('days'),
+    rating: one('rating'),
+    sort: one('sort'),
+    saved: one('saved'),
+    topic: one('topic'),
+  };
   // A search from the top bar lands here again with new words: the key starts the list over with them.
   return (
     <>
       <BrowseClient
-        key={`${initial.q ?? ''}|${initial.cat ?? ''}|${initial.saved ?? ''}`}
+        key={`${initial.topic ?? ''}|${initial.q ?? ''}|${initial.cat ?? ''}|${initial.saved ?? ''}`}
         initial={initial}
         items={[...(await getLiveDbProducts(pl)), ...((await showExamples()) ? appsFor(pl) : [])]}
         kind={pl}

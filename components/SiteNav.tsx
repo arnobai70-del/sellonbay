@@ -8,7 +8,7 @@ import { SHELF_OPTIONS } from '@/lib/storeShelves';
 import { Logo } from './Logo';
 
 /* Which category-bar entry a page belongs to, from the key SiteNavByPath picks. */
-const ENTRY_OF: Record<string, string> = { browse: 'web', find: 'web', how: 'help', apps: 'android' };
+const ENTRY_OF: Record<string, string> = { browse: 'web', find: 'web', domains: 'web', webapp: 'web', how: 'help', apps: 'apps', android: 'apps', ios: 'apps', desktop: 'apps', digital: '' };
 const entryFor = (active: string) => ENTRY_OF[active] ?? active;
 
 const Chevron = () => (

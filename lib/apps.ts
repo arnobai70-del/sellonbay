@@ -33,7 +33,49 @@ export const STORE_NAME: Record<'android' | 'ios', string> = { android: 'Google 
 
 export const APP_CATS = ['Fitness', 'Food', 'Productivity', 'Travel', 'Finance', 'Education', 'Business', 'Utilities'];
 /* Digital products: delivered as files or access, never put live on a domain. */
-export const DIGITAL_CATS = ['Figma kits', 'No-code templates', 'Plugins', 'Scripts', 'AI automations', 'Chatbots', 'AI prompts', 'Video templates'];
+export const DIGITAL_CATS = [
+  'Figma kits',
+  'No-code templates',
+  'Plugins',
+  'Scripts',
+  'AI automations',
+  'Chatbots',
+  'AI prompts',
+  'Video templates',
+  // creative assets (owner, 2026-10-20: the topics of a big asset marketplace)
+  'Motion graphics',
+  'Stock video',
+  'Music',
+  'Sound effects',
+  'Graphics',
+  'Add-ons',
+  'Presentation templates',
+  'Print templates',
+  'Mockups',
+  'Social media templates',
+  'Logo templates',
+  'Photos',
+  '3D models',
+  'Fonts',
+];
+/* The digital shelf grouped the way the top bar shows it: one topic per menu entry, each a few categories. */
+export const DIGITAL_TOPICS: { key: string; label: string; cats: string[]; lead: string }[] = [
+  { key: 'ai', label: 'AI tools', cats: ['AI automations', 'Chatbots', 'AI prompts'], lead: 'Automations, chatbots and prompt packs that do real work, each with a demo or sample results.' },
+  { key: 'video-templates', label: 'Video templates', cats: ['Video templates', 'Motion graphics'], lead: 'Titles, openers, promos and motion graphics for the video app you already use.' },
+  { key: 'stock-video', label: 'Stock video', cats: ['Stock video'], lead: 'Clips and footage you can use in your own videos, with the licence on every listing.' },
+  { key: 'audio', label: 'Audio', cats: ['Music', 'Sound effects'], lead: 'Music tracks and sound effects for videos, podcasts, apps and games.' },
+  { key: 'graphics', label: 'Graphics', cats: ['Graphics', 'Add-ons'], lead: 'Icons, illustrations, textures, brushes and presets for your design app.' },
+  {
+    key: 'design-templates',
+    label: 'Design templates',
+    cats: ['Figma kits', 'Presentation templates', 'Print templates', 'Mockups', 'Social media templates', 'Logo templates'],
+    lead: 'UI kits, slides, print files, mockups, social posts and logos you edit and make your own.',
+  },
+  { key: 'photos', label: 'Photos', cats: ['Photos'], lead: 'Photos for websites, ads and social posts, with the licence on every listing.' },
+  { key: '3d', label: '3D', cats: ['3D models'], lead: 'Models and scenes for your 3D app, with the formats listed up front.' },
+  { key: 'fonts', label: 'Fonts', cats: ['Fonts'], lead: 'Typefaces for brands, sites and print, with a licence that says where you may use them.' },
+];
+export const topicFor = (key?: string | null) => DIGITAL_TOPICS.find((t) => t.key === key);
 export const DIGITAL_TOOLS = [
   'Figma',
   'Notion',
@@ -52,11 +94,23 @@ export const DIGITAL_TOOLS = [
   'Premiere Pro',
   'After Effects',
   'CapCut',
+  'DaVinci Resolve',
+  'Final Cut Pro',
+  'Photoshop',
+  'Illustrator',
+  'InDesign',
+  'Canva',
+  'PowerPoint',
+  'Keynote',
+  'Google Slides',
+  'Blender',
+  'Cinema 4D',
+  'Procreate',
   'Other',
 ];
 /* Things a buyer cannot judge from a picture: the seller must show them working (a video, a view-only link or a sample result). */
 /* A buyer cannot judge these from pictures alone. Prompts and video templates need sample results or a preview video. */
-export const NEEDS_DEMO = ['Plugins', 'Scripts', 'AI automations', 'Chatbots', 'AI prompts', 'Video templates'];
+export const NEEDS_DEMO = ['Plugins', 'Scripts', 'AI automations', 'Chatbots', 'AI prompts', 'Video templates', 'Motion graphics'];
 export const catsFor = (pl: Platform) => (pl === 'digital' ? DIGITAL_CATS : APP_CATS);
 export const toolsFor = (pl: Platform) => (pl === 'digital' ? DIGITAL_TOOLS : STACKS);
 export const STACKS = ['Flutter', 'React Native', 'Kotlin', 'Swift', 'SwiftUI', 'Java', 'Unity', 'Next.js', 'React', 'Vue', 'Laravel', 'Electron', 'Tauri', '.NET', 'Python', 'Other'];
