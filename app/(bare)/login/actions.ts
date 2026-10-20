@@ -6,6 +6,7 @@ import { guard, noteAccount } from '@/lib/guard';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { safeNext } from '@/lib/safeNext';
 import { clientAddress } from '@/lib/clientIp';
+import { maintenanceMessage } from '@/lib/maintenance/service';
 import { SITE_URL } from '@/lib/site';
 
 const back = (msg: string): never => redirect('/login?error=' + encodeURIComponent(msg));
@@ -35,6 +36,9 @@ export async function authenticate(formData: FormData) {
   if (!email || password.length < 8) return back('Use a valid email and a password of at least 8 characters.');
 
   if (signup && !name) return back('Enter your name.');
+  // Sign-in stays open during auth maintenance (nobody is locked out); new accounts wait.
+  const closed = signup ? await maintenanceMessage('auth') : null;
+  if (closed) return back(closed);
   if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
   const g = await guard(signup ? 'signup' : 'login', null, { email });
   if (!g.ok) return back(g.error);
@@ -73,6 +77,8 @@ export async function signOut() {
 export async function requestReset(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim();
   if (!email) return back('Enter your email.');
+  const closed = await maintenanceMessage('auth');
+  if (closed) return back(closed);
   if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
   // The link is built from our own address, never from request headers someone could set.
   await (await createClient()).auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/auth/callback?next=/reset-password` });

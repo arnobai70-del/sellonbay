@@ -8,6 +8,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { CONFIG, DAY_MS } from '@/lib/config';
 import { idOf } from '@/lib/validate';
 import { BUYERS_ONLY, cannotAct, mayBuy } from '@/lib/accounts';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const TRIAL_TTL = CONFIG.trialCopy.linkMinutes * 60;
@@ -18,6 +19,8 @@ const fail = (error: string, status: number) => NextResponse.json({ error }, { s
  * Behind FEATURE_TRIAL_COPY. Rules: signed in, one trial per buyer per product per 7 days, a one-hour signed link, every download logged.
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('checkout'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   if (!flags.trialCopy || !supabaseConfigured) return fail('Not found.', 404);
   const id = await idOf(params);
   const sb = await createClient();

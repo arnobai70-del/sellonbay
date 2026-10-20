@@ -328,3 +328,12 @@ html.sheet-open{overflow:hidden}
 .gp-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
 .gp-note{margin-top:16px;font-size:14px}
 @media(max-width:980px){.gp-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Module maintenance notice (components/MaintenanceNotice.tsx) */
+.mn{padding:56px 24px 96px}
+.mn-card{max-width:640px;margin:0 auto;border:1px solid var(--line);border-radius:16px;padding:32px;background:#fff}
+.mn-card h1{margin:0 0 10px}
+.mn-card h2{font-size:1.05rem;margin:24px 0 6px}
+.mn-until{color:var(--ink-2)}
+.mn-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+@media (max-width:640px){.mn{padding:32px 16px 72px}.mn-card{padding:22px}}

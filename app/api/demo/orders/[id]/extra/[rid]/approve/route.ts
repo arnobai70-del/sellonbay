@@ -5,11 +5,14 @@ import { getExtra } from '@/lib/orders/extra';
 import { handlePaymentEvent } from '@/lib/orders/payments';
 import { fakePayments } from '@/lib/providers/payment';
 import { idOf, idParam } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 
 /* The buyer approves extra work and pays it into escrow. Demo gateway: the test card 4242 pays. A real provider would send the buyer to its payment page instead. */
 export async function POST(_r: Request, { params }: { params: Promise<{ id: string; rid: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const o = await orderFor(await idOf(params));
   if (!o) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
   if (!canUseDemoPayment(o)) return NextResponse.json({ error: 'Extra-work payments require a connected real payment provider.' }, { status: 403 });

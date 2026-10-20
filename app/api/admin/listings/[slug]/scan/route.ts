@@ -5,12 +5,15 @@ import { runScan } from '@/lib/scan';
 import { orderStore } from '@/lib/orders/store';
 import { createAdminClient } from '@/lib/supabase/server';
 import { idOf } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 /* Run the listing scan again (after the seller changed the file, or when it did not finish the first time). It only adds flags. */
 export async function POST(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const closed = await maintenanceFor('admin'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const slug = await idOf(params.then((p) => ({ id: p.slug })));

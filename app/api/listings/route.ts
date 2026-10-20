@@ -17,6 +17,7 @@ import { guard } from '@/lib/guard';
 import { getSettings } from '@/lib/settings';
 import { audit } from '@/lib/admin/audit';
 import { FUNDED_STATES } from '@/lib/orders/machine';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -52,6 +53,8 @@ const slugify = (s: string) =>
 
 /* A seller creates a listing, optionally with a zip of the site to host. New listings start in review and only the owner and admins can see them until approved. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('upload'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const sb = await createClient();
   const {
     data: { user },
@@ -451,6 +454,8 @@ export async function POST(req: Request) {
 
 /* The seller opens one of their own drafts, or (with ?edit=) a listing they already sent, to change it. */
 export async function GET(req: Request) {
+  const closed = await maintenanceFor('upload'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const q = new URL(req.url).searchParams;
   const isEdit = q.has('edit');
   const d = idParam.safeParse(q.get(isEdit ? 'edit' : 'draft') ?? '');

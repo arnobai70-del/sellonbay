@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminOnly } from '@/lib/admin/guard';
 import { setSeo } from '@/lib/seo/site';
 import { readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({
@@ -14,6 +15,8 @@ const schema = z.object({
 
 /* Changes the search settings (home page title and description, Search Console and Bing codes). Admins only; audited. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('seo'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await adminOnly();
   if (!a.ok) return a.res;
   const body = await readJson(req, schema);

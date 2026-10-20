@@ -8,12 +8,15 @@ import { fakePayments } from '@/lib/providers/payment';
 import { paySchema } from '@/lib/schemas';
 import { idOf, readJson } from '@/lib/validate';
 import { bump } from '@/lib/metrics';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const MAX_TRIES = 8;
 
 /* Charge the card through the payment provider. The card is checked and then thrown away: only the brand and last 4 digits are kept. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('checkout'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const found = await orderFor(await idOf(params));
   if (!found) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
   // Never allow a fake card event to create escrow/entitlements for a real seller or developer.

@@ -7,12 +7,15 @@ import { createClient } from '@/lib/supabase/server';
 import { replySchema } from '@/lib/schemas';
 import { readJson } from '@/lib/validate';
 import { cannotAct } from '@/lib/accounts';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const fail = (error: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error, ...extra }, { status });
 
 /* A seller answers a pre-sale question. Same chat filter, same blocked-message list. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('messaging'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   if (!supabaseConfigured) return fail('Replies need a signed-in seller account.', 401);
   const ip = clientIp(req);
   const sb = await createClient();

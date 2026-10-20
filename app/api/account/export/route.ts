@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { allow } from '@/lib/delivery/service';
 import { exportData, logExport } from '@/lib/privacy';
 import { getViewerId, staffNeedsCode } from '@/lib/supabase/viewer';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 
 /* A copy of the signed-in person's own data, as a JSON file. Three a day at most. */
 export async function GET() {
+  const closed = await maintenanceFor('auth'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await getViewerId();
   if (!id) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
   if (await staffNeedsCode()) return NextResponse.json({ error: 'Enter your authenticator code first.' }, { status: 403 });

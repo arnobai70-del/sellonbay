@@ -15,12 +15,15 @@ import { readJson } from '@/lib/validate';
 import { isPkg } from '@/lib/data';
 import { guard } from '@/lib/guard';
 import { PAUSED_TEXT, checkoutPausedFor } from '@/lib/switches';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
 /* Creates an order waiting for payment. What was chosen comes from the browser; what it costs is worked out here. */
 export async function POST(req: Request) {
+  const closed = await maintenanceFor('checkout'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const parsed = await readJson(req, orderCreateSchema);
   if (!parsed.ok) return parsed.res;
   const b = parsed.data;

@@ -6,12 +6,15 @@ import { supabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { cannotAct } from '@/lib/accounts';
 import { idOf, readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({ text: z.string().max(2500) });
 
 /* The buyer or the seller of the order adds evidence to an open dispute. Nobody else can. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('disputes'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const d = await getDispute(id);
   const o = d ? await getOrder(d.orderId) : null;

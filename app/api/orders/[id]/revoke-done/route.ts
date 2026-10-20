@@ -3,12 +3,15 @@ import { cannotAct } from '@/lib/accounts';
 import { sellerRemoved } from '@/lib/repoAccess';
 import { createClient } from '@/lib/supabase/server';
 import { idOf } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const no = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 /* The seller says they removed the buyer from the repository after a refund or cancellation. An admin then confirms. Sellers need the authenticator code (aal2). */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const sb = await createClient();
   const {

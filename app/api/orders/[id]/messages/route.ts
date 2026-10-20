@@ -6,6 +6,7 @@ import { clientIp } from '@/lib/delivery/service';
 import { getOrder } from '@/lib/orders/service';
 import { createClient } from '@/lib/supabase/server';
 import { idOf, readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({ body: z.string().max(4000) });
@@ -31,6 +32,8 @@ async function party(id: string) {
 const refuse = (status: 401 | 403 | 404) => NextResponse.json({ error: status === 401 ? 'Sign in first.' : status === 403 ? 'Not allowed.' : 'Order not found.' }, { status });
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('messaging'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await party(await idOf(params));
   if (a.error) return refuse(a.error);
   const since = Number(new URL(req.url).searchParams.get('since') ?? 0) || 0;
@@ -38,6 +41,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('messaging'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const a = await party(await idOf(params));
   if (a.error) return refuse(a.error);
   const body = await readJson(req, schema);

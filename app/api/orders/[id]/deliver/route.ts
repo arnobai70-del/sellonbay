@@ -3,9 +3,12 @@ import { deliver, getOrder } from '@/lib/orders/service';
 import { createClient } from '@/lib/supabase/server';
 import { idOf } from '@/lib/validate';
 import { HELD_TEXT, heldReason } from '@/lib/holds';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 /* The seller of an order says it is delivered. The review window starts then. Sellers need the authenticator code (aal2). */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const sb = await createClient();
   const {

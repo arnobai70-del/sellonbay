@@ -4,12 +4,15 @@ import { getDispute, sellerReply } from '@/lib/disputes';
 import { getOrder } from '@/lib/orders/service';
 import { createClient } from '@/lib/supabase/server';
 import { idOf, readJson } from '@/lib/validate';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 const schema = z.object({ text: z.string().max(2500) });
 
 /* The seller of the order replies to a dispute (within 48 hours). Sellers need the authenticator code (aal2). */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('disputes'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const sb = await createClient();
   const {

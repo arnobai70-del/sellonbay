@@ -4,7 +4,10 @@
  * that every API route is either in a module or in ALWAYS_ON on purpose. Saved state: table module_maintenance (migration 0049).
  */
 export const MODULES = {
-  auth: { label: 'Authentication & registration', keeps: 'People already signed in stay signed in and keep using the site.' },
+  auth: {
+    label: 'Authentication & registration',
+    keeps: 'Signing in still works, so nobody is locked out (admins included), and people already signed in stay signed in. New accounts, password resets and account pages wait.',
+  },
   visitor: { label: 'Visitor dashboard', keeps: 'Browsing, previews and demos.' },
   buyer: { label: 'Buyer dashboard', keeps: 'Browsing, orders, checkout and the seller side.' },
   seller: { label: 'Seller dashboard', keeps: 'Everything buyers and visitors use.' },
@@ -30,7 +33,7 @@ export const MAINTENANCE_LIMITS = { message: 300, defaultRetrySeconds: 300, maxR
  * Maintenance Manager with the audit log (the way back). Paths are API paths without the /api prefix.
  */
 export const ALWAYS_ON_API: RegExp[] = [/^\/webhooks\//, /^\/cron\//, /^\/health$/, /^\/admin\/maintenance(\/|$)/];
-const ALWAYS_ON_PAGE: RegExp[] = [/^\/dashboard\/admin\/maintenance(\/|$)/, /^\/dashboard\/admin\/audit(\/|$)/];
+const ALWAYS_ON_PAGE: RegExp[] = [/^\/dashboard\/admin\/maintenance(\/|$)/, /^\/dashboard\/admin\/audit(\/|$)/, /^\/(login|auth)(\/|$)/, /^\/maintenance(\/|$)/];
 
 /* API routes (path after /api), most specific first. */
 const API_RULES: [RegExp, ModuleKey][] = [
@@ -60,7 +63,7 @@ const PAGE_RULES: [RegExp, ModuleKey][] = [
   [/^\/dashboard\/admin(\/|$)/, 'admin'],
   [/^\/dashboard\/buyer(\/|$)/, 'buyer'],
   [/^\/dashboard\/seller(\/|$)/, 'seller'],
-  [/^\/(login|reset-password|auth|account)(\/|$)/, 'auth'],
+  [/^\/(reset-password|account)(\/|$)/, 'auth'], // sign-in pages stay open (ALWAYS_ON_PAGE); the sign-up and reset actions check for themselves
   [/^\/guest(\/|$)/, 'visitor'],
   [/^\/sell\/new(\/|$)/, 'upload'],
   [/^\/developers\/join(\/|$)/, 'seller'],

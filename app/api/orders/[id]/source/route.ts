@@ -6,6 +6,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { CONFIG, HOUR_MS } from '@/lib/config';
 import { idOf } from '@/lib/validate';
 import { HELD_TEXT, heldReason } from '@/lib/holds';
+import { maintenanceFor } from '@/lib/maintenance/service';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +16,8 @@ export const runtime = 'nodejs';
  * can be requested any time (at most 5 an hour per order). GET redirects to the download; add ?json=1 to get the link and licence key instead.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const closed = await maintenanceFor('orders'); // module maintenance (lib/maintenance)
+  if (closed) return closed;
   const id = await idOf(params);
   const wantsJson = new URL(req.url).searchParams.get('json') === '1';
   const supabase = await createClient();

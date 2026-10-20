@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { supabaseAnonKey, supabaseConfigured, supabaseUrl } from '@/lib/supabase/env';
 import { cannotAct } from './lib/accounts';
+import { closedForPath, maintenanceJson, maintenancePage } from './lib/maintenance/guard';
+import type { ModuleKey } from './lib/maintenance/config';
 import { crossSiteWrite } from './lib/sameOrigin';
 import { SITE_URL } from './lib/site';
 
@@ -13,10 +15,27 @@ export async function proxy(req: NextRequest) {
   const h = req.headers;
   if (crossSiteWrite(req.method, req.nextUrl.pathname, h.get('origin'), [h.get('host'), h.get('x-forwarded-host'), SITE_URL]))
     return NextResponse.json({ error: 'Not allowed from another site.' }, { status: 403 });
+  // A module in maintenance (lib/maintenance): its pages show the maintenance notice, its APIs answer 503. The routes check again themselves.
+  const closed = await closedForPath(req.nextUrl.pathname);
+  if (closed && !(await adminPasses(req, closed.key))) return closed.api ? maintenanceJson(closed.row) : NextResponse.rewrite(new URL(maintenancePage(closed.key), req.url), { status: 503 });
   const res = await handle(req);
   if (!req.cookies.get('lb_dev'))
     res.cookies.set('lb_dev', crypto.randomUUID(), { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 365 });
   return res;
+}
+
+/* An admin who passed the authenticator code may still open a closed module to test it (not the admin dashboard itself). Only asked when a module is closed. */
+async function adminPasses(req: NextRequest, key: ModuleKey): Promise<boolean> {
+  if (!supabaseConfigured || key === 'admin') return false;
+  const sb = createServerClient(supabaseUrl, supabaseAnonKey, { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } });
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  const { data: p } = await sb.from('profiles').select('role, banned, suspended_until').eq('id', user.id).single();
+  if (!p || p.role !== 'admin' || cannotAct(p)) return false;
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  return aal?.currentLevel === 'aal2';
 }
 
 async function handle(req: NextRequest) {
