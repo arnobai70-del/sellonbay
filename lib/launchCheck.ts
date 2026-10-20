@@ -9,6 +9,7 @@ import { clamavReady } from './scan/clamav';
 import { aiProvider } from './providers/ai';
 import { allowedAiBudget } from './ai/budget';
 import { isStale, lastBeat } from './heartbeat';
+import { emailConfirmationOn } from './authSettings';
 
 /*
  * What is still missing before the live site is safe, read from the running server (keys are never shown, only whether they are set).
@@ -19,6 +20,8 @@ const set = (k: string, min = 1) => (process.env[k] ?? '').length >= min;
 
 export async function launchChecks(): Promise<Check[]> {
   const s = await getSettings();
+  const confirm = await emailConfirmationOn();
+  const ipSource = Boolean(process.env.CLIENT_IP_HEADER?.trim()) || Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? '', 10) > 0;
   const [orders, payouts] = await Promise.all([lastBeat('orders'), lastBeat('payouts')]);
   const when = (t: number | null) => (t === null ? 'never yet' : new Date(t).toISOString().replace('T', ' ').slice(0, 16) + ' UTC');
   const late = (job: 'orders' | 'payouts', t: number | null) => (isStale(job, t) ? ' (late)' : '');
@@ -36,6 +39,19 @@ export async function launchChecks(): Promise<Check[]> {
       `CRON_SECRET, and a scheduler calling POST /api/cron/orders every 5 to 10 minutes and /api/cron/payouts on Sundays. Orders job last finished: ${when(orders)}${late('orders', orders)}. Payout job last finished: ${when(payouts)}${late('payouts', payouts)}.`,
     ),
     c('Abuse hashing salt', set('GUARD_SALT', 32), 'GUARD_SALT: a random value of 32 or more characters. Set it once; changing it later forgets blocks.'),
+    c(
+      'Email confirmation',
+      confirm === true,
+      confirm === null
+        ? 'Could not read the Supabase auth settings. Turn on Authentication > Providers > Email > Confirm email so fake addresses cannot open accounts.'
+        : 'Supabase Authentication > Providers > Email > Confirm email: new accounts must confirm their address before they sign in.',
+    ),
+    c(
+      'Visitor address',
+      ipSource,
+      'Set CLIENT_IP_HEADER=cf-connecting-ip behind Cloudflare, or TRUSTED_PROXY_HOPS to the number of proxies. Without it a visitor can fake their address and slip past rate limits.',
+      'warn',
+    ),
     c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),
     c('Examples cannot be bought', process.env.EXAMPLE_ORDERS !== '1', 'EXAMPLE_ORDERS must not be set on the live site.'),
     c('Payments', paymentProvider().name !== 'fake', 'Only the test gateway exists (test cards, no real money). Connect a real provider (decision D1) before the market opens.'),
