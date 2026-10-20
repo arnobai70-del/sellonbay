@@ -244,4 +244,31 @@ if (!failed) {
   }
 }
 
+if (!failed) {
+  // 0049: module maintenance is server only, every change lands in the history by itself, and the history cannot be changed.
+  try {
+    const priv = async (role, mode, table) => (await db.query(`select has_table_privilege('${role}', '${table}', '${mode}') as p`)).rows[0].p;
+    for (const t of ['module_maintenance', 'module_maintenance_history'])
+      for (const r of ['anon', 'authenticated']) if ((await priv(r, 'select', t)) || (await priv(r, 'insert', t))) throw new Error(`${r} can reach ${t}`);
+    await db.exec(`insert into module_maintenance (module_key, enabled, message) values ('seller', true, 'Back soon')`);
+    await db.exec(`update module_maintenance set enabled = false where module_key = 'seller'`);
+    const h = (await db.query(`select enabled from module_maintenance_history where module_key = 'seller' order by id`)).rows.map((r) => r.enabled);
+    if (h.join() !== 'true,false') throw new Error(`history has ${h.join()}`);
+    const refused = async (sql) =>
+      db.exec(sql).then(
+        () => false,
+        () => true,
+      );
+    if (!(await refused(`delete from module_maintenance_history`))) throw new Error('history rows can be deleted');
+    if (!(await refused(`update module_maintenance_history set enabled = true`))) throw new Error('history rows can be changed');
+    if (!(await refused(`insert into module_maintenance (module_key, start_at, end_at) values ('ai', now(), now() - interval '1 hour')`))) throw new Error('an end before the start is accepted');
+    if (!(await refused(`insert into module_maintenance (module_key) values ('Bad Key!')`))) throw new Error('a junk module key is accepted');
+    await db.exec(`delete from module_maintenance`);
+    console.log('ok   module maintenance: server only, history written by the database and append-only');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL module maintenance:', e.message);
+  }
+}
+
 process.exit(failed ? 1 : 0);
