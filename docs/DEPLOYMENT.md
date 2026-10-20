@@ -82,6 +82,7 @@ Apply the files in `supabase/migrations/` strictly in number order, each one onc
 | 0047_close_direct_writes.sql | Abuse reports written only by the server |
 | 0048_posts.sql | Blog posts with meta title and description |
 | 0049_module_maintenance.sql | Module maintenance and its history |
+| 0050_more_indexes.sql | Indexes for lookups the code already makes |
 
 Almost every file only adds or tightens. One exception: 0016 drops the old `wallets` and `ledger_entries` tables from 0001 and rebuilds the ledger, so on a database that already holds money records, back up and read 0016 before running it. Files 0043, 0045 and 0047 remove client write rights. After them, check that sellers can still save listings through the site, because the site writes through the server.
 
