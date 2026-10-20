@@ -3,6 +3,7 @@ import { TEMPLATES, type NotificationKind, type Payload } from '../emails/templa
 import { emailProvider } from './providers/email';
 import { orderStore } from './orders/store';
 import { createAdminClient } from './supabase/server';
+import { outboxReady, queueEmail } from './emailQueue';
 
 /*
  * One function for every notification: an in-app row for the person and, when we know their address, an email through the email provider.
@@ -35,7 +36,8 @@ export async function notify(userId: string | null | undefined, kind: Notificati
   try {
     const { subject, text } = TEMPLATES[kind](payload);
     let notificationId: string;
-    if (await pg()) {
+    const stored = await pg();
+    if (stored) {
       const { data, error } = await createAdminClient()
         .from('notifications')
         .insert({ user_id: userId, kind, payload, dedupe: opts.dedupe ?? null })
@@ -51,6 +53,8 @@ export async function notify(userId: string | null | undefined, kind: Notificati
     // must not turn a successfully committed notification into a failed action.
     if (opts.email !== false) {
       try {
+        // With the queue (migration 0051) the email goes out after the response and is retried; without it, at once as before.
+        if (stored && UUID.test(userId) && emailProvider().name !== 'unconfigured' && (await outboxReady()) && (await queueEmail(notificationId))) return true;
         const to = await addressOf(userId);
         if (to) await emailProvider().send({ to, subject, text, idempotencyKey: `notification/${notificationId}` });
       } catch {

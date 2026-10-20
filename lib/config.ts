@@ -57,6 +57,7 @@ export const CONFIG = {
   notify: { dueSoonHours: 6, reviewEndingHours: 12 }, // reminders before a delivery is due and before a review ends
   ai: { freeRunsPerDay: 5, cacheDays: 30 },
   catalogCacheSeconds: 60, // each server copy keeps the public list of live listings this long (lib/catalog.ts); never checkout, orders or user data
+  emailQueue: { maxAttempts: 5, retryMinutes: [1, 5, 30, 120] as readonly number[], batch: 50 }, // lib/emailQueue.ts: tries per email, wait before each retry, emails per scheduled run
   orderReuseMinutes: 10, // a second Buy of the same thing by the same buyer within this time opens the unpaid order instead of a new one
   cron: { ordersStaleMinutes: 30, payoutsStaleDays: 8 }, // the launch check warns when a scheduled job has not finished for this long
   extras: { aiContentCents: 300, hostingMonthCents: 400, storeListingCents: 900, installerSetupCents: 1500 },
