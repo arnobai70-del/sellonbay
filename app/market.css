@@ -22,6 +22,7 @@
 .mk-ico:hover{background:rgba(255,255,255,.1)}
 .mk-ico i{position:absolute;top:4px;right:3px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--gold);color:var(--ink);font-size:11px;font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center}
 .mk-ico-acct{display:none}
+.mk-ico-acct.mk-ico-guest{display:flex} /* signed out: the person icon opens the visitor panel */
 .mk-sell{padding:10px 12px;font-weight:600;font-size:14px;white-space:nowrap;border-radius:10px}
 .mk-sell:hover,.mk-sell[aria-current]{color:var(--gold)}
 .mk-acct{margin-left:4px}
@@ -308,3 +309,22 @@ html.sheet-open{overflow:hidden}
 .mk-related a:hover{border-color:var(--cobalt);color:var(--cobalt)}
 @media (max-width:860px){.mk-shelfhead-row{grid-template-columns:minmax(0,1fr)}.mk-guide-cols{grid-template-columns:minmax(0,1fr);gap:20px}}
 @media (max-width:640px){[data-browse] .wrap,.mk-guide .wrap{padding-left:16px;padding-right:16px}.mk-guide{margin-top:40px;padding:36px 0}.mk-related a{padding:9px 13px}}
+
+/* Visitor panel (/guest) */
+.gp{padding:40px 24px 96px}
+.gp h1{margin:0 0 8px}
+.gp .lead{max-width:640px;margin:0 0 28px}
+.gp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.gp-card{border:1px solid var(--line);border-radius:16px;padding:20px;background:#fff}
+.gp-card h2{font-size:1.1rem;margin:0 0 12px}
+.gp-card h3{font-size:.95rem;margin:18px 0 8px}
+.gp-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.gp-list a{display:flex;align-items:center;gap:12px;color:var(--ink)}
+.gp-list a span{display:flex;flex-direction:column;min-width:0}
+.gp-list b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gp-list small{color:var(--mute)}
+.gp-checks{margin:0;padding-left:20px;display:grid;gap:6px}
+.gp-later{color:var(--ink-2)}
+.gp-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.gp-note{margin-top:16px;font-size:14px}
+@media(max-width:980px){.gp-grid{grid-template-columns:minmax(0,1fr)}}

@@ -92,7 +92,7 @@ test.describe('on a phone', () => {
     await page.goto(`${DEMO}/browse`);
     await dismissNotice(page);
     const tabs = page.getByRole('navigation', { name: 'Quick links' });
-    for (const name of ['Home', 'Categories', 'Saved', 'Sell', 'Sign in']) await expect(tabs.getByRole('link', { name })).toBeVisible();
+    for (const name of ['Home', 'Categories', 'Saved', 'Sell', 'You']) await expect(tabs.getByRole('link', { name })).toBeVisible();
     await page.getByRole('button', { name: 'Open menu' }).click();
     const sheet = page.locator('#mk-sheet');
     await expect(sheet).toBeVisible();

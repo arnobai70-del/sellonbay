@@ -99,7 +99,7 @@ Time passes by `runDueJobs` (`POST /api/cron/orders`, `CRON_SECRET`; also on eve
 
 ## Roles (owner, 2026-10-20)
 
-Four roles: Visitor (not signed in: browses, opens previews and demos, cannot buy, hire, ask sellers or sell), Buyer (buys products, hires developers, asks sellers questions, own dashboard `/dashboard/buyer`), Seller (sells, own dashboard `/dashboard/seller`, cannot buy), Admin (runs the marketplace, `/dashboard/admin`). Only a buyer account buys: `mayBuy` in `lib/accounts.ts`, checked on the server in `/api/demo/orders`, `/api/hire`, `/api/presale` and the trial copy, and on the checkout and hire pages (`BuyersOnly` notice). Sign-up still picks Buyer or Seller (`app/(bare)/login/actions.ts`); demo mode (no Supabase) keeps the guest flow for the made-up examples.
+Four roles: Visitor (not signed in: browses, opens previews and demos, cannot buy, hire, ask sellers or sell), Buyer (buys products, hires developers, asks sellers questions, own dashboard `/dashboard/buyer`), Seller (sells, own dashboard `/dashboard/seller`, cannot buy), Admin (runs the marketplace, `/dashboard/admin`). Only a buyer account buys: `mayBuy` in `lib/accounts.ts`, checked on the server in `/api/demo/orders`, `/api/hire`, `/api/presale` and the trial copy, and on the checkout and hire pages (`BuyersOnly` notice). Visitors have their own basic panel at `/guest` (`GuestPanel`: saved and recently viewed from this browser, what a visitor can do, the way to an account; signed-in people are sent to their dashboard; the person icon and the phone tab "You" lead there). Sign-up still picks Buyer or Seller (`app/(bare)/login/actions.ts`); demo mode (no Supabase) keeps the guest flow for the made-up examples.
 
 ## Security lessons (do not undo)
 
