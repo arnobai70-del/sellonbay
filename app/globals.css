@@ -2617,3 +2617,21 @@ html{scroll-padding-top:92px}
 .pw-preview{margin-top:18px;padding:18px 20px;border:1px dashed var(--dash-line,#E4E7F2);border-radius:12px;background:#fff}
 .pw-preview>b{display:block;margin-bottom:8px;color:var(--mute);font-size:13px}
 @media (max-width:640px){.pw-form textarea.pw-body{min-height:300px;font-size:16px}}
+
+/* ---------- lightweight UI polish: existing layout, clearer interaction feedback ---------- */
+/* No new animation loops, JS, layout changes or hover-only information. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .btn:not(:disabled):not([aria-disabled="true"]):hover{transform:translateY(-2px);box-shadow:0 12px 24px -16px rgba(15,19,48,.45)}
+  .btn:not(:disabled):not([aria-disabled="true"]):active{transform:translateY(0)}
+  .side .it:not([aria-current]),.side .it:not([aria-current]) svg{transition:background-color .18s ease,color .18s ease,transform .18s ease,opacity .18s ease}
+  .side .it:not([aria-current]):hover svg{transform:translateX(2px);opacity:1}
+  .quick button,.fchip,.ex-tabs a{transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease}
+  .quick button:not([aria-pressed=true]):hover{border-color:#c5ceff;background:#f4f6ff}
+  .fchip:hover{transform:translateY(-1px);box-shadow:0 8px 16px -13px rgba(15,19,48,.5)}
+  .kpi .kpi-i{transition:transform .2s ease}
+  .kpi:hover .kpi-i{transform:translateY(-2px)}
+  .pcard h3,.ex-card-in .ex-name{transition:color .2s ease}
+  .pcard:hover h3,.ex-card-in:hover .ex-name{color:var(--cobalt-d)}
+  .dash .dp{transition:border-color .22s ease,box-shadow .22s ease}
+  .dash .dp:hover{border-color:#d5d9e9;box-shadow:0 10px 24px -25px rgba(15,19,48,.4)}
+}
