@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FEE_CUSTOM_TEXT, FEE_SALE_TEXT } from '@/lib/config';
 import { LegalPage } from '@/components/LegalPage';

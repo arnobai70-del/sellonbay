@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DomainSearch } from '@/components/DomainSearch';
 import { ALL_TLDS, cleanName } from '@/lib/domains';

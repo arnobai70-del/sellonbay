@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { DevBrowse } from '@/components/DevBrowse';
 import { AREAS, LANGS } from '@/lib/developers';
 import { getDevs } from '@/lib/devsDb';

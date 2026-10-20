@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { BrowseClient, type Initial } from '@/components/BrowseClient';
 import { ShelfGuide } from '@/components/ShelfGuide';
 import { getLiveDbProducts } from '@/lib/catalog';

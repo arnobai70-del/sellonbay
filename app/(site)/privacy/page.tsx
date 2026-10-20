@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CONFIG } from '@/lib/config';
 import { LegalPage } from '@/components/LegalPage';

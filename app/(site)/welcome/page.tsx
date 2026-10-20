@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CountUp } from '@/components/CountUp';
 import { GlobeHero } from '@/components/GlobeHero';

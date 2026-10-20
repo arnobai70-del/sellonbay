@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { LegalPage } from '@/components/LegalPage';
 import { BRAND_EMAIL } from '@/lib/brand';
 import { pageMetadata } from '@/lib/seo/pageMeta';
