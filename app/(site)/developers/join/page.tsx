@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { DevJoinForm } from '@/components/DevJoinForm';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { createAdminClient } from '@/lib/supabase/server';

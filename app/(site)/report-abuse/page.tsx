@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { reportAbuse } from './actions';
 import { pageMetadata } from '@/lib/seo/pageMeta';
 import { pageWords } from '@/lib/seo/pageWords';

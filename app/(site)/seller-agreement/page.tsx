@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { LegalPage } from '@/components/LegalPage';
 import { BUGFIX_DAYS, FEE_CUSTOM_TEXT, FEE_SALE_TEXT, PAYOUT_HOLD_DAYS, REVIEW_HOURS } from '@/lib/config';
 import { pageMetadata } from '@/lib/seo/pageMeta';

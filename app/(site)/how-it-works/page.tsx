@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EscrowLine } from '@/components/EscrowLine';
 import { ExplainerVideo } from '@/components/ExplainerVideo';
