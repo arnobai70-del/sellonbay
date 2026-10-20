@@ -61,7 +61,7 @@ lib/delivery/         signed download links, licence keys, download log
 supabase/migrations/  SQL, in order
 tests/unit, tests/e2e Vitest and Playwright
 prototype/            the old static prototype, kept as a visual reference
-docs/                 DECISIONS.md, RUNBOOK.md, launch gates (FINANCIAL_LAUNCH_GATES.md, STAGING_GATE.md, AI_USAGE_GATES.md)
+docs/                 DECISIONS.md, RUNBOOK.md, DEPLOYMENT.md, launch gates (FINANCIAL_LAUNCH_GATES.md, STAGING_GATE.md, AI_USAGE_GATES.md)
 emails/               email templates (not built yet)
 ```
 

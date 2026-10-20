@@ -8,7 +8,7 @@
 
 ## Before clicking Run workflow
 
-1. Create a **separate Supabase staging project** and a disposable/staging Next.js deployment using Node.js 22 with migration files `0001` through `0042`, in order. Never use the production database or production auth accounts.
+1. Create a **separate Supabase staging project** and a disposable/staging Next.js deployment using Node.js 22 with every migration file in `supabase/migrations`, in order (list: `docs/DEPLOYMENT.md`). Never use the production database or production auth accounts.
 2. Create a GitHub repository Environment named `staging`, with required reviewers if supported.
 3. Set environment Variables: `STAGING_APP_URL`, `PRODUCTION_APP_URL`, `STAGING_SUPABASE_URL`, `PRODUCTION_SUPABASE_URL` (HTTPS origins, without trailing paths). Staging app hostname and Supabase project must each differ from production.
 4. Set protected Environment Secrets: `STAGING_SUPABASE_ANON_KEY` and `STAGING_SUPABASE_SERVICE_ROLE_KEY`. Never put these in repository files, Issue comments, screenshots or logs.

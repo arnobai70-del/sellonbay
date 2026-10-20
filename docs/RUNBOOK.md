@@ -4,6 +4,8 @@ How to operate SellOnBay. Short on purpose. Where something is not built yet it 
 
 ## Applying database changes
 
+Only with the owner's permission. The full order, the checks to run first and the deployment steps are in `docs/DEPLOYMENT.md`.
+
 1. Back up first: `npm run db:backup` (below), and the Supabase dashboard backup if your plan has one.
 2. Apply the files in `supabase/migrations/` in number order: Supabase SQL editor (paste, run), or a Postgres client with the project's connection string.
 3. After a migration that adds tables, check the grants in that file (clients get the minimum, never TRUNCATE) and run `npm run test:e2e` with the real database: `tests/e2e/rls.spec.ts` tries every forbidden action as the wrong user.
