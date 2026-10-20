@@ -75,6 +75,11 @@ export const FEE_SALE_TEXT = `${pct(CONFIG.fees.saleBps)} (${pct(CONFIG.fees.sal
 export const FEE_CUSTOM_TEXT = pct(CONFIG.fees.customBps);
 /* What the seller keeps of a sale: "78% (70% under $20)". */
 export const SELLER_KEEP_TEXT = `${pct(10_000 - CONFIG.fees.saleBps)} (${pct(10_000 - CONFIG.fees.saleLowBps)} under $${CONFIG.fees.saleLowBelowCents / 100})`;
+/*
+ * Owner, 2026-10-20: lists (home, shelves, cards, compare, finder) show no prices; the price appears on the product page beside
+ * Buy and in full at checkout, before anything is paid. Consumer law needs the total before the buyer commits, so never hide it there.
+ */
+export const SHOW_LIST_PRICES = false;
 export const REVIEW_HOURS = CONFIG.review.hours;
 export const PAYOUT_HOLD_DAYS = CONFIG.payout.holdDays;
 export const BUGFIX_DAYS = CONFIG.bugFixDays;

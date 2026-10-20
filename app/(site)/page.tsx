@@ -10,6 +10,7 @@ import { TemplatePage } from '@/components/TemplatePage';
 import { Tilt } from '@/components/Tilt';
 import { SHELVES, isApp, platformOf, shelfHref, shelfLabel, type AppPlatform, type Platform } from '@/lib/apps';
 import { getLiveDbProducts } from '@/lib/catalog';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { CONFIG, PAYOUT_HOLD_DAYS, REVIEW_HOURS, pct } from '@/lib/config';
 import { daysLabel, imageFor, isNew, money, type Product } from '@/lib/data';
 import { AREAS } from '@/lib/developers';
@@ -187,7 +188,7 @@ function Card({ p }: { p: Product }) {
             )}
           </span>
           <span className="ex-foot">
-            <span className="ex-price">{money(p.price)}</span>
+            {SHOW_LIST_PRICES && <span className="ex-price">{money(p.price)}</span>}
             <span className="chip">{daysLabel(p.days)}</span>
           </span>
         </Link>

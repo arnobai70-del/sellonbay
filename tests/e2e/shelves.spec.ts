@@ -41,3 +41,17 @@ test('on a phone the shelf stays inside the screen', async ({ page }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(390);
   }
 });
+
+test('lists show no prices, and the price appears on the product page beside Buy', async ({ page }) => {
+  await page.goto(`${DEMO}/browse?min=10&max=20&sort=low`);
+  const grid = page.locator('.bl-grid');
+  await expect(grid.locator('.tall').first()).toBeVisible();
+  expect(await grid.innerText()).not.toMatch(/\$\d/);
+  await expect(page.getByRole('option', { name: /^Price/ })).toHaveCount(0);
+  await expect(page.getByText('Lowest price')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/browse$/); // price filters from an old link are dropped
+  await page.goto(`${DEMO}/`);
+  expect(await page.locator('.ex-grid').innerText()).not.toMatch(/\$\d/);
+  await page.locator('.ex-grid .ex-card-in').first().click();
+  await expect(page.locator('.buybox .price')).toHaveText(/^\$\d/);
+});

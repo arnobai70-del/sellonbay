@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { daysLabel, doesFeature, imageFor, isNew, money, type Product } from '@/lib/data';
 import { APP_FEATURES, FEATURES, SHELVES, isApp, platformOf } from '@/lib/apps';
+import { SHOW_LIST_PRICES } from '@/lib/config';
 import { AppArt } from './AppPhone';
 import { PlatformBadge } from './PlatformBadge';
 import { SaveButton } from './SaveButton';
@@ -57,7 +58,7 @@ export function TallCard({ p, compare }: { p: Product; compare?: Compare }) {
           </div>
           <div className="row">
             <h3>{p.name}</h3>
-            <span className="price">{money(p.price)}</span>
+            {SHOW_LIST_PRICES && <span className="price">{money(p.price)}</span>}
           </div>
           <div className="meta">
             <span>{app ? `${p.cat} · ${p.stack ?? 'App'}` : `in ${p.cat}`}</span>
