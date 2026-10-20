@@ -128,6 +128,10 @@ An admin can close one module (13 in `MODULES`, `lib/maintenance/config.ts`) whi
 
 `/dashboard/admin/seo` is the hub: blog posts, every page (`/seo/pages`), every live listing (`/seo/listings`), the automatic check (`/seo/check`), home words and Search Console codes. One list of public pages, `SEO_PAGES` in `lib/seo/pageList.ts` (digital topics included, as `/apps/digital?topic=<key>`), feeds the panel, page metadata (`pageMetadata`) and the sitemap; a new public page goes in that list with a description of 50 to 170 characters (tested). Listings get automatic words (`autoListingMeta` in `lib/seo/listingMeta.ts`: "Name · Category" and the seller's description, filled out when short) and a canonical address; an admin's words for `/product/<id>` are saved like a page's and win. Listings that are not live are kept out of search. The check (`lib/seo/check.ts`, pure and tested) flags missing, long, short and repeated titles and descriptions.
 
+## GitHub only (owner, 2026-10-20)
+
+All work is built, tested and committed in this repository. Never apply a migration, change the live Supabase database, reset or delete data, deploy or restart the live site, or change production environment variables without the owner's written permission. Tests that need a database wait for a staging project. The migration order and the deployment and rollback steps are in `docs/DEPLOYMENT.md` (a test keeps its list in step with `supabase/migrations`).
+
 ## Verify before launch
 
 Prices, free-tier limits and provider policies change. Check them on the providers' own sites.
