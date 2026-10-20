@@ -10,6 +10,7 @@ import { aiProvider } from './providers/ai';
 import { allowedAiBudget } from './ai/budget';
 import { isStale, lastBeat } from './heartbeat';
 import { sharedLimitsConfigured } from './rateLimit';
+import { webhookConfigured } from './monitor';
 import { emailConfirmationOn } from './authSettings';
 
 /*
@@ -57,6 +58,12 @@ export async function launchChecks(): Promise<Check[]> {
       'Visitor address',
       ipSource,
       'Set CLIENT_IP_HEADER=cf-connecting-ip behind Cloudflare, or TRUSTED_PROXY_HOPS to the number of proxies. Without it a visitor can fake their address and slip past rate limits.',
+      'warn',
+    ),
+    c(
+      'Error alerts',
+      webhookConfigured() && set('ERROR_WEBHOOK_URL', 12),
+      'ERROR_WEBHOOK_URL: an https webhook (Slack, Discord or a monitoring service) gets each kind of server error at most once a minute. Without it errors are only in the server log.',
       'warn',
     ),
     c('Bot check (Turnstile)', hasNonTestTurnstileKeys(), 'Cloudflare Turnstile requires a real site key and secret; official 1x/2x/3x test keys do not protect production. Validate real verification in staging.'),

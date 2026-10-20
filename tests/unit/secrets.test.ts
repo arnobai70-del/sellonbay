@@ -16,7 +16,7 @@ const walk = (d: string) => {
 for (const d of SOURCE_DIRS) walk(path.join(root, d));
 sources.push({ file: 'proxy.ts', text: fs.readFileSync(path.join(root, 'proxy.ts'), 'utf8') });
 
-const SECRETS = ['SUPABASE_SERVICE_ROLE_KEY', 'DELIVERY_SECRET', 'PAYMENT_WEBHOOK_SECRET', 'CRON_SECRET', 'TURNSTILE_SECRET_KEY', 'GUARD_SALT', 'UPSTASH_REDIS_REST_TOKEN'];
+const SECRETS = ['SUPABASE_SERVICE_ROLE_KEY', 'DELIVERY_SECRET', 'PAYMENT_WEBHOOK_SECRET', 'CRON_SECRET', 'TURNSTILE_SECRET_KEY', 'GUARD_SALT', 'UPSTASH_REDIS_REST_TOKEN', 'ERROR_WEBHOOK_URL'];
 /* The only files that may read a secret. Each is server code. lib/launchCheck.ts only checks whether a secret is set and how long it is, never shows it.
    lib/maintenance/state.ts reads module maintenance for proxy.ts, which cannot use the server client. */
 const CHECK = 'lib/launchCheck.ts';
@@ -28,6 +28,7 @@ const ALLOWED: Record<string, string[]> = {
   TURNSTILE_SECRET_KEY: ['lib/bot/turnstile.ts', CHECK],
   GUARD_SALT: ['lib/guard.ts', CHECK],
   UPSTASH_REDIS_REST_TOKEN: ['lib/rateLimit.ts', CHECK],
+  ERROR_WEBHOOK_URL: ['lib/monitor.ts', CHECK],
 };
 
 describe('secrets stay on the server', () => {
