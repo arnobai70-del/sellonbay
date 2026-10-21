@@ -26,6 +26,8 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // `next dev` only: lets a phone on the same Wi-Fi or a quick Cloudflare tunnel load the dev scripts, so menus work there too.
+  allowedDevOrigins: ['*.trycloudflare.com', '192.168.*.*', '10.*.*.*'],
   async headers() {
     return [
       {

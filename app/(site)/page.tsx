@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AppArt } from '@/components/AppPhone';
-import { HeroSearch } from '@/components/HeroSearch';
 import { SaveButton } from '@/components/SaveButton';
 import { ScaledPage } from '@/components/ScaledPage';
 import { StoreMotion } from '@/components/StoreMotion';
@@ -77,21 +76,31 @@ function Glyph({ k, size = 28 }: { k: string; size?: number }) {
         </svg>
       );
     case 'android':
-    case 'ios':
     case 'Android apps':
-    case 'iPhone & iPad apps':
+      // a phone with a download arrow: an app you install
       return (
         <svg {...p}>
-          <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
-          <path d="M11 18.5h2" />
+          <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+          <path d="M12 7.5v6M9.5 11l2.5 2.5 2.5-2.5M10.5 18.5h3" />
+        </svg>
+      );
+    case 'ios':
+    case 'iPhone & iPad apps':
+      // a phone beside a tablet
+      return (
+        <svg {...p}>
+          <rect x="9" y="3" width="12" height="16" rx="2" />
+          <rect x="3" y="8" width="7" height="13" rx="1.8" />
+          <path d="M14 16.5h2M5.8 18.5h1.4" />
         </svg>
       );
     case 'webapp':
     case 'Web apps':
+      // a browser window holding a dashboard
       return (
         <svg {...p}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
+          <rect x="3" y="4" width="18" height="16" rx="2.5" />
+          <path d="M3 8.5h18M7 13h4v3H7zM14 12.5h3M14 15.5h3" />
         </svg>
       );
     case 'desktop':
@@ -121,16 +130,19 @@ function Glyph({ k, size = 28 }: { k: string; size?: number }) {
         </svg>
       );
     case 'domains':
+      // an address bar with "www"
       return (
         <svg {...p}>
-          <path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16" />
-          <circle cx="12" cy="12" r="8" />
+          <rect x="2.5" y="7" width="19" height="10" rx="5" />
+          <path d="M6 10.5l1 3 1-3 1 3 1-3M11.5 10.5l1 3 1-3 1 3 1-3M17 12h1.5" />
         </svg>
       );
     default:
+      // a file with a download arrow: digital products
       return (
         <svg {...p}>
-          <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5L12 12l8-4.5M12 12v9" />
+          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" />
+          <path d="M14 3v5h5M12 11v6M9.5 14.5L12 17l2.5-2.5" />
         </svg>
       );
   }
@@ -241,7 +253,20 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           <div className="mk-hero-copy">
             <h1 id="mk-h1">Websites, apps and digital products, ready to use</h1>
             <p>Built once by real developers and made yours: your name, your domain, your store accounts. Look at the real thing before you pay.</p>
-            <HeroSearch />
+            {sets.length > 0 && (
+              <nav className="mk-hero-pop" aria-label="Popular right now">
+                <span>Popular right now</span>
+                <ul>
+                  {sets.map((c) => (
+                    <li key={c.key}>
+                      <Link href={c.href}>
+                        {c.title} <em>{c.count}</em>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
             <ul className="mk-hero-points">
               <li>Payment held in escrow until you accept</li>
               <li>{REVIEW_HOURS} hours to check it</li>
@@ -385,24 +410,65 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           <div className="mk-why-cols" data-rise>
             <div className="mk-why-col">
               <span className="mk-why-art" data-a="look" aria-hidden="true">
-                <i />
-                <i />
-                <i />
+                <span className="mk-wa-win">
+                  <span className="mk-wa-bar">
+                    <i />
+                    <i />
+                    <i />
+                    <span>yourname.com</span>
+                  </span>
+                  <span className="mk-wa-page">
+                    <b />
+                    <s />
+                    <s />
+                    <span className="mk-wa-live">Live demo</span>
+                  </span>
+                </span>
+                <svg className="mk-wa-cursor" width="22" height="22" viewBox="0 0 24 24">
+                  <path d="M5 3l14 8-6 1.5L10 19z" fill="#fff" stroke="#0F1330" strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
               </span>
               <h3>Look before you pay</h3>
               <p>Click through the live site or try the app first. What you see is what the seller delivers.</p>
             </div>
             <div className="mk-why-col">
               <span className="mk-why-art" data-a="hold" aria-hidden="true">
-                <i />
+                <span className="mk-wa-flow">
+                  <span className="mk-wa-node">
+                    <i>1</i>
+                    You pay
+                  </span>
+                  <span className="mk-wa-node mk-wa-lock">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                    </svg>
+                    Held safely
+                  </span>
+                  <span className="mk-wa-node">
+                    <i>3</i>
+                    You accept
+                  </span>
+                </span>
               </span>
               <h3>Your money waits for you</h3>
               <p>Payment stays in escrow. You get {REVIEW_HOURS} hours to check the work, and a fair dispute if something is wrong.</p>
             </div>
             <div className="mk-why-col">
               <span className="mk-why-art" data-a="yours" aria-hidden="true">
-                <i />
-                <i />
+                <span className="mk-wa-domain">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                  </svg>
+                  yourshop.com
+                </span>
+                <span className="mk-wa-owner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12.5l4.5 4.5L19 7" />
+                  </svg>
+                  Registered to you
+                </span>
               </span>
               <h3>Made to be yours</h3>
               <p>Domains and store accounts are in your name. Need changes? Order them from the seller or hire a developer.</p>
