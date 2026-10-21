@@ -364,3 +364,24 @@ html.sheet-open{overflow:hidden}
 }
 @keyframes mk-drop{from{opacity:0;transform:translateY(-6px)}}
 @keyframes mk-fade-up{from{opacity:0;transform:translateY(8px)}}
+
+/* ---------- home: motion you can see (owner, 2026-10-21). The hero pictures drift slowly, lean on hover, the search
+   box catches one sweep of light, and category tiles glow. Transform, opacity and shadow only; off with reduced motion. ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .mk-hero-shot .tc-shot{animation:mk-float 6s ease-in-out infinite alternate}
+  .mk-hero-shot[data-i="1"] .tc-shot{animation-delay:-3s}
+  .mk-hero-art:hover .tc-shot{animation-play-state:paused}
+  .mk-hero-shot{transition:scale .3s cubic-bezier(.2,.7,.2,1),rotate .3s cubic-bezier(.2,.7,.2,1)}
+  .mk-hero-shot:hover{scale:1.04;rotate:-1.5deg}
+  .mk-hero-shot[data-i="1"]:hover{rotate:1.5deg}
+  .mk-hero-badge{animation:rise-up .6s cubic-bezier(.2,.75,.2,1) .45s both}
+  .mk-hsearch{position:relative;overflow:hidden;transition:box-shadow .22s ease}
+  .mk-hsearch::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(255,181,46,.35) 50%,transparent 65%);transform:translateX(-110%);animation:mk-sheen 1.3s ease-in-out .9s both}
+  .mk-hsearch:hover{box-shadow:0 0 0 3px rgba(255,181,46,.55),0 24px 48px -18px rgba(255,181,46,.45)}
+  .mk-tile-art{position:relative;overflow:hidden;transition:box-shadow .25s ease}
+  .mk-tile-art::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-110%)}
+  .mk-tile:hover .mk-tile-art{box-shadow:0 16px 32px -14px var(--c1,var(--cobalt))}
+  .mk-tile:hover .mk-tile-art::after{transform:translateX(110%);transition:transform .7s ease}
+}
+@keyframes mk-float{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+@keyframes mk-sheen{to{transform:translateX(110%)}}
