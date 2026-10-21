@@ -4,7 +4,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { MARKET_MENU, type MenuEntry } from '@/lib/marketMenu';
 import { useList } from '@/lib/saved';
+import { KINDS, KIND_LABEL, MIN_QUERY, type Hit } from '@/lib/siteSearchCore';
 import { SHELF_OPTIONS } from '@/lib/storeShelves';
+import { SearchMark } from './SearchMark';
 import { Logo } from './Logo';
 
 /* Which category-bar entry a page belongs to, from the key SiteNavByPath picks. */
@@ -76,7 +78,11 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
   const [sheet, setSheet] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [q, setQ] = useState('');
-  const shelfOfPage = SHELF_OPTIONS.find(([href]) => path === href)?.[0] ?? '/browse';
+  // On a shelf the search stays on that shelf; anywhere else it searches the whole site (/search).
+  const shelfOfPage = SHELF_OPTIONS.find(([href]) => path === href)?.[0] ?? '/search';
+  const [hits, setHits] = useState<Omit<Hit, 'score'>[] | null>(null);
+  const [focus, setFocus] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
   const [shelf, setShelf] = useState(shelfOfPage);
   const saved = useList('saved').length;
   const box = useRef<HTMLElement>(null);
@@ -87,6 +93,7 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
   useEffect(() => {
     setOpen(null);
     setSheet(false);
+    setFocus(false);
     setShelf(shelfOfPage);
   }, [path, shelfOfPage]);
   useEffect(() => {
@@ -114,6 +121,31 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
       removeEventListener('mousedown', out);
     };
   }, [open, sheet]);
+  // Results as you type: the best few of each kind from the whole site, a moment after the last key.
+  const term = q.trim();
+  useEffect(() => {
+    if (term.length < MIN_QUERY) return;
+    const ctl = new AbortController();
+    const t = setTimeout(() => {
+      fetch('/api/search?q=' + encodeURIComponent(term), { signal: ctl.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => j && setHits(j.hits))
+        .catch(() => {});
+    }, 180);
+    return () => (clearTimeout(t), ctl.abort());
+  }, [term]);
+  useEffect(() => {
+    if (!focus) return;
+    const out = (e: MouseEvent) => {
+      if (!form.current?.contains(e.target as Node)) setFocus(false);
+    };
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setFocus(false);
+    addEventListener('mousedown', out);
+    addEventListener('keydown', key);
+    return () => (removeEventListener('mousedown', out), removeEventListener('keydown', key));
+  }, [focus]);
+  const showHits = focus && term.length >= MIN_QUERY && hits !== null;
+
   useEffect(() => {
     document.documentElement.classList.toggle('sheet-open', sheet);
     return () => document.documentElement.classList.remove('sheet-open');
@@ -126,6 +158,7 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
   const go = (e: React.FormEvent) => {
     e.preventDefault();
     const t = q.trim();
+    setFocus(false);
     router.push(shelf + (t ? '?q=' + encodeURIComponent(t) : ''));
   };
   const hoverOpen = (k: string) => (e: React.PointerEvent) => {
@@ -150,7 +183,7 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
           </svg>
         </button>
         <Logo />
-        <form className="mk-search" role="search" onSubmit={go}>
+        <form ref={form} className="mk-search" role="search" onSubmit={go} onFocus={() => setFocus(true)}>
           <label className="sr-only" htmlFor="mk-shelf">
             Where to search
           </label>
@@ -164,13 +197,54 @@ export function SiteNav({ active = '', dashHref }: { active?: string; dashHref?:
           <label className="sr-only" htmlFor="mk-q">
             Search
           </label>
-          <input id="mk-q" type="search" enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search websites, apps and more" autoComplete="off" />
+          <input
+            id="mk-q"
+            type="search"
+            enterKeyHint="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search websites, apps and more"
+            autoComplete="off"
+            aria-describedby={showHits ? 'mk-hits' : undefined}
+          />
           <button type="submit" aria-label="Search">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
             </svg>
           </button>
+          {showHits && (
+            <div id="mk-hits" className="mk-hits" aria-label="Search results">
+              {hits.length === 0 ? (
+                <p className="mk-hits-none">Nothing found for “{term}”.</p>
+              ) : (
+                KINDS.filter((k) => hits.some((h) => h.kind === k)).map((k) => (
+                  <div key={k} className="mk-hits-group">
+                    <b>{KIND_LABEL[k]}</b>
+                    {hits
+                      .filter((h) => h.kind === k)
+                      .map((h) => (
+                        <a key={h.href + h.title} href={h.href} onClick={() => setFocus(false)}>
+                          <span>
+                            <SearchMark text={h.title} q={term} />
+                          </span>
+                          {(h.kind === 'page' || h.kind === 'post') && h.snippet ? (
+                            <small>
+                              <SearchMark text={h.snippet} q={term} />
+                            </small>
+                          ) : (
+                            h.sub && <small>{h.sub}</small>
+                          )}
+                        </a>
+                      ))}
+                  </div>
+                ))
+              )}
+              <Link className="mk-hits-all" href={'/search?q=' + encodeURIComponent(term)} onClick={() => setFocus(false)}>
+                See all results for “{term}”
+              </Link>
+            </div>
+          )}
         </form>
         <div className="mk-end">
           <Link className="mk-ico" href="/browse?saved=1" aria-label={`Saved${saved ? `, ${saved}` : ''}`}>
