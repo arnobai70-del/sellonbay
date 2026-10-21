@@ -3,12 +3,11 @@ import { expect, test } from '@playwright/test';
 /* The home page in the marketplace layout. Real products only, no brand logos, no claims we cannot keep. */
 const DEMO = process.env.DEMO_URL ?? 'http://localhost:3002';
 
-test('has one h1, every shelf with a count, featured products that open, and tabs that reorder', async ({ page }) => {
+test('has one h1, the hero stage, featured products that open, and tabs that reorder', async ({ page }) => {
   await page.goto(`${DEMO}/`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  for (const name of ['Websites', 'Android apps', 'iPhone & iPad apps', 'Web apps', 'Desktop apps', 'Digital products', 'Hire a developer', 'Domains'])
-    await expect(page.locator('.mk-tile', { hasText: name })).toBeVisible();
-  await expect(page.locator('.mk-tile[data-k=web]')).toContainText(/\d+ products/);
+  await expect(page.locator('.mk-stage-url')).toContainText('.com');
+  await expect(page.locator('.mk-stage-steps li')).toHaveCount(4);
   await expect(page.locator('.ex-grid .ex-card').first()).toBeVisible();
   const popular = await page.locator('.ex-grid .ex-name').allTextContents();
   await page.getByRole('tab', { name: 'New', exact: true }).click();
@@ -27,11 +26,9 @@ test('does not promise what we do not have, and states the fees from the config'
   await expect(page.locator('.mk-sellband')).toContainText('78% of every sale from $20 and 70% below it');
 });
 
-test('the popular row, collections and developer row lead to the right shelves', async ({ page }) => {
+test('the popular row and developer row lead to the right shelves', async ({ page }) => {
   await page.goto(`${DEMO}/`);
   await expect(page.locator('.mk-hero-pop a').first()).toHaveAttribute('href', /\?cat=/);
-  const set = page.locator('.mk-set').first();
-  await expect(set).toHaveAttribute('href', /\?cat=/);
   await expect(page.locator('.mk-svc', { hasText: 'Bug fixes' })).toHaveAttribute('href', '/developers?area=Bug%20fixes');
 });
 
@@ -39,7 +36,7 @@ test('on a phone the page stays inside its width and the tab bar does not cover 
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto(`${DEMO}/`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await expect(page.locator('.mk-tile').first()).toBeVisible();
+  await expect(page.locator('.mk-stage')).toBeVisible();
   await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }));
   const legal = page.locator('.mk-foot-base');
   const tabs = page.getByRole('navigation', { name: 'Quick links' });

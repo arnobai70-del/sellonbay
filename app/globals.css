@@ -2649,3 +2649,44 @@ html{scroll-padding-top:92px}
 }
 @keyframes dlg-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
 @keyframes dlg-fade{from{opacity:0}}
+
+/* Sign in and sign up (owner, 2026-10-21): an ink panel with the order card that follows the chosen role, and role cards
+   with icons. Replaces the colour-drifting panel. */
+.auth .art.auth-art{background:radial-gradient(70% 60% at 0% 0%,rgba(43,61,255,.5),transparent 70%),radial-gradient(60% 50% at 100% 100%,rgba(255,181,46,.22),transparent 70%),radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.5px) 0 0/22px 22px,var(--ink);animation:none;gap:34px}
+.auth-art h2{max-width:14ch}
+.auth-card{max-width:400px;padding:20px;border-radius:20px;background:#fff;color:var(--ink);box-shadow:0 40px 70px -30px rgba(0,0,0,.8)}
+.auth-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.auth-card-top b{font-family:var(--display);font-size:1.05rem}
+.auth-card-top span{padding:4px 10px;border-radius:99px;background:var(--fog);font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.auth-card ol{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:4px}
+.auth-card li{position:relative;display:flex;align-items:center;gap:12px;padding:8px 0;font-weight:600;font-size:14.5px;color:var(--mute)}
+.auth-card li i{position:relative;flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:#fff}
+.auth-card li:not(:last-child) i::after{content:"";position:absolute;left:8px;top:22px;width:2px;height:18px;background:var(--line)}
+.auth-card li.done{color:var(--ink)}
+.auth-card li.done i{border-color:var(--mint);background:var(--mint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-6.5' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat}
+.auth-card li.done i::after{background:var(--mint)}
+.auth-card li.now{color:var(--ink)}
+.auth-card li.now i{border-color:var(--gold);box-shadow:0 0 0 4px rgba(255,181,46,.2)}
+.auth-trust{list-style:none;margin:0;padding:0;display:grid;gap:8px;color:#C9CEEC;font-size:14.5px}
+.auth-trust li{display:flex;align-items:center;gap:10px}
+.auth-trust li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.auth-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:24px}
+.auth-role{position:relative;display:grid;gap:4px;justify-items:start;text-align:left;padding:16px;border-radius:var(--r-m);border:2px solid var(--line);background:#fff;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease}
+.auth-role b{font-family:var(--display);font-size:1.08rem}
+.auth-role .muted{font-size:14px}
+.auth-role-ico{display:grid;place-items:center;width:40px;height:40px;margin-bottom:6px;border-radius:12px;background:var(--fog);color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
+.auth-role:hover{border-color:#c5ceff}
+.auth-role[aria-checked=true]{border-color:var(--cobalt);background:var(--blue-bg);box-shadow:0 14px 28px -20px rgba(43,61,255,.7)}
+.auth-role[aria-checked=true] .auth-role-ico{background:var(--cobalt);color:#fff}
+.auth-role[aria-checked=true]::after{content:"";position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--cobalt) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-6.5' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/13px no-repeat}
+@media (max-width:420px){.auth-roles{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:no-preference){
+  .auth-card{animation:rise-up .6s cubic-bezier(.2,.75,.2,1) both}
+  .auth-card li{animation:auth-step .4s ease both}
+  .auth-card li:nth-child(1){animation-delay:.25s}
+  .auth-card li:nth-child(2){animation-delay:.4s}
+  .auth-card li:nth-child(3){animation-delay:.55s}
+  .auth-card li:nth-child(4){animation-delay:.7s}
+  .auth-role:active{transform:scale(.98)}
+}
+@keyframes auth-step{from{opacity:0;transform:translateX(-8px)}}
