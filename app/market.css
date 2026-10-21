@@ -248,13 +248,13 @@
 }
 @media (max-width:420px){.mk-grid{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:no-preference){
-  .mk-hero-copy>*{animation:rise-up .8s cubic-bezier(.2,.75,.2,1) both}
+  .mk-hero-copy>*{animation:rise-up .6s cubic-bezier(.2,.75,.2,1) both}
   .mk-hero-copy>:nth-child(2){animation-delay:.08s}
   .mk-hero-copy>:nth-child(3){animation-delay:.16s}
   .mk-hero-copy>:nth-child(4){animation-delay:.24s}
-  .mk-hero-shot{animation:rise-up 1s cubic-bezier(.2,.75,.2,1) both}
+  .mk-hero-shot{animation:rise-up .65s cubic-bezier(.2,.75,.2,1) both}
   .mk-hero-shot[data-i="1"]{animation-delay:.15s}
-  .mk-tile-art svg{transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+  .mk-tile-art svg{transition:transform .3s cubic-bezier(.2,.7,.2,1)}
   .mk-tile:hover .mk-tile-art svg{transform:translateY(-4px) rotate(-6deg) scale(1.08)}
 }
 
@@ -344,3 +344,23 @@ html.sheet-open{overflow:hidden}
 .mm-times span{display:grid;gap:4px}
 .mm-form .btn{justify-self:start;margin-top:4px}
 @media (max-width:640px){.mm-times{grid-template-columns:minmax(0,1fr)}}
+
+/* the phone tab bar marks the open tab with a short cobalt bar */
+.mk-tabs a{position:relative}
+.mk-tabs a::before{content:"";position:absolute;top:-6px;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--cobalt);transform:scaleX(0)}
+.mk-tabs a[aria-current]::before{transform:scaleX(1)}
+
+/* ---------- motion polish (October 2026): short, transform and opacity only, nothing without no-preference ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .mk-cat-link{transition:color .18s ease,border-color .18s ease}
+  .mk-panel:not([hidden]){animation:mk-drop .22s cubic-bezier(.2,.7,.2,1) both}
+  .mk-sheet:not([hidden]){animation:mk-fade-up .24s cubic-bezier(.2,.7,.2,1) both}
+  .mk-acc[open]>:not(summary){animation:mk-fade-up .2s ease both}
+  .mk-acc summary::after{transition:color .18s ease}
+  .mk-tabs a{transition:color .18s ease,background-color .18s ease}
+  .mk-tabs a::before{transition:transform .22s cubic-bezier(.2,.7,.2,1)}
+  .mk-catchips button{transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .15s ease}
+  .mk-catchips button:active{transform:scale(.97)}
+}
+@keyframes mk-drop{from{opacity:0;transform:translateY(-6px)}}
+@keyframes mk-fade-up{from{opacity:0;transform:translateY(8px)}}
