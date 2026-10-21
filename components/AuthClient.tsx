@@ -5,6 +5,7 @@ import { OAuthButtons } from './OAuthButtons';
 import { Turnstile } from './Turnstile';
 import { authenticate, requestReset } from '@/app/(bare)/login/actions';
 import { PAYOUT_HOLD_DAYS, REVIEW_HOURS } from '@/lib/config';
+import type { OAuthProvider } from '@/lib/supabase/oauth';
 
 const ROLES = [
   { key: 'buyer', title: 'I want a site', note: 'Pick one and go live on my domain.' },
@@ -26,7 +27,21 @@ function RoleIcon({ k }: { k: 'buyer' | 'seller' }) {
 }
 
 /* Real sign-in when Supabase keys are set, otherwise the old demo redirect. */
-export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boolean; error?: string; next?: string; sent?: boolean; botKey?: string }) {
+export function AuthClient({
+  live,
+  error,
+  next,
+  sent,
+  botKey = '',
+  oauth = [],
+}: {
+  live: boolean;
+  error?: string;
+  next?: string;
+  sent?: boolean;
+  botKey?: string;
+  oauth?: OAuthProvider[];
+}) {
   const router = useRouter();
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(sent ? 'forgot' : 'signin');
@@ -218,7 +233,7 @@ export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boo
               )}
             </form>
 
-            {live && <OAuthButtons next={next} />}
+            {live && oauth.length > 0 && <OAuthButtons next={next} providers={oauth} />}
 
             <p style={{ marginTop: 20 }} className="muted">
               {signup ? 'Already have an account? ' : 'New to SellOnBay? '}
