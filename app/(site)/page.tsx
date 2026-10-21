@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AppArt } from '@/components/AppPhone';
 import { SaveButton } from '@/components/SaveButton';
 import { HeroStage, type StageSite } from '@/components/HeroStage';
+import { LoopVideo } from '@/components/LoopVideo';
 import { ScaledPage } from '@/components/ScaledPage';
 import { StoreMotion } from '@/components/StoreMotion';
 import { TemplatePage } from '@/components/TemplatePage';
@@ -42,6 +43,9 @@ const TABS = [
   ['top', 'Top rated'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
+
+/* Real footage behind the hero. To use another clip, put it in public/video/ (short, silent, H.264, under ~5 MB) with a poster and change these two paths. */
+const HERO_VIDEO = { src: '/video/work-laptop.mp4', poster: '/video/work-laptop-poster.webp' };
 
 const SHELF_ORDER: Platform[] = ['web', 'android', 'ios', 'webapp', 'desktop', 'digital'];
 const AREA_NOTE: Record<(typeof AREAS)[number], string> = {
@@ -244,6 +248,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
     <div className="mk-home">
       <StoreMotion />
       <section className="mk-hero" aria-labelledby="mk-h1">
+        <LoopVideo className="mk-hero-video" src={HERO_VIDEO.src} poster={HERO_VIDEO.poster} />
+        <span className="mk-hero-shade" aria-hidden="true" />
         <div className="wrap mk-hero-in">
           <div className="mk-hero-copy">
             <h1 id="mk-h1">Websites, apps and digital products, ready to use</h1>
