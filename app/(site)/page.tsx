@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AppArt } from '@/components/AppPhone';
 import { SaveButton } from '@/components/SaveButton';
+import { HeroStage, type StageSite } from '@/components/HeroStage';
 import { ScaledPage } from '@/components/ScaledPage';
 import { StoreMotion } from '@/components/StoreMotion';
 import { TemplatePage } from '@/components/TemplatePage';
@@ -43,14 +44,6 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 const SHELF_ORDER: Platform[] = ['web', 'android', 'ios', 'webapp', 'desktop', 'digital'];
-const TILE_NOTE: Record<Platform, string> = {
-  web: 'Live on your own domain',
-  android: 'On your Google Play',
-  ios: 'On your App Store',
-  webapp: 'Deployed for you',
-  desktop: 'Windows, Mac and Linux',
-  digital: 'Files the moment you pay',
-};
 const AREA_NOTE: Record<(typeof AREAS)[number], string> = {
   Websites: 'A new page, a booking form, your own words',
   'Web apps': 'Features, logins and dashboards',
@@ -238,10 +231,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
   const live = (await Promise.all(SHELF_ORDER.map((pl) => getLiveDbProducts(pl)))).flat();
   const ids = new Set(live.map((p) => p.id));
   const all = [...live, ...(await starterProducts()).filter((p) => !ids.has(p.id))];
-  const count = (pl: Platform) => all.filter((p) => platformOf(p) === pl).length;
   const sorted = [...all].sort((a, b) => (tab === 'new' ? b.added.localeCompare(a.added) : tab === 'top' ? b.rating * Math.log(b.reviews + 2) - a.rating * Math.log(a.reviews + 2) : b.sold - a.sold));
   const featured = sorted.slice(0, 8);
-  const pictured = all.filter((p) => !isApp(p) && imageFor(p.id)).slice(0, 2);
+  const stage: StageSite[] = all
+    .filter((p) => !isApp(p) && imageFor(p.id))
+    .slice(0, 4)
+    .map((p) => ({ id: p.id, name: p.name, src: imageFor(p.id)!.src, domain: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com' }));
   const sets = collections(all);
   const keep = (bps: number) => pct(10_000 - bps);
 
@@ -275,58 +270,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
               </li>
             </ul>
           </div>
-          {pictured.length > 0 && (
-            <div className="mk-hero-art" aria-hidden="true">
-              {pictured.map((p, i) => (
-                <span key={p.id} className="mk-hero-shot" data-i={i}>
-                  <Cover p={p} sizes="280px" />
-                </span>
-              ))}
-              <span className="mk-hero-badge">
-                <b>Held in escrow</b>
-                <small>The seller is paid after you accept</small>
-              </span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="wrap mk-sec" aria-labelledby="mk-kinds">
-        <div className="mk-head">
-          <h2 id="mk-kinds">Every kind of product, for every kind of business</h2>
-          <Link className="link-u" href="/categories">
-            All categories
-          </Link>
-        </div>
-        <div className="mk-tiles" data-rise>
-          {SHELF_ORDER.map((pl) => (
-            <Link key={pl} href={shelfHref(pl)} className="mk-tile" data-k={pl}>
-              <span className="mk-tile-art">
-                <Glyph k={pl} size={34} />
-              </span>
-              <b>{shelfLabel(pl)}</b>
-              <small>
-                {count(pl)} {count(pl) === 1 ? 'product' : 'products'}
-              </small>
-              <small className="mk-tile-note">{TILE_NOTE[pl]}</small>
-            </Link>
-          ))}
-          <Link href="/developers" className="mk-tile" data-k="dev">
-            <span className="mk-tile-art">
-              <Glyph k="dev" size={34} />
-            </span>
-            <b>Hire a developer</b>
-            <small>Fixed prices, paid into escrow</small>
-            <small className="mk-tile-note">Changes, fixes and new builds</small>
-          </Link>
-          <Link href="/domains" className="mk-tile" data-k="domains">
-            <span className="mk-tile-art">
-              <Glyph k="domains" size={34} />
-            </span>
-            <b>Domains</b>
-            <small>Search an address</small>
-            <small className="mk-tile-note">Registered in your name</small>
-          </Link>
+          {stage.length > 0 && <HeroStage sites={stage} steps={['You pay into escrow', 'The seller sets it up', `You check it for ${REVIEW_HOURS} hours`, 'The seller is paid']} />}
         </div>
       </section>
 
@@ -354,34 +298,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           </div>
         </div>
       </section>
-
-      {sets.length > 0 && (
-        <section className="wrap mk-sec" aria-labelledby="mk-sets">
-          <div className="mk-head">
-            <h2 id="mk-sets">Collections</h2>
-            <Link className="link-u" href="/categories">
-              See every category
-            </Link>
-          </div>
-          <div className="mk-sets" data-rise>
-            {sets.map((c) => (
-              <Link key={c.key} href={c.href} className="mk-set">
-                <span className={'mk-set-pics n' + Math.min(c.items.length, 3)}>
-                  {c.items.slice(0, 3).map((p) => (
-                    <span key={p.id} className="mk-set-pic">
-                      <Cover p={p} sizes="300px" />
-                    </span>
-                  ))}
-                </span>
-                <b>{c.title}</b>
-                <small>
-                  {c.count} {c.count === 1 ? 'product' : 'products'}
-                </small>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="wrap mk-sec" aria-labelledby="ex-feat">
         <div className="mk-head">

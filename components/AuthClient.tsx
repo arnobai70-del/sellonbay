@@ -1,15 +1,29 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CrystalLogo } from './CrystalLogo';
 import { OAuthButtons } from './OAuthButtons';
 import { Turnstile } from './Turnstile';
 import { authenticate, requestReset } from '@/app/(bare)/login/actions';
+import { PAYOUT_HOLD_DAYS, REVIEW_HOURS } from '@/lib/config';
 
 const ROLES = [
   { key: 'buyer', title: 'I want a site', note: 'Pick one and go live on my domain.' },
   { key: 'seller', title: 'I sell sites', note: 'List what I built and get paid.' },
 ] as const;
+
+/* The order card on the left: what happens to a buyer's money, or to a seller's sale, step by step. */
+const JOURNEY = {
+  buyer: { title: 'Your order', domain: 'yourname.com', steps: ['Paid into escrow', 'Live on your domain', `${REVIEW_HOURS} hours to check it`, 'Seller paid after you accept'] },
+  seller: { title: 'Your sale', domain: 'Payout', steps: ['Buyer pays into escrow', 'You deliver the site', 'Buyer accepts', `Paid ${PAYOUT_HOLD_DAYS} days later`] },
+} as const;
+
+function RoleIcon({ k }: { k: 'buyer' | 'seller' }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {k === 'buyer' ? <path d="M6 7h12l-1 13H7L6 7zM9 7a3 3 0 0 1 6 0" /> : <path d="M4 10l1.5-5h13L20 10M4 10v9h16v-9M4 10h16M9 19v-5h6v5" />}
+    </svg>
+  );
+}
 
 /* Real sign-in when Supabase keys are set, otherwise the old demo redirect. */
 export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boolean; error?: string; next?: string; sent?: boolean; botKey?: string }) {
@@ -32,10 +46,26 @@ export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boo
 
   return (
     <div className="auth" data-auth>
-      <div className="art">
-        <h2>Your site is one domain away.</h2>
-        <CrystalLogo />
-        <div className="sun" style={{ width: 420, height: 420, right: -160, bottom: -200, top: 'auto' }} />
+      <div className="art auth-art">
+        <h2>{signup ? 'Your site is one domain away.' : 'Everything you bought or sold, in one place.'}</h2>
+        <div className="auth-card" key={signup ? role : 'signin'} aria-hidden="true">
+          <div className="auth-card-top">
+            <b>{JOURNEY[signup ? role : 'buyer'].title}</b>
+            <span>{JOURNEY[signup ? role : 'buyer'].domain}</span>
+          </div>
+          <ol>
+            {JOURNEY[signup ? role : 'buyer'].steps.map((t, n) => (
+              <li key={t} className={n < 2 ? 'done' : n === 2 ? 'now' : ''}>
+                <i />
+                {t}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <ul className="auth-trust">
+          <li>Money held in escrow on every order</li>
+          <li>Sellers sign in with an authenticator code</li>
+        </ul>
       </div>
       <div className="form">
         <h1 style={{ fontSize: '2.4rem' }}>{mode === 'forgot' ? 'Reset your password' : signup ? 'Create your account' : 'Welcome back'}</h1>
@@ -92,27 +122,14 @@ export function AuthClient({ live, error, next, sent, botKey = '' }: { live: boo
         ) : (
           <>
             {(signup || !live) && (
-              <div role="radiogroup" aria-label="What brings you here" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 24 }}>
+              <div role="radiogroup" aria-label="What brings you here" className="auth-roles">
                 {ROLES.map((r) => (
-                  <button
-                    key={r.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={role === r.key}
-                    onClick={() => setRole(r.key)}
-                    style={{
-                      textAlign: 'left',
-                      padding: 16,
-                      borderRadius: 'var(--r-m)',
-                      cursor: 'pointer',
-                      background: role === r.key ? 'var(--blue-bg)' : '#fff',
-                      border: '2px solid ' + (role === r.key ? 'var(--cobalt)' : 'var(--line)'),
-                    }}
-                  >
-                    <b style={{ display: 'block', fontFamily: 'var(--display)', fontSize: '1.1rem' }}>{r.title}</b>
-                    <span className="muted" style={{ fontSize: 14 }}>
-                      {r.note}
+                  <button key={r.key} type="button" role="radio" aria-checked={role === r.key} onClick={() => setRole(r.key)} className="auth-role">
+                    <span className="auth-role-ico">
+                      <RoleIcon k={r.key} />
                     </span>
+                    <b>{r.title}</b>
+                    <span className="muted">{r.note}</span>
                   </button>
                 ))}
               </div>
