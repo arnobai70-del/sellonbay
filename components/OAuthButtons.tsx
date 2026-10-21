@@ -1,8 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-
-type Provider = 'apple' | 'google';
+import type { OAuthProvider as Provider } from '@/lib/supabase/oauth';
 
 const APPLE = (
   <path
@@ -19,8 +18,8 @@ const GOOGLE = (
   </>
 );
 
-/* Supabase must have the provider switched on (Authentication > Providers) or this returns an error. */
-export function OAuthButtons({ next }: { next?: string }) {
+/* Only the providers switched on in Supabase are passed in (`enabledOAuth`), so no button leads to an error page. */
+export function OAuthButtons({ next, providers }: { next?: string; providers: Provider[] }) {
   const [error, setError] = useState('');
   const go = async (provider: Provider) => {
     setError('');
@@ -33,19 +32,15 @@ export function OAuthButtons({ next }: { next?: string }) {
       <p className="muted" style={{ fontSize: 14, marginBottom: 10 }}>
         Or continue with
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <button type="button" className="btn btn-line" onClick={() => go('google')}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            {GOOGLE}
-          </svg>
-          Google
-        </button>
-        <button type="button" className="btn btn-line" onClick={() => go('apple')}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            {APPLE}
-          </svg>
-          Apple
-        </button>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${providers.length}, minmax(0, 1fr))`, gap: 12 }}>
+        {providers.map((p) => (
+          <button key={p} type="button" className="btn btn-line" onClick={() => go(p)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              {p === 'google' ? GOOGLE : APPLE}
+            </svg>
+            {p === 'google' ? 'Google' : 'Apple'}
+          </button>
+        ))}
       </div>
       {error && (
         <p role="alert" style={{ color: 'var(--rose)', marginTop: 10 }}>
