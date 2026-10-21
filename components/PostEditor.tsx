@@ -1,11 +1,15 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { PostBody } from '@/components/PostBody';
+import { parseMarkdown, safeHref, videoOf } from '@/lib/markdown';
 import { GOOD, LIMITS, descriptionOf, postProblem, seoHints, slugify, type Post } from '@/lib/postRules';
 
 /*
  * The post editor in the admin panel: title, address, meta title and meta description with live character counts, a preview of how the post
- * looks in Google, SEO hints, and the text in simple Markdown. The server checks everything again (lib/posts.ts).
+ * looks in Google, SEO hints, and the text in simple Markdown with a toolbar (headings, bold, italic, links, lists, quote, picture
+ * upload or link, video, dividing line) and a preview. The title is the page's only h1, so the toolbar starts at H2. The server checks
+ * everything again (lib/posts.ts).
  */
 type Draft = Pick<Post, 'title' | 'slug' | 'metaTitle' | 'metaDescription' | 'excerpt' | 'body' | 'coverUrl' | 'coverAlt' | 'status' | 'noindex'>;
 const EMPTY: Draft = { title: '', slug: '', metaTitle: '', metaDescription: '', excerpt: '', body: '', coverUrl: '', coverAlt: '', status: 'draft', noindex: false };
@@ -13,6 +17,9 @@ const EMPTY: Draft = { title: '', slug: '', metaTitle: '', metaDescription: '', 
 function Count({ n, good, max }: { n: number; good: number; max: number }) {
   return <small className={n > good ? 'pe-over' : 'muted'}>{`${n} / ${good} shown in Google (max ${max})`}</small>;
 }
+
+/* Line marks the toolbar can set or clear at the start of each chosen line. */
+const LINE_MARK = /^(#{1,4}\s+|[-*]\s+|\d+[.)]\s+|>\s?)/;
 
 export function PostEditor({ post, siteUrl, siteName }: { post: (Draft & { id: string }) | null; siteUrl: string; siteName: string }) {
   const router = useRouter();
@@ -25,6 +32,92 @@ export function PostEditor({ post, siteUrl, siteName }: { post: (Draft & { id: s
   const shownTitle = (d.metaTitle || d.title || 'Post title') + ` · ${siteName}`;
   const shownDesc = descriptionOf(d) || 'The meta description you write appears here.';
   const hints = seoHints(d);
+  const area = useRef<HTMLTextAreaElement>(null);
+  const file = useRef<HTMLInputElement>(null);
+  const [view, setView] = useState<'write' | 'preview'>('write');
+  const [uploading, setUploading] = useState(false);
+
+  /* Replaces the chosen text (or inserts at the cursor) and puts the selection back where the writer expects it. */
+  function edit(fn: (text: string, start: number, end: number) => { text: string; start: number; end: number }) {
+    const el = area.current;
+    if (!el) return;
+    const r = fn(d.body, el.selectionStart, el.selectionEnd);
+    if (r.text.length > LIMITS.body) return setMsg({ ok: false, text: 'The post is too long.' });
+    set('body', r.text);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(r.start, r.end);
+    });
+  }
+  const wrap = (before: string, after: string, sample: string) =>
+    edit((t, a, b) => {
+      const inner = t.slice(a, b) || sample;
+      return { text: t.slice(0, a) + before + inner + after + t.slice(b), start: a + before.length, end: a + before.length + inner.length };
+    });
+  const lines = (mark: string, numbered = false) =>
+    edit((t, a, b) => {
+      const from = t.lastIndexOf('\n', a - 1) + 1;
+      const to = t.indexOf('\n', b) === -1 ? t.length : t.indexOf('\n', b);
+      const out = t
+        .slice(from, to)
+        .split('\n')
+        .map((l, i) => (l.trim() ? (numbered ? `${i + 1}. ` : mark) + l.replace(LINE_MARK, '') : l))
+        .join('\n');
+      return { text: t.slice(0, from) + out + t.slice(to), start: from, end: from + out.length };
+    });
+  const block = (md: string) =>
+    edit((t, a) => {
+      const before = t.slice(0, a).replace(/\s*$/, '');
+      const after = t.slice(a).replace(/^\s*/, '');
+      const head = before ? before + '\n\n' : '';
+      return { text: head + md + (after ? '\n\n' + after : '\n'), start: head.length + md.length, end: head.length + md.length };
+    });
+
+  function addLink() {
+    const href = window.prompt('Link address (https://... or a page here, like /browse)');
+    if (!href) return;
+    if (!safeHref(href)) return setMsg({ ok: false, text: 'That link address is not allowed. Use https://... or a path like /browse.' });
+    wrap('[', `](${href.trim()})`, 'link text');
+  }
+  function addImageLink() {
+    const src = window.prompt('Picture address (https://...)');
+    if (!src) return;
+    const h = safeHref(src);
+    if (!h || (h.external && !h.href.startsWith('https:'))) return setMsg({ ok: false, text: 'Use a picture address that starts with https://' });
+    const alt = window.prompt('What the picture shows (for people who cannot see it)') ?? '';
+    block(`![${alt.replace(/[[\]]/g, '')}](${h.href})`);
+  }
+  async function upload(f: File) {
+    setUploading(true);
+    setMsg(null);
+    const fd = new FormData();
+    fd.append('file', f);
+    const r = await fetch('/api/admin/posts/image', { method: 'POST', body: fd });
+    const j = await r.json().catch(() => ({}));
+    setUploading(false);
+    if (!r.ok) return setMsg({ ok: false, text: j.error ?? 'Could not upload the picture.' });
+    const alt = window.prompt('What the picture shows (for people who cannot see it)') ?? '';
+    block(`![${alt.replace(/[[\]]/g, '')}](${j.url})`);
+  }
+  function addVideo() {
+    const src = window.prompt('Video address: YouTube, Vimeo, or an https .mp4 / .webm file');
+    if (!src) return;
+    if (!videoOf(src)) return setMsg({ ok: false, text: 'Use a YouTube or Vimeo address, or an https link to an .mp4 or .webm file.' });
+    const title = window.prompt('A short title for the video (optional)') ?? '';
+    block(`@[${title.replace(/[[\]]/g, '') || 'video'}](${src.trim()})`);
+  }
+  const TOOLS: [string, string, () => void][] = [
+    ['H2', 'Heading', () => lines('## ')],
+    ['H3', 'Smaller heading', () => lines('### ')],
+    ['P', 'Normal paragraph', () => lines('')],
+    ['B', 'Bold', () => wrap('**', '**', 'bold text')],
+    ['I', 'Italic', () => wrap('*', '*', 'italic text')],
+    ['Link', 'Add a link', addLink],
+    ['• List', 'Bullet list', () => lines('- ')],
+    ['1. List', 'Numbered list', () => lines('', true)],
+    ['Quote', 'Quote', () => lines('> ')],
+    ['Line', 'Dividing line', () => block('---')],
+  ];
 
   async function save(status: Draft['status']) {
     const next = { ...d, status };
@@ -96,9 +189,56 @@ export function PostEditor({ post, siteUrl, siteName }: { post: (Draft & { id: s
           </div>
         )}
         <div className="field">
-          <label htmlFor="pe-body">Post</label>
-          <textarea id="pe-body" className="pe-body" rows={22} value={d.body} maxLength={LIMITS.body} onChange={(e) => set('body', e.target.value)} />
-          <small className="muted">## Heading, ### Smaller heading, **bold**, *italic*, [link text](https://...), - list item, 1. numbered item, &gt; quote, ![picture description](https://...)</small>
+          <div className="pe-bodyhead">
+            <label htmlFor="pe-body">Post</label>
+            <div className="pe-tabs" role="group" aria-label="Write or preview">
+              <button type="button" aria-pressed={view === 'write'} onClick={() => setView('write')}>
+                Write
+              </button>
+              <button type="button" aria-pressed={view === 'preview'} onClick={() => setView('preview')}>
+                Preview
+              </button>
+            </div>
+          </div>
+          {view === 'write' ? (
+            <>
+              <div className="pe-tools" role="toolbar" aria-label="Formatting">
+                {TOOLS.map(([label, title, run]) => (
+                  <button key={label} type="button" title={title} aria-label={title} onClick={run}>
+                    {label}
+                  </button>
+                ))}
+                <button type="button" title="Upload a picture" aria-label="Upload a picture" disabled={uploading} onClick={() => file.current?.click()}>
+                  {uploading ? 'Uploading…' : 'Upload picture'}
+                </button>
+                <button type="button" title="Picture from a link" aria-label="Picture from a link" onClick={addImageLink}>
+                  Picture link
+                </button>
+                <button type="button" title="Add a video" aria-label="Add a video" onClick={addVideo}>
+                  Video
+                </button>
+                <input
+                  ref={file}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  hidden
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = '';
+                    if (f) upload(f);
+                  }}
+                />
+              </div>
+              <textarea ref={area} id="pe-body" className="pe-body" rows={22} value={d.body} maxLength={LIMITS.body} onChange={(e) => set('body', e.target.value)} />
+              <small className="muted">
+                The title above is the page&apos;s H1, so headings in the post start at H2. Pictures: PNG, JPEG, WebP or GIF up to 5 MB. Videos: YouTube, Vimeo or an .mp4 / .webm link.
+              </small>
+            </>
+          ) : (
+            <div className="pe-preview post">
+              <div className="prose">{d.body.trim() ? <PostBody blocks={parseMarkdown(d.body)} /> : <p className="muted">Nothing written yet.</p>}</div>
+            </div>
+          )}
         </div>
         <label className="adm-check">
           <input type="checkbox" checked={d.noindex} onChange={(e) => set('noindex', e.target.checked)} />

@@ -84,6 +84,25 @@ export function PostBody({ blocks }: { blocks: Block[] }) {
           case 'img':
             // eslint-disable-next-line @next/next/no-img-element -- pictures in posts come from any https address the admin gives; next/image needs a fixed list of hosts
             return <img key={i} className="post-img" src={b.src} alt={b.alt} loading="lazy" decoding="async" />;
+          case 'video':
+            // YouTube and Vimeo players need scripts and their own origin inside the frame; the frame still cannot reach our page.
+            return b.kind === 'embed' ? (
+              <div key={i} className="post-video">
+                <iframe
+                  src={b.src}
+                  title={b.title}
+                  loading="lazy"
+                  allow="encrypted-media; picture-in-picture; fullscreen"
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <video key={i} className="post-video-file" src={b.src} title={b.title} controls preload="metadata" playsInline />
+            );
+          case 'hr':
+            return <hr key={i} className="post-hr" />;
         }
       })}
     </>

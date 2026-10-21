@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { auditList } from '@/lib/admin/audit';
-import { markdownText, parseInline, parseMarkdown, safeHref } from '@/lib/markdown';
+import { markdownText, parseInline, parseMarkdown, safeHref, videoOf } from '@/lib/markdown';
 import { allPosts, deletePost, descriptionOf, postProblem, publishedPost, publishedPosts, savePost, seoHints, slugify, type PostInput } from '@/lib/posts';
 import { getSeo, setSeo, verificationCode } from '@/lib/seo/site';
 
@@ -46,6 +46,35 @@ describe('markdown in posts', () => {
     const b = parseMarkdown('## Price\n\n## Price');
     expect(b.map((x) => (x.t === 'h2' ? x.id : ''))).toEqual(['price', 'price-2']);
     expect(markdownText('## Hi\n\n**Bold** words')).toBe('Hi Bold words');
+  });
+});
+
+describe('videos, uploaded pictures and dividing lines in posts', () => {
+  it('turns YouTube and Vimeo addresses into player addresses built from the id only', () => {
+    const yt = { kind: 'embed', src: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ' };
+    expect(videoOf('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10')).toEqual(yt);
+    expect(videoOf('https://youtu.be/dQw4w9WgXcQ')).toEqual(yt);
+    expect(videoOf('https://youtube.com/shorts/dQw4w9WgXcQ')).toEqual(yt);
+    expect(videoOf('https://vimeo.com/76979871')).toEqual({ kind: 'embed', src: 'https://player.vimeo.com/video/76979871?dnt=1' });
+    expect(videoOf('https://cdn.example/clip.mp4')).toEqual({ kind: 'file', src: 'https://cdn.example/clip.mp4' });
+    expect(videoOf('http://cdn.example/clip.mp4')).toBeNull();
+    expect(videoOf('https://evil.example/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(videoOf('https://www.youtube.com/watch?v="><script>')).toBeNull();
+    expect(videoOf('javascript:alert(1)')).toBeNull();
+  });
+  it('reads @[title](video), a lone YouTube link, --- and our own uploaded pictures', () => {
+    const b = parseMarkdown(
+      '@[Shop tour](https://youtu.be/dQw4w9WgXcQ)\n\nhttps://vimeo.com/76979871\n\n---\n\n![Cake](/blog/media/0b6c8f9e-1f2a-4c3d-9e8f-123456789abc.png)\n\n@[x](https://evil.example/a)',
+    );
+    expect(b).toEqual([
+      { t: 'video', kind: 'embed', src: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', title: 'Shop tour' },
+      { t: 'video', kind: 'embed', src: 'https://player.vimeo.com/video/76979871?dnt=1', title: 'Video' },
+      { t: 'hr' },
+      { t: 'img', src: '/blog/media/0b6c8f9e-1f2a-4c3d-9e8f-123456789abc.png', alt: 'Cake' },
+    ]);
+    expect(markdownText('@[Tour](https://youtu.be/dQw4w9WgXcQ)\n\nWords')).toBe('Words');
+    // an ordinary link alone on a line stays a paragraph
+    expect(parseMarkdown('https://example.com/page')[0].t).toBe('p');
   });
 });
 

@@ -31,7 +31,7 @@ const SECRETS = [
    lib/maintenance/state.ts reads module maintenance for proxy.ts, which cannot use the server client. */
 const CHECK = 'lib/launchCheck.ts';
 const ALLOWED: Record<string, string[]> = {
-  SUPABASE_SERVICE_ROLE_KEY: ['lib/supabase/server.ts', 'lib/catalog.ts', 'lib/delivery/service.ts', 'app/demo/[id]/[[...path]]/route.ts', 'lib/maintenance/state.ts', CHECK],
+  SUPABASE_SERVICE_ROLE_KEY: ['lib/supabase/server.ts', 'lib/catalog.ts', 'lib/delivery/service.ts', 'app/demo/[id]/[[...path]]/route.ts', 'lib/maintenance/state.ts', 'lib/blogMedia.ts', CHECK],
   DELIVERY_SECRET: ['lib/delivery/service.ts', CHECK],
   PAYMENT_WEBHOOK_SECRET: ['lib/providers/payment/fake.ts', CHECK],
   CRON_SECRET: ['app/api/cron/orders/route.ts', 'app/api/cron/payouts/route.ts', CHECK],
