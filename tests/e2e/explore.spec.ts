@@ -27,12 +27,9 @@ test('does not promise what we do not have, and states the fees from the config'
   await expect(page.locator('.mk-sellband')).toContainText('78% of every sale from $20 and 70% below it');
 });
 
-test('the hero search, collections and developer row lead to the right shelves', async ({ page }) => {
+test('the popular row, collections and developer row lead to the right shelves', async ({ page }) => {
   await page.goto(`${DEMO}/`);
-  await page.locator('#mk-hq').fill('clinic');
-  await page.locator('.mk-hsearch').getByRole('button', { name: 'Search' }).click();
-  await expect(page).toHaveURL(/\/browse\?q=clinic/);
-  await page.goto(`${DEMO}/`);
+  await expect(page.locator('.mk-hero-pop a').first()).toHaveAttribute('href', /\?cat=/);
   const set = page.locator('.mk-set').first();
   await expect(set).toHaveAttribute('href', /\?cat=/);
   await expect(page.locator('.mk-svc', { hasText: 'Bug fixes' })).toHaveAttribute('href', '/developers?area=Bug%20fixes');
