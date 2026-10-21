@@ -18,6 +18,7 @@ describe('rules in one place', () => {
     expect(CONFIG.ai.freeRunsPerDay).toBe(5);
     expect(CONFIG.domain.reminderDays).toEqual([30, 7, 1]);
     expect(CONFIG.abuse).toEqual({ autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 });
+    expect(CONFIG.analytics).toEqual({ keepDays: 90, topRows: 15, perVisitorPerMinute: 60, reportsShown: 30, attraction: { minViewers: 10, strongPct: 10, fairPct: 3 } }); // lib/analytics.ts
     expect(CONFIG.catalogCacheSeconds).toBe(60); // public live-listing list only (lib/catalog.ts)
     expect(CONFIG.emailQueue).toEqual({ maxAttempts: 5, retryMinutes: [1, 5, 30, 120], batch: 50 }); // lib/emailQueue.ts
     expect(CONFIG.orderReuseMinutes).toBe(10); // a second Buy of the same thing opens the unpaid order (lib/orders/service.ts)

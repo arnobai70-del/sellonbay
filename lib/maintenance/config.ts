@@ -54,6 +54,7 @@ const API_RULES: [RegExp, ModuleKey][] = [
   [/^\/(seller|developers)(\/|$)/, 'seller'],
   [/^\/domains(\/|$)/, 'catalog'],
   [/^\/tools(\/|$)/, 'ai'],
+  [/^\/track$/, 'visitor'], // visitor analytics: a closed module just stops counting
 ];
 
 /* Pages, most specific first. Pages in no module (home, how it works, FAQ, policies, sell landing page) are always open. */

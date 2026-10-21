@@ -297,4 +297,30 @@ if (!failed) {
   }
 }
 
+if (!failed) {
+  // 0052: visitor analytics are server only; a visitor counts once a day, repeats are capped, a returning visitor is told apart, and old rows go.
+  try {
+    for (const t of ['analytics_visitors', 'analytics_hits', 'analytics_reports'])
+      for (const r of ['anon', 'authenticated']) if ((await db.query(`select has_table_privilege('${r}', '${t}', 'select') as p`)).rows[0].p) throw new Error(`${r} can read ${t}`);
+    const fn = async (role) => (await db.query(`select has_function_privilege('${role}', 'analytics_hit(date, text, text, text)', 'execute') as p`)).rows[0].p;
+    if ((await fn('anon')) || (await fn('authenticated'))) throw new Error('clients can write hits');
+    await db.exec(`select analytics_hit('2026-10-01', 'visitor-aaaa', 'visit', '')`);
+    await db.exec(`select analytics_hit('2026-10-02', 'visitor-aaaa', 'visit', '')`);
+    await db.exec(`select analytics_hit('2026-10-02', 'visitor-aaaa', 'visit', '')`);
+    await db.exec(`select analytics_hit('2026-10-02', 'visitor-bbbb', 'visit', '')`);
+    for (let i = 0; i < 60; i++) await db.exec(`select analytics_hit('2026-10-02', 'visitor-bbbb', 'product', 'saffron-table')`);
+    await db.exec(`select analytics_hit('2026-10-02', 'visitor-aaaa', 'product', 'saffron-table')`);
+    const d = (await db.query(`select * from analytics_days('2026-10-02', '2026-10-02')`)).rows[0];
+    if (Number(d.visitors) !== 2 || Number(d.repeat_visitors) !== 1 || Number(d.products) !== 51) throw new Error(`day gave ${JSON.stringify(d)}`);
+    const top = (await db.query(`select * from analytics_top('product', '2026-10-01', '2026-10-02', 5)`)).rows;
+    if (top.length !== 1 || Number(top[0].people) !== 2) throw new Error(`top gave ${JSON.stringify(top)}`);
+    await db.exec(`select analytics_purge('2026-10-03')`);
+    if ((await db.query(`select (select count(*) from analytics_hits) + (select count(*) from analytics_visitors) as c`)).rows[0].c != 0) throw new Error('purge left rows');
+    console.log('ok   visitor analytics: server only, one visitor a day, capped repeats, returning visitors, purge');
+  } catch (e) {
+    failed = true;
+    console.log('FAIL visitor analytics:', e.message);
+  }
+}
+
 process.exit(failed ? 1 : 0);

@@ -38,7 +38,8 @@ export type NotificationKind =
   | 'order_hold_alert'
   | 'order_hold_decided'
   | 'order_held'
-  | 'abuse_alert';
+  | 'abuse_alert'
+  | 'daily_report';
 
 export type Payload = Record<string, string | number | boolean | null | undefined>;
 const t = (v: unknown, fallback = 'your order') =>
@@ -147,4 +148,8 @@ export const TEMPLATES: Record<NotificationKind, (p: Payload) => { subject: stri
     text: `Too many messages were blocked. You can use the account again after ${t(p.until, 'a few days')}. Contact support if you think this is a mistake.`,
   }),
   abuse_alert: (p) => ({ subject: `Admin alert: ${t(p.what, 'something needs a look')}`, text: t(p.detail, 'Open the admin dashboard.') }),
+  daily_report: (p) => ({
+    subject: `Daily report for ${t(p.day, 'yesterday')}: ${t(p.visitors, '0')} visitors`,
+    text: `${t(p.visitors, '0')} visitors (${t(p.repeat, '0')} came back), ${t(p.pages, '0')} pages opened, ${t(p.orders, '0')} orders. Most opened product: ${t(p.top, 'none yet')}. The full report is under Visitors in the admin dashboard.`,
+  }),
 };

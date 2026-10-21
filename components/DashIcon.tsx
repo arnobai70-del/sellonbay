@@ -1,6 +1,6 @@
 /* Line icons for the dashboards (menu, overview cards). Plain SVG, no client code. */
 export type IconName =
-  'grid' | 'bag' | 'chat' | 'shield' | 'plus' | 'home' | 'user' | 'scale' | 'wallet' | 'flag' | 'lock' | 'gear' | 'search' | 'check' | 'pulse' | 'layers' | 'branch' | 'list' | 'tool';
+  'grid' | 'bag' | 'chat' | 'shield' | 'plus' | 'home' | 'user' | 'scale' | 'wallet' | 'flag' | 'lock' | 'gear' | 'search' | 'check' | 'pulse' | 'layers' | 'branch' | 'list' | 'tool' | 'chart';
 
 const ICON: Record<IconName, React.ReactNode> = {
   grid: <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
@@ -38,6 +38,7 @@ const ICON: Record<IconName, React.ReactNode> = {
   ),
   check: <path d="M4 12l5 5L20 6" />,
   pulse: <path d="M3 12h4l3-7 4 14 3-7h4" />,
+  chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   layers: <path d="M12 4l9 5-9 5-9-5zM3 14l9 5 9-5" />,
   branch: (
     <>

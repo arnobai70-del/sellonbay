@@ -56,6 +56,9 @@ export const CONFIG = {
   abuse: { autoSuspendReports: 3, windowDays: 7, perIpPerHour: 5 }, // different reporters in the window that pause a listing by themselves
   notify: { dueSoonHours: 6, reviewEndingHours: 12 }, // reminders before a delivery is due and before a review ends
   ai: { freeRunsPerDay: 5, cacheDays: 30 },
+  // visitor analytics (lib/analytics.ts): days of rows kept, rows in each top list, events one visitor may send a minute, stored daily reports listed,
+  // and when a product counts as attractive (enough different viewers, and the share of them who clicked Buy)
+  analytics: { keepDays: 90, topRows: 15, perVisitorPerMinute: 60, reportsShown: 30, attraction: { minViewers: 10, strongPct: 10, fairPct: 3 } },
   catalogCacheSeconds: 60, // each server copy keeps the public list of live listings this long (lib/catalog.ts); never checkout, orders or user data
   emailQueue: { maxAttempts: 5, retryMinutes: [1, 5, 30, 120] as readonly number[], batch: 50 }, // lib/emailQueue.ts: tries per email, wait before each retry, emails per scheduled run
   orderReuseMinutes: 10, // a second Buy of the same thing by the same buyer within this time opens the unpaid order instead of a new one
