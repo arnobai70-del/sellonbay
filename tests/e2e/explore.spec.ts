@@ -3,11 +3,9 @@ import { expect, test } from '@playwright/test';
 /* The home page in the marketplace layout. Real products only, no brand logos, no claims we cannot keep. */
 const DEMO = process.env.DEMO_URL ?? 'http://localhost:3002';
 
-test('has one h1, the hero deck, featured products that open, and tabs that reorder', async ({ page }) => {
+test('has one h1, the domain finder, featured products that open, and tabs that reorder', async ({ page }) => {
   await page.goto(`${DEMO}/`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.locator('.mk-deck-card[data-pos="0"]')).toHaveCount(1);
-  await expect(page.locator('.mk-deck-card[data-pos="0"]')).toContainText(/Live in \d+ days?/);
   await expect(page.locator('.ex-grid .ex-card').first()).toBeVisible();
   const popular = await page.locator('.ex-grid .ex-name').allTextContents();
   await page.getByRole('tab', { name: 'New', exact: true }).click();
@@ -26,6 +24,15 @@ test('does not promise what we do not have, and states the fees from the config'
   await expect(page.locator('.mk-sellband')).toContainText('78% of every sale from $20 and 70% below it');
 });
 
+test('the hero domain box opens the domain search with the name', async ({ page }) => {
+  await page.goto(`${DEMO}/`);
+  await expect(page.locator('.mk-find-list li')).toHaveCount(4);
+  await page.getByLabel('Find a domain for your site').fill('Sunrise Bakery');
+  await page.getByRole('button', { name: 'Find domain' }).click();
+  await expect(page).toHaveURL(/\/domains\?q=/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+});
+
 test('the popular row and developer row lead to the right shelves', async ({ page }) => {
   await page.goto(`${DEMO}/`);
   await expect(page.locator('.mk-hero-pop a').first()).toHaveAttribute('href', /\?cat=/);
@@ -36,7 +43,7 @@ test('on a phone the page stays inside its width and the tab bar does not cover 
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto(`${DEMO}/`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await expect(page.locator('.mk-deck')).toBeVisible();
+  await expect(page.locator('.mk-find')).toBeVisible();
   await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }));
   const legal = page.locator('.mk-foot-base');
   const tabs = page.getByRole('navigation', { name: 'Quick links' });

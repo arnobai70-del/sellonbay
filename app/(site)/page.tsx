@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AppArt } from '@/components/AppPhone';
 import { SaveButton } from '@/components/SaveButton';
-import { HeroDeck, type DeckCard } from '@/components/HeroDeck';
+import { HeroDomain } from '@/components/HeroDomain';
 import { LoopVideo } from '@/components/LoopVideo';
 import { ScaledPage } from '@/components/ScaledPage';
 import { StoreMotion } from '@/components/StoreMotion';
@@ -239,10 +239,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
   const all = [...live, ...(await starterProducts()).filter((p) => !ids.has(p.id))];
   const sorted = [...all].sort((a, b) => (tab === 'new' ? b.added.localeCompare(a.added) : tab === 'top' ? b.rating * Math.log(b.reviews + 2) - a.rating * Math.log(a.reviews + 2) : b.sold - a.sold));
   const featured = sorted.slice(0, 8);
-  const deck: DeckCard[] = all
-    .filter((p) => !isApp(p) && imageFor(p.id))
-    .slice(0, 5)
-    .map((p) => ({ id: p.id, name: p.name, src: imageFor(p.id)!.src, cat: p.cat, days: p.days }));
   const sets = collections(all);
   const keep = (bps: number) => pct(10_000 - bps);
 
@@ -278,7 +274,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
               </li>
             </ul>
           </div>
-          <HeroDeck cards={deck} />
+          <HeroDomain />
         </div>
       </section>
 

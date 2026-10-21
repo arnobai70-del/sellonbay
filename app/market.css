@@ -374,32 +374,43 @@ html.sheet-open{overflow:hidden}
 @keyframes mk-pop{from{opacity:0;transform:scale(.6)}}
 @keyframes mk-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
-/* ---------- home hero deck (owner, 2026-10-21): a fanned stack of real listings; the front card slides to the back
-   and the next comes forward. Hover, off-screen, hidden tab and reduced motion keep it still. ---------- */
-.mk-deck{position:relative;display:grid;justify-items:center;gap:22px;max-width:520px;width:100%;justify-self:end;padding:34px 56px 0 0}
-.mk-deck-stack{position:relative;width:100%;aspect-ratio:4/4.1}
-.mk-deck-card{position:absolute;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto;border-radius:22px;overflow:hidden;background:#fff;color:var(--ink);text-decoration:none;box-shadow:0 40px 70px -30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.16);transform-origin:50% 100%}
-.mk-deck-card[data-pos="0"]{z-index:4}
-.mk-deck-card[data-pos="1"]{z-index:3;transform:translate(28px,-18px) rotate(4deg) scale(.95);filter:brightness(.82)}
-.mk-deck-card[data-pos="2"]{z-index:2;transform:translate(54px,-34px) rotate(8deg) scale(.9);filter:brightness(.66)}
-.mk-deck-card[data-pos="3"]{z-index:1;transform:translate(54px,-34px) rotate(8deg) scale(.9);opacity:0}
-.mk-deck-pic{position:relative;background:var(--fog)}
-.mk-deck-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:2px 12px;padding:14px 18px 16px}
-.mk-deck-cat{grid-column:1;color:var(--mute);font-size:12.5px;font-weight:600}
-.mk-deck-name{grid-column:1;font-family:var(--display);font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mk-deck-days{grid-column:2;grid-row:1/span 2;align-self:center;padding:7px 12px;border-radius:99px;background:#E4F5EF;color:#0A7A5B;font-size:12.5px;font-weight:700;white-space:nowrap}
-.mk-deck-card[data-pos="0"]:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
-.mk-deck-dots{display:flex;gap:8px;padding:8px 12px;border-radius:99px;background:rgba(15,19,48,.72);border:1px solid rgba(255,255,255,.14)}
-.mk-deck-dots button{width:9px;height:9px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.35);cursor:pointer}
-.mk-deck-dots button[aria-pressed="true"]{width:26px;background:var(--gold)}
-@media (max-width:1023px){.mk-deck{justify-self:start;max-width:440px}}
-@media (max-width:640px){.mk-deck{padding:24px 34px 0 0}.mk-deck-card[data-pos="1"]{transform:translate(16px,-12px) rotate(3deg) scale(.95)}.mk-deck-card[data-pos="2"],.mk-deck-card[data-pos="3"]{transform:translate(30px,-22px) rotate(6deg) scale(.9)}}
+/* ---------- home hero domain finder (owner, 2026-10-21, replaced the card deck): a panel that types a name, scans and lists
+   name ideas, and a real form to /domains. Off-screen, hidden tab, hover/focus and reduced motion keep it still. ---------- */
+.mk-find{display:grid;gap:14px;max-width:500px;width:100%;justify-self:end}
+.mk-find-panel{padding:18px;border-radius:22px;background:rgba(255,255,255,.96);color:var(--ink);box-shadow:0 40px 70px -30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.16)}
+.mk-find-bar{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:14px;background:var(--fog);border:1px solid #E1E5F0;color:var(--mute)}
+.mk-find-typed{min-width:0;color:var(--ink);font-family:var(--display);font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden}
+.mk-find-caret{display:inline-block;width:2px;height:1.05em;margin-left:2px;vertical-align:-2px;background:var(--cobalt);opacity:0}
+.mk-find-caret[data-on]{opacity:1}
+.mk-find-scan{height:3px;margin:12px 4px 6px;border-radius:99px;background:#E7EAF4;overflow:hidden}
+.mk-find-scan span{display:block;width:35%;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cobalt),var(--gold));opacity:0}
+.mk-find-scan[data-on] span{opacity:1}
+.mk-find-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}
+.mk-find-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid #E7EAF4;background:#fff}
+.mk-find-dom{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-find-dom b{color:var(--cobalt)}
+.mk-find-tag{padding:4px 10px;border-radius:99px;background:var(--fog);color:var(--mute);font-size:12px;font-weight:700}
+.mk-find-list li:not([data-in]){background:#F3F5FA;border-color:#EEF0F6}
+.mk-find-list li:not([data-in])>*{visibility:hidden}
+.mk-find-list li[data-pick]{border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(43,61,255,.12)}
+.mk-find-list li[data-pick] .mk-find-tag{background:#E4F5EF;color:#0A7A5B}
+.mk-find-note{margin:12px 2px 0;color:var(--mute);font-size:12.5px}
+.mk-find-form{display:grid;gap:8px;padding:16px;border-radius:18px;background:rgba(15,19,48,.72);border:1px solid rgba(255,255,255,.14)}
+.mk-find-form label{color:#fff;font-weight:600;font-size:14px}
+.mk-find-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.mk-find-row input{min-width:0;height:48px;padding:0 14px;border-radius:12px;border:1px solid transparent;background:#fff;color:var(--ink);font:inherit;font-size:15px}
+.mk-find-row input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.mk-find-row .btn{height:48px;white-space:nowrap}
+@media (max-width:1023px){.mk-find{justify-self:start;max-width:460px}}
+@media (max-width:420px){.mk-find-row{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:no-preference){
-  .mk-deck{animation:rise-up .65s cubic-bezier(.2,.75,.2,1) .1s both}
-  .mk-deck-card{transition:transform .7s cubic-bezier(.2,.75,.2,1),filter .7s ease,opacity .5s ease}
-  .mk-deck-card[data-pos="0"]:hover{transform:translateY(-6px) rotate(-1deg)}
-  .mk-deck-dots button{transition:width .3s ease,background-color .3s ease}
+  .mk-find{animation:rise-up .65s cubic-bezier(.2,.75,.2,1) .1s both}
+  .mk-find-list li{transition:opacity .35s ease,transform .35s cubic-bezier(.2,.75,.2,1),border-color .3s ease,box-shadow .3s ease}
+  .mk-find-scan[data-on] span{animation:mk-scan .9s ease-in-out infinite}
+  .mk-find-caret[data-on]{animation:mk-blink 1s steps(1) infinite}
 }
+@keyframes mk-scan{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+@keyframes mk-blink{50%{opacity:0}}
 
 /* ---------- hero video (owner, 2026-10-21): our product pages drifting behind the hero, darkened so the words stay readable.
    LoopVideo plays it only on screen and keeps the poster for reduced motion. ---------- */
