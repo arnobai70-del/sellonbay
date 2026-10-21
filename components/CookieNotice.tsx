@@ -22,7 +22,8 @@ export function CookieNotice() {
   return (
     <div className="cookie" role="region" aria-label="Cookies">
       <p>
-        We only use the cookies the site needs to work, like keeping you signed in. No advertising, no tracking cookies. <Link href="/privacy#cookies">What we store</Link>
+        We only use the cookies the site needs to work, like keeping you signed in. No advertising, no tracking cookies. The live chat (Tawk.to) sets its own cookies so a conversation carries on.{' '}
+        <Link href="/privacy#cookies">What we store</Link>
       </p>
       <button
         className="btn btn-blue btn-sm"

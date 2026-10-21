@@ -34,8 +34,9 @@ export default function Privacy() {
         animation). To stop abuse we also set a random device id cookie and keep a hashed form of it and of your connection address with the actions you take (sign up, order, list), for{' '}
         {CONFIG.limits.keepDays} days. When you accept an order we keep a record of the click (time, your connection address, your browser and the words you saw) as evidence in case of a dispute or a
         chargeback. To see how many people visit and which products and categories they open, we count page opens with a hashed form of your connection address and browser (no cookie, and the address
-        itself is not kept) for {CONFIG.analytics.keepDays} days; a browser that sends Global Privacy Control or Do Not Track is not counted. We do not use advertising or tracking cookies. If we ever
-        add an optional one, we will ask first.
+        itself is not kept) for {CONFIG.analytics.keepDays} days; a browser that sends Global Privacy Control or Do Not Track is not counted. The live chat on public pages is run by Tawk.to: it loads
+        from their servers, sets its own cookies so a conversation carries on between pages, and what you type in it (and any name or email you give) goes to Tawk.to. We do not use advertising or
+        tracking cookies. If we ever add an optional one, we will ask first.
       </p>
 
       <h2>Your choices</h2>

@@ -9,11 +9,11 @@ import type { NextConfig } from 'next';
 const dev = process.env.NODE_ENV !== 'production';
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com`,
-  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com https://*.tawk.to https://cdn.jsdelivr.net`,
+  "style-src 'self' 'unsafe-inline' https://*.tawk.to https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com${dev ? ' ws: http://localhost:*' : ''}`,
+  "font-src 'self' data: https://*.tawk.to https://fonts.gstatic.com",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://*.tawk.to wss://*.tawk.to${dev ? ' ws: http://localhost:*' : ''}`,
   "frame-src 'self' https:", // our own previews and a seller's https demo link
   "worker-src 'self' blob:",
   "media-src 'self' https: blob:",
