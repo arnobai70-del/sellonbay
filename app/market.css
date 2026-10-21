@@ -392,11 +392,11 @@ html.sheet-open{overflow:hidden}
 .mk-stage-view img{opacity:0}
 .mk-stage-view img.on{opacity:1}
 .mk-stage-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.mk-stage-steps li{display:grid;justify-items:start;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#AEB5DD;font-size:12.5px;font-weight:600;line-height:1.3}
+.mk-stage-steps li{display:grid;justify-items:start;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(20,25,62,.88);border:1px solid rgba(255,255,255,.12);color:#AEB5DD;font-size:12.5px;font-weight:600;line-height:1.3}
 .mk-stage-steps i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-style:normal;font-family:var(--display);font-weight:800;font-size:12px}
-.mk-stage-steps li.done{color:#fff;border-color:rgba(14,159,118,.6);background:rgba(14,159,118,.16)}
+.mk-stage-steps li.done{color:#fff;border-color:rgba(14,159,118,.6);background:#123B48}
 .mk-stage-steps li.done i{background:var(--mint)}
-.mk-stage-steps li.now{color:#fff;border-color:var(--gold);background:rgba(255,181,46,.14)}
+.mk-stage-steps li.now{color:#fff;border-color:var(--gold);background:#3A3438}
 .mk-stage-steps li.now i{background:var(--gold);color:var(--ink)}
 .mk-stage-name{position:absolute;left:-14px;top:58px;padding:8px 14px;border-radius:12px;background:var(--ink);color:#fff;font-family:var(--display);font-weight:700;font-size:14px;box-shadow:0 16px 30px -14px rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.14)}
 @media (max-width:1023px){.mk-stage{justify-self:start}}
@@ -411,9 +411,9 @@ html.sheet-open{overflow:hidden}
   .mk-stage:hover .mk-stage-win{transform:translateY(-4px)}
 }
 
-/* ---------- hero video (owner, 2026-10-21): real footage behind the hero, darkened so the words stay readable.
+/* ---------- hero video (owner, 2026-10-21): our product pages drifting behind the hero, darkened so the words stay readable.
    LoopVideo plays it only on screen and keeps the poster for reduced motion. ---------- */
 .mk-hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 50%}
-.mk-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,19,48,.94) 0%,rgba(15,19,48,.82) 45%,rgba(15,19,48,.55) 100%),radial-gradient(60% 90% at 85% 10%,rgba(43,61,255,.45),transparent 70%)}
+.mk-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,19,48,.92) 0%,rgba(15,19,48,.78) 40%,rgba(15,19,48,.42) 100%),radial-gradient(60% 90% at 85% 10%,rgba(43,61,255,.35),transparent 70%)}
 .mk-hero-in{position:relative}
 @media (max-width:1023px){.mk-hero-shade{background:linear-gradient(180deg,rgba(15,19,48,.9),rgba(15,19,48,.78))}}
