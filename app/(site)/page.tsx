@@ -44,8 +44,10 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
-/* Real footage behind the hero. To use another clip, put it in public/video/ (short, silent, H.264, under ~5 MB) with a poster and change these two paths. */
-const HERO_VIDEO = { src: '/video/work-laptop.mp4', poster: '/video/work-laptop-poster.webp' };
+/* The clip behind the hero: our own product pages drifting past in browser windows, rendered from
+   scripts/hero-video-scene.html (see the note in scripts/hero-video-render.cjs). To use another clip, put it in
+   public/video/ (short, silent, H.264, under ~5 MB) with a poster and change these two paths. */
+const HERO_VIDEO = { src: '/video/marketplace-wall.mp4', poster: '/video/marketplace-wall-poster.webp' };
 
 const SHELF_ORDER: Platform[] = ['web', 'android', 'ios', 'webapp', 'desktop', 'digital'];
 const AREA_NOTE: Record<(typeof AREAS)[number], string> = {
