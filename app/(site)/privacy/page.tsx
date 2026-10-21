@@ -33,7 +33,9 @@ export default function Privacy() {
         We use only what the site needs to work: a sign-in session so you stay signed in, and a few choices kept in your browser (for example that you closed the cookie notice, or paused an
         animation). To stop abuse we also set a random device id cookie and keep a hashed form of it and of your connection address with the actions you take (sign up, order, list), for{' '}
         {CONFIG.limits.keepDays} days. When you accept an order we keep a record of the click (time, your connection address, your browser and the words you saw) as evidence in case of a dispute or a
-        chargeback. We do not use advertising or tracking cookies. If we ever add an optional one, we will ask first.
+        chargeback. To see how many people visit and which products and categories they open, we count page opens with a hashed form of your connection address and browser (no cookie, and the address
+        itself is not kept) for {CONFIG.analytics.keepDays} days; a browser that sends Global Privacy Control or Do Not Track is not counted. We do not use advertising or tracking cookies. If we ever
+        add an optional one, we will ask first.
       </p>
 
       <h2>Your choices</h2>

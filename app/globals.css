@@ -635,6 +635,13 @@ dialog.pv::backdrop{background:rgba(15,19,48,.55);backdrop-filter:blur(3px)}
 .alert-strip{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--r-l);background:linear-gradient(90deg,#FFF3D6,#FFF9EA);border:1px solid #F6DFA6}
 .alert-strip>div{flex:1;min-width:0}
 .alert-strip b{display:block;font-family:var(--display);font-size:1.1rem;letter-spacing:-.02em}
+/* admin Visitors page (app/(dash)/dashboard/admin/analytics) */
+.an-h{margin:22px 0 10px;font-family:var(--display);font-size:1.05rem;letter-spacing:-.01em}
+.an-range{display:flex;flex-wrap:wrap;gap:8px}
+.an-bar{display:flex;align-items:center;gap:8px;min-width:110px}
+.an-bar i{display:block;height:8px;min-width:3px;border-radius:99px;background:var(--cobalt)}
+.an-up{color:var(--mint);font-weight:700}
+.an-down{color:var(--rose);font-weight:700}
 .alert-strip span:not(.pulse){color:var(--ink-2);font-size:14.5px}
 .alert-strip .pulse{flex:none;width:12px;height:12px;border-radius:50%;background:var(--gold-d);box-shadow:0 0 0 0 rgba(242,157,0,.5);animation:ping2 1.8s ease-out infinite}
 @keyframes ping2{70%{box-shadow:0 0 0 10px rgba(242,157,0,0)}100%{box-shadow:0 0 0 0 rgba(242,157,0,0)}}
