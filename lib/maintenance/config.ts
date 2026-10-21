@@ -52,7 +52,7 @@ const API_RULES: [RegExp, ModuleKey][] = [
   [/^\/(notifications|presale)(\/|$)/, 'messaging'],
   [/^\/listings(\/|$)/, 'upload'],
   [/^\/(seller|developers)(\/|$)/, 'seller'],
-  [/^\/domains(\/|$)/, 'catalog'],
+  [/^\/(domains|search)(\/|$)/, 'catalog'],
   [/^\/tools(\/|$)/, 'ai'],
   [/^\/track$/, 'visitor'], // visitor analytics: a closed module just stops counting
 ];
@@ -74,7 +74,7 @@ const PAGE_RULES: [RegExp, ModuleKey][] = [
   [/^\/(messages|notifications)(\/|$)/, 'messaging'],
   [/^\/blog(\/|$)/, 'seo'],
   [/^\/(tools|find)(\/|$)/, 'ai'],
-  [/^\/(browse|apps|product|preview|categories|websites|templates|developers|domains)(\/|$)/, 'catalog'],
+  [/^\/(browse|apps|product|preview|categories|websites|templates|developers|domains|search)(\/|$)/, 'catalog'],
 ];
 
 const match = (rules: [RegExp, ModuleKey][], path: string) => rules.find(([re]) => re.test(path))?.[1] ?? null;
