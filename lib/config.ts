@@ -22,14 +22,15 @@ export const CONFIG = {
     keepDays: 90, // how long the hashed connection and device events are kept
     // per person (0 = no limit), per connection (0 = no limit), window in hours, and the lower per-person limit for a new account
     actions: {
-      signup: { perUser: 0, perIp: 5, hours: 1, newMax: 0 },
-      login: { perUser: 0, perIp: 30, hours: 1, newMax: 0 },
-      order: { perUser: 20, perIp: 30, hours: 1, newMax: 5 },
-      listing: { perUser: 10, perIp: 15, hours: 24, newMax: 3 },
-      hire: { perUser: 10, perIp: 15, hours: 24, newMax: 3 },
-      developer: { perUser: 5, perIp: 10, hours: 24, newMax: 2 },
-      dispute: { perUser: 5, perIp: 10, hours: 24, newMax: 2 },
-      extra: { perUser: 20, perIp: 40, hours: 24, newMax: 6 },
+      signup: { perUser: 0, perIp: 5, hours: 1, newMax: 0, perEmail: 0 },
+      login: { perUser: 0, perIp: 30, hours: 1, newMax: 0, perEmail: 10 }, // perEmail: tries on one mailbox from any address, so a changing address cannot guess a password
+      reset: { perUser: 0, perIp: 5, hours: 1, newMax: 0, perEmail: 3 }, // password reset emails
+      order: { perUser: 20, perIp: 30, hours: 1, newMax: 5, perEmail: 0 },
+      listing: { perUser: 10, perIp: 15, hours: 24, newMax: 3, perEmail: 0 },
+      hire: { perUser: 10, perIp: 15, hours: 24, newMax: 3, perEmail: 0 },
+      developer: { perUser: 5, perIp: 10, hours: 24, newMax: 2, perEmail: 0 },
+      dispute: { perUser: 5, perIp: 10, hours: 24, newMax: 2, perEmail: 0 },
+      extra: { perUser: 20, perIp: 40, hours: 24, newMax: 6, perEmail: 0 },
     },
     cluster: { accounts: 4, hours: 24 }, // this many accounts on one connection or device raises an alert
     burst: { hits: 10, hours: 1 }, // this many refused requests from one connection raises an alert

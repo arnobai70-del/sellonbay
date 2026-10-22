@@ -39,7 +39,7 @@ describe('rules in one place', () => {
     });
     expect(CONFIG.dashboard).toEqual({ chartWeeks: 8 });
     expect(CONFIG.limits).toMatchObject({ newAccountDays: 7, keepDays: 90, cluster: { accounts: 4, hours: 24 }, burst: { hits: 10, hours: 1 } });
-    expect(CONFIG.limits.actions.order).toEqual({ perUser: 20, perIp: 30, hours: 1, newMax: 5 });
+    expect(CONFIG.limits.actions.order).toEqual({ perUser: 20, perIp: 30, hours: 1, newMax: 5, perEmail: 0 });
     expect(CONFIG.notify).toEqual({ dueSoonHours: 6, reviewEndingHours: 12 });
     expect(CONFIG.extras).toEqual({ aiContentCents: 300, hostingMonthCents: 400, storeListingCents: 900, installerSetupCents: 1500 });
   });

@@ -47,7 +47,7 @@ export async function authenticate(formData: FormData) {
   let userId: string;
 
   if (signup) {
-    const up = await supabase.auth.signUp({ email, password, options: { data: { full_name: name, terms_accepted_at: new Date().toISOString() } } });
+    const up = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${SITE_URL}/auth/callback`, data: { full_name: name, terms_accepted_at: new Date().toISOString() } } });
     if (up.error) return back(friendly(up.error.message));
     // Role is set here on the server. The browser can never choose its own role. The account exists before the email is confirmed, so this runs first.
     if (wantsSeller && up.data.user) await createAdminClient().from('profiles').update({ role: 'seller' }).eq('id', up.data.user.id).eq('role', 'buyer');
@@ -80,6 +80,9 @@ export async function requestReset(formData: FormData) {
   const closed = await maintenanceMessage('auth');
   if (closed) return back(closed);
   if (!(await passesBotCheck(formData))) return back(BOT_FAILED);
+  // Limited per connection and per mailbox, so a loop cannot use up the project's email allowance.
+  const g = await guard('reset', null, { email });
+  if (!g.ok) return back(g.error);
   // The link is built from our own address, never from request headers someone could set.
   await (await createClient()).auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/auth/callback?next=/reset-password` });
   redirect('/login?sent=1');

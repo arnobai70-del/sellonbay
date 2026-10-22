@@ -66,6 +66,12 @@ describe('limits', () => {
     expect((await run('order', { userId: u, ip: ip() }, t0)).ok).toBe(false);
     expect((await run('order', { userId: u, ip: ip() }, t0 + CONFIG.limits.actions.order.hours * HOUR_MS + 1)).ok).toBe(true);
   });
+  it('sign-in tries on one mailbox are limited even when every try comes from a new address', async () => {
+    const email = `guard-${Date.now()}-${++n}@example.com`;
+    for (let i = 0; i < CONFIG.limits.actions.login.perEmail; i++) expect((await check('login', { userId: null, ip: ip(), device: null, email }, Date.now())).ok).toBe(true);
+    expect(await check('login', { userId: null, ip: ip(), device: null, email }, Date.now())).toMatchObject({ ok: false, status: 429 });
+    expect((await check('login', { userId: null, ip: ip(), device: null, email: `other-${email}` }, Date.now())).ok).toBe(true);
+  });
   it('an unknown connection is never limited as a group, a known one is', async () => {
     for (let i = 0; i < CONFIG.limits.actions.signup.perIp + 3; i++) expect((await run('signup', { ip: 'unknown' })).ok).toBe(true);
     const a = ip();

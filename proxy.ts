@@ -46,7 +46,7 @@ async function handle(req: NextRequest) {
   if (req.nextUrl.pathname === '/' && req.nextUrl.searchParams.has('code')) {
     const to = new URL('/auth/callback', req.url);
     to.searchParams.set('code', req.nextUrl.searchParams.get('code')!);
-    to.searchParams.set('next', '/reset-password');
+    // No next: the callback tells a password reset from a sign-up confirmation or a Google sign-in by itself.
     return NextResponse.redirect(to);
   }
 

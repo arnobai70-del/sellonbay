@@ -16,6 +16,9 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // A code that reached the site root carries no next. If this person asked for a reset in the last hour, it was the reset link.
+  const resetAsked = Date.parse(user?.recovery_sent_at ?? '');
+  if (!next && Date.now() - resetAsked < 60 * 60 * 1000) return NextResponse.redirect(`${origin}/reset-password`);
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single();
   return NextResponse.redirect(origin + (next || '/dashboard/' + (profile?.role ?? 'buyer')));
 }
