@@ -193,7 +193,8 @@ export async function check(action: Action, s: Subject, now = Date.now()): Promi
   const userMax = fresh ? cfg.newMax : cfg.perUser;
   const userOk = !s.userId || userMax <= 0 || (await limit(`g:${action}:u:${s.userId}`, userMax, windowMs, now));
   const ipOk = !ip || cfg.perIp <= 0 || (await limit(`g:${action}:ip:${ip}`, cfg.perIp, windowMs, now));
-  if (!userOk || !ipOk) {
+  const emailOk = !email || cfg.perEmail <= 0 || (await limit(`g:${action}:e:${email}`, cfg.perEmail, windowMs, now));
+  if (!userOk || !ipOk || !emailOk) {
     await record({ userId: s.userId, action: `limit:${action}`, ip, device, at: now });
     await alertBurst(ip, now);
     return { ok: false, status: 429, error: limitText(fresh && !userOk) };

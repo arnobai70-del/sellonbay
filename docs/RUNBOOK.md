@@ -78,6 +78,14 @@ The seller reserve is off until you set `CONFIG.reserve` (percent and days) or a
 
 The full set of timed drills (restore, point-in-time recovery, rollback, maintenance, outside services down) is in `docs/RECOVERY_DRILL.md`.
 
+## Sign-in emails (Supabase → Authentication)
+
+- URL configuration: Site URL `https://sellonbay.com`; redirect URLs `https://sellonbay.com/auth/callback` and `https://sellonbay.com/auth/confirm`.
+- Links that work in any browser: by default a confirm or reset link only works in the browser that asked for it. To make it work on another device, change the templates under Emails:
+  - Confirm signup: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
+  - Reset password: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
+- Seller and admin accounts enter their authenticator code during a reset; the page sends them there and back.
+
 ## Cloudflare (put it in front before launch)
 
 - Proxy DNS (orange cloud), SSL mode Full (strict).
