@@ -67,7 +67,8 @@ async function pg() {
 
 async function load(): Promise<Settings> {
   const out: Settings = { ...DEFAULTS };
-  const saved: Partial<Settings> = (await pg()) ? Object.fromEntries(((await createAdminClient().from('app_settings').select('key, value')).data ?? []).map((r) => [r.key, r.value])) : mem.saved;
+  // When the database cannot be reached the shop runs on the defaults instead of failing every page; saving still fails loudly.
+  const saved: Partial<Settings> = (await pg().catch(() => false)) ? Object.fromEntries(((await createAdminClient().from('app_settings').select('key, value')).data ?? []).map((r) => [r.key, r.value])) : mem.saved;
   for (const k of Object.keys(DEFAULTS) as Key[]) if (k in saved && typeof saved[k] === typeof DEFAULTS[k]) (out as Record<string, unknown>)[k] = saved[k];
   return problemWith(out) ? { ...DEFAULTS } : out; // a bad saved set never takes the shop down
 }

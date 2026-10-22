@@ -52,7 +52,7 @@ async function pg() {
 async function load(): Promise<SeoSettings> {
   const out = { ...SEO_DEFAULTS };
   let saved: Partial<SeoSettings> = mem.saved;
-  if (await pg()) {
+  if (await pg().catch(() => false)) {
     const { data } = await createAdminClient()
       .from('app_settings')
       .select('key, value')

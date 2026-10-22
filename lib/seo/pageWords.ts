@@ -26,7 +26,7 @@ const clean = (path: string, v: unknown): PageWordsInput => {
 export async function allPageWords(now = Date.now()): Promise<Record<string, PageWordsInput>> {
   if (g.__pageWordsCache && now - g.__pageWordsCache.at < 30_000) return g.__pageWordsCache.value;
   let value: Record<string, PageWordsInput> = { ...mem.saved };
-  if (await settingsTableReady()) {
+  if (await settingsTableReady().catch(() => false)) {
     const { data } = await createAdminClient()
       .from('app_settings')
       .select('key, value')

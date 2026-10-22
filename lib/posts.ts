@@ -73,7 +73,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /* Published posts, newest first. */
 export async function publishedPosts(limit = 200): Promise<Post[]> {
-  if (await pg()) {
+  // The blog list shows empty rather than failing while the database cannot be reached.
+  if (await pg().catch(() => false)) {
     const { data } = await createAdminClient().from('posts').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(limit);
     return ((data ?? []) as Row[]).map(fromRow);
   }
