@@ -221,6 +221,7 @@ export function PostEditor({ post, siteUrl, siteName }: { post: (Draft & { id: s
                   ref={file}
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
+                  aria-label="Upload a picture"
                   hidden
                   onChange={(e) => {
                     const f = e.target.files?.[0];

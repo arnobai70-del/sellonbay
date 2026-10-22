@@ -66,7 +66,9 @@ export async function sendMessage(o: Order, role: Role, viewerId: string | null,
 export async function listMessages(orderId: string, since = 0): Promise<ChatMessage[]> {
   if (await pg()) {
     let q = createAdminClient().from('messages').select('id, order_id, sender_id, sender_role, body, created_at').eq('order_id', orderId).order('created_at', { ascending: true }).limit(500);
-    if (since) q = q.gt('created_at', new Date(since).toISOString());
+    // A junk value (too big, negative) is ignored instead of throwing on toISOString.
+    const after = new Date(since);
+    if (since > 0 && !Number.isNaN(after.getTime())) q = q.gt('created_at', after.toISOString());
     const { data } = await q;
     return (data ?? []).map((r) => ({ id: r.id, orderId: r.order_id, role: (r.sender_role ?? 'buyer') as Role, senderId: r.sender_id, body: r.body, at: Date.parse(r.created_at) }));
   }
