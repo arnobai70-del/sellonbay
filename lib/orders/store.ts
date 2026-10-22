@@ -29,7 +29,12 @@ export interface OrderStore {
   byState(states: string[]): Promise<Order[]>;
   /* Orders that could have something due: funded or in delivery, delivered, or accepted. */
   open(): Promise<Order[]>;
+  /* Funded orders outside open() that changed at or after sinceMs, so a ledger post that failed on their last move is tried again. */
+  changedSince(sinceMs: number): Promise<Order[]>;
 }
+
+/* Funded states open() does not read. */
+const SETTLED = ['payout_pending', 'paid_out', 'disputed', 'fix_requested', 'overdue', 'cancelled', 'refunded'];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isOrderId = (id: string) => UUID.test(id);
@@ -87,6 +92,9 @@ export const memoryStore: OrderStore = {
   },
   async open() {
     return [...mem.orders.values()].filter((o) => ['funded', 'in_delivery', 'delivered', 'accepted'].includes(o.state)).map((o) => ({ ...o }));
+  },
+  async changedSince() {
+    return [...mem.orders.values()].filter((o) => !!o.fundedAt && SETTLED.includes(o.state)).map((o) => ({ ...o }));
   },
 };
 
@@ -308,6 +316,18 @@ export const postgresStore: OrderStore = {
       out.push(...(data ?? []).map(fromRow));
       if ((data?.length ?? 0) < 1000) return out;
     }
+  },
+  async changedSince(sinceMs) {
+    const { data, error } = await createAdminClient()
+      .from('orders')
+      .select('*')
+      .in('status', SETTLED)
+      .not('funded_at', 'is', null)
+      .gte('updated_at', new Date(sinceMs).toISOString())
+      .order('updated_at', { ascending: true })
+      .limit(5000);
+    if (error) console.error('orders: could not read changed orders', error.message);
+    return (data ?? []).map(fromRow);
   },
 };
 

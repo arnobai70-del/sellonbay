@@ -12,7 +12,7 @@ describe('scheduled job heartbeat', () => {
   });
 
   it('calls a job late only after its window, and never before its first run', () => {
-    expect(CONFIG.cron).toEqual({ ordersStaleMinutes: 30, payoutsStaleDays: 8 });
+    expect(CONFIG.cron).toEqual({ ordersStaleMinutes: 30, payoutsStaleDays: 8, ledgerRecheckDays: 3 });
     const now = 10 * DAY_MS;
     expect(isStale('orders', now - 29 * 60_000, now)).toBe(false);
     expect(isStale('orders', now - 31 * 60_000, now)).toBe(true);
