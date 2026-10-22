@@ -99,7 +99,8 @@ export async function devQueue(): Promise<QueueDev[]> {
 }
 
 export type ListingDecision = 'approve' | 'changes' | 'reject';
-const STATUS: Record<ListingDecision, string> = { approve: 'live', changes: 'draft', reject: 'rejected' };
+// Sent back for changes stays the same row (address, reviews, orders) in a state the seller can edit and resend; a draft could only be resent as a new listing.
+const STATUS: Record<ListingDecision, string> = { approve: 'live', changes: 'rejected', reject: 'rejected' };
 const WORD: Record<ListingDecision, string> = { approve: 'approved', changes: 'sent back for changes', reject: 'rejected' };
 
 export async function decideListing(adminId: string | null, slug: string, decision: ListingDecision, note: string, filesChecked: boolean): Promise<Result> {
@@ -212,16 +213,17 @@ export async function userAction(adminId: string | null, userId: string, action:
   if (action === 'unban' && (await db.from('data_requests').select('id').eq('user_id', userId).eq('kind', 'delete').eq('status', 'done').limit(1)).data?.length)
     return fail(409, "This account was deleted at the person's request. It cannot be brought back.");
   // The ban also reaches sign-in, so a banned person's session cannot be renewed; the unban lifts both.
+  // A failed write must not reach the audit log as done.
   if (action === 'ban') {
-    await db.from('profiles').update({ banned: true }).eq('id', userId);
+    if ((await db.from('profiles').update({ banned: true }).eq('id', userId)).error) return fail(500, 'Could not save. Nothing was changed.');
     const { error } = await db.auth.admin.updateUserById(userId, { ban_duration: '876000h' });
     if (error) console.error('ban: could not lock sign-in', error.message);
   } else if (action === 'unban') {
-    await db.from('profiles').update({ banned: false }).eq('id', userId);
+    if ((await db.from('profiles').update({ banned: false }).eq('id', userId)).error) return fail(500, 'Could not save. Nothing was changed.');
     const { error } = await db.auth.admin.updateUserById(userId, { ban_duration: 'none' });
     if (error) console.error('unban: could not unlock sign-in', error.message);
   } else if (action === 'unsuspend') await unsuspend(userId, adminId);
-  else await db.from('profiles').update({ flagged: false }).eq('id', userId);
+  else if ((await db.from('profiles').update({ flagged: false }).eq('id', userId)).error) return fail(500, 'Could not save. Nothing was changed.');
   await audit(adminId, `user_${action}`, 'profile', userId, { note: note.trim() });
   return { ok: true };
 }

@@ -53,7 +53,7 @@ export async function readRows(now = Date.now()): Promise<Cache> {
         signal: AbortSignal.timeout(2_000),
       });
       if (res.ok) next = { at: now, rows: ((await res.json()) as DbRow[]).map(fromDb).filter((r): r is ModuleRow => !!r), source: 'db' };
-      else if (res.status !== 404 && !(await res.text()).includes('module_maintenance')) next = c ? { ...c, at: now } : next; // a passing error: keep what we had
+      else if (res.status !== 404 && !(await res.text()).includes('module_maintenance')) next = c ? { ...c, at: now } : { at: now, rows: [], source: 'db' }; // a passing error: keep what we had, else everything open (and a save still goes to the database)
     } catch {
       next = c ? { ...c, at: now } : { at: now, rows: [], source: 'db' }; // unreachable: keep the last answer, else everything open
     }
