@@ -50,7 +50,7 @@ export async function addReview(orderId: string, buyerId: string | null, i: { ra
 }
 
 export async function reviewsFor(productKey: string, limit = 20): Promise<Review[]> {
-  if (await pg()) {
+  if (await pg().catch(() => false)) {
     const { data } = await createAdminClient()
       .from('reviews')
       .select('order_id, product_key, buyer_id, rating, body, created_at')
@@ -67,7 +67,7 @@ export async function reviewsFor(productKey: string, limit = 20): Promise<Review
 
 /* Average to one decimal and the count. Zero reviews means there are no real ratings yet. */
 export async function ratingOf(productKey: string): Promise<{ avg: number; count: number }> {
-  if (await pg()) {
+  if (await pg().catch(() => false)) {
     const { data } = await createAdminClient().from('reviews').select('rating').eq('product_key', productKey);
     const n = data?.length ?? 0;
     return { avg: n ? Math.round(((data ?? []).reduce((s, r) => s + r.rating, 0) / n) * 10) / 10 : 0, count: n };

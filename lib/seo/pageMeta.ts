@@ -38,7 +38,7 @@ const clean = (v: unknown): PageSeo => {
 export async function allPageSeo(now = Date.now()): Promise<Record<string, PageSeo>> {
   if (g.__pageSeoCache && now - g.__pageSeoCache.at < 30_000) return g.__pageSeoCache.value;
   let value: Record<string, PageSeo> = { ...mem.saved };
-  if (await settingsTableReady()) {
+  if (await settingsTableReady().catch(() => false)) {
     const { data } = await createAdminClient().from('app_settings').select('key, value').like('key', 'seo:page:%'); // the listed pages and any listing page (/product/<id>) an admin gave its own words
     value = Object.fromEntries((data ?? []).map((r) => [String(r.key).slice('seo:page:'.length), clean(r.value)]));
   }
