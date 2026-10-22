@@ -386,5 +386,7 @@ export async function runDueJobs(now = Date.now()): Promise<number> {
     await notifyReminders(after, now);
     if (after.state !== o.state) moved++;
   }
+  // ensureLedger swallows its errors and the next run tries again; orders that already left the open states get that retry here.
+  for (const o of await store.changedSince(now - CONFIG.cron.ledgerRecheckDays * 86_400_000)) await ensureLedger(o);
   return moved;
 }

@@ -62,7 +62,7 @@ export const CONFIG = {
   catalogCacheSeconds: 60, // each server copy keeps the public list of live listings this long (lib/catalog.ts); never checkout, orders or user data
   emailQueue: { maxAttempts: 5, retryMinutes: [1, 5, 30, 120] as readonly number[], batch: 50 }, // lib/emailQueue.ts: tries per email, wait before each retry, emails per scheduled run
   orderReuseMinutes: 10, // a second Buy of the same thing by the same buyer within this time opens the unpaid order instead of a new one
-  cron: { ordersStaleMinutes: 30, payoutsStaleDays: 8 }, // the launch check warns when a scheduled job has not finished for this long
+  cron: { ordersStaleMinutes: 30, payoutsStaleDays: 8, ledgerRecheckDays: 3 }, // the launch check warns when a scheduled job has not finished for this long; orders that left the open states are re-checked in the ledger for ledgerRecheckDays
   extras: { aiContentCents: 300, hostingMonthCents: 400, storeListingCents: 900, installerSetupCents: 1500 },
   listing: { periodDays: [0, 30, 90, 180, 365] as readonly number[], requirementsMax: 600, minShots: 1, maxShots: 6, minDescChars: 20, minIncluded: 1, maxIncluded: 8 },
 } as const;

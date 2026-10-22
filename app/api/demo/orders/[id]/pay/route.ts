@@ -3,7 +3,8 @@ import { orderFor } from '@/lib/commerce/access';
 import { canUseDemoPayment } from '@/lib/commerce/demoPaymentPolicy';
 import { domainProvider } from '@/lib/providers/domain';
 import { handlePaymentEvent } from '@/lib/orders/payments';
-import { countAttempt } from '@/lib/orders/service';
+import { countAttempt, getOrder } from '@/lib/orders/service';
+import { isFundedState } from '@/lib/orders/machine';
 import { fakePayments } from '@/lib/providers/payment';
 import { paySchema } from '@/lib/schemas';
 import { idOf, readJson } from '@/lib/validate';
@@ -54,5 +55,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     card: { brand: r.brand, last4: r.last4 },
   });
   if (out.status === 'rejected') return NextResponse.json({ error: 'This payment does not match the order. Nothing was charged.' }, { status: 409 });
+  // Ignored (for example another tab moved the order first): say paid only when the order really is funded now.
+  if (out.status === 'ignored') {
+    const now = await getOrder(o.id);
+    if (!now || !isFundedState(now.state)) return NextResponse.json({ error: 'This order changed while paying. Reload the page before trying again.' }, { status: 409 });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -254,7 +254,8 @@ export default async function SellerDashboard() {
                       <Link className="btn btn-dark btn-sm" href={`/messages/${o.id}`}>
                         Open chat
                       </Link>
-                      {o.deliveryType !== 'repo_access' && !o.instant && (o.state === 'funded' || o.state === 'in_delivery' || o.state === 'overdue' || o.state === 'fix_requested') && (
+                      {/* After a dispute the fix is delivered the same way for every kind of order, repository and instant downloads included. */}
+                      {(o.state === 'fix_requested' || (o.deliveryType !== 'repo_access' && !o.instant && (o.state === 'funded' || o.state === 'in_delivery' || o.state === 'overdue'))) && (
                         <AdminForm endpoint={`/api/orders/${o.id}/deliver`} fields={[]} submit="Yes, it is live and ready" openLabel="I delivered it" tone="dark" />
                       )}
                       {o.deliveryType === 'repo_access' && (o.state === 'funded' || o.state === 'in_delivery') && (

@@ -9,6 +9,7 @@ import { infoOf } from '@/lib/productInfo';
 import { createOrder } from '@/lib/orders/service';
 import { orderCreateSchema } from '@/lib/schemas';
 import { accountLockedOut, getViewerId, viewerBlocked, viewerMayBuy } from '@/lib/supabase/viewer';
+import { supabaseConfigured } from '@/lib/supabase/env';
 import { BUYERS_ONLY } from '@/lib/accounts';
 import { examplesBuyable } from '@/lib/examples';
 import { readJson } from '@/lib/validate';
@@ -28,6 +29,8 @@ export async function POST(req: Request) {
   if (!parsed.ok) return parsed.res;
   const b = parsed.data;
   const buyerId = (await getViewerId()) ?? null;
+  // Visitors browse but do not buy; only demo mode (no accounts at all) keeps the signed-out flow for the made-up examples.
+  if (supabaseConfigured && !buyerId) return fail('Sign in with a buyer account to buy.', 401);
   if (await viewerBlocked(buyerId)) return fail('This account cannot place orders.', 403);
   if (!(await viewerMayBuy(buyerId))) return fail(BUYERS_ONLY, 403);
   const g = await guard('order', buyerId);
