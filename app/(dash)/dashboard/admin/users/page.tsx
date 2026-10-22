@@ -8,10 +8,11 @@ import { requireViewer } from '@/lib/supabase/viewer';
 export const metadata: Metadata = { title: 'Accounts', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
-export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const viewer = await requireViewer({ path: '/dashboard/admin/users', roles: ['admin'] });
   const { q } = await searchParams;
-  const users = await listUsers(q ?? '');
+  // ?q=a&q=b arrives as a list; search for nothing rather than crash.
+  const users = await listUsers(typeof q === 'string' ? q : '');
   const deletions = await pendingDeletions();
   const now = Date.now();
   return (

@@ -10,12 +10,13 @@ export const metadata: Metadata = { title: 'Two-step sign in' };
 
 export default async function Mfa({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
-  if (supabaseConfigured) {
-    const {
-      data: { user },
-    } = await (await createClient()).auth.getUser();
-    if (!user) redirect('/login?next=' + encodeURIComponent('/login/mfa'));
-  }
+  // Demo mode has no accounts and no authenticator to check.
+  if (!supabaseConfigured) redirect('/login');
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser();
+  // Keep where they were going, so after the code they land there and not on the seller dashboard.
+  if (!user) redirect('/login?next=' + encodeURIComponent(next ? `/login/mfa?next=${encodeURIComponent(next)}` : '/login/mfa'));
   return (
     <>
       <SiteNav />

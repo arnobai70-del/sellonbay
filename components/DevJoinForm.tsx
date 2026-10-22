@@ -52,6 +52,8 @@ export function DevJoinForm({
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  // The address the server gave the profile: it can differ from the name (taken, too short, or kept from an earlier save).
+  const [handle, setHandle] = useState('');
 
   const toggle = (arr: string[], v: string, max: number) => (arr.includes(v) ? arr.filter((x) => x !== v) : arr.length < max ? [...arr, v] : arr);
   const setPack = (n: number, k: keyof PackIn, v: string) => setPacks((s) => s.map((p, j) => (j === n ? { ...p, [k]: v } : p)));
@@ -123,7 +125,9 @@ export function DevJoinForm({
     setBusy(true);
     const res = await fetch('/api/developers', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     setBusy(false);
-    if (!res.ok) return setErr((await res.json().catch(() => ({}))).error ?? 'Something went wrong. Try again.');
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) return setErr(out.error ?? 'Something went wrong. Try again.');
+    setHandle(typeof out.handle === 'string' ? out.handle : '');
     setDone(true);
   }
 
@@ -134,9 +138,11 @@ export function DevJoinForm({
           <h2>Profile sent for review</h2>
           <p className="muted">We check every profile, usually within a day. You will be able to preview it in the meantime.</p>
           <div className="done-btns">
-            <Link className="btn btn-blue" href={`/developers/${slug(name)}`}>
-              Preview my profile
-            </Link>
+            {handle && (
+              <Link className="btn btn-blue" href={`/developers/${handle}`}>
+                Preview my profile
+              </Link>
+            )}
             <Link className="btn btn-line" href="/developers">
               See developers
             </Link>
