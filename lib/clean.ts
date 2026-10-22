@@ -28,8 +28,9 @@ export async function removeFakeAccount(adminId: string | null, userId: string, 
   if (!p) return fail(404, 'Account not found.');
   if (p.role === 'admin') return fail(400, 'Remove the admin role first.');
   if ((await store.forUser(userId)).some((o) => !!o.fundedAt)) return fail(409, 'This account has paid orders. Use a dispute or a refund, not the clean-up.');
-  await db.from('profiles').update({ banned: true }).eq('id', userId);
-  await db.auth.admin.updateUserById(userId, { ban_duration: '876000h' });
+  if ((await db.from('profiles').update({ banned: true }).eq('id', userId)).error) return fail(500, 'Could not ban the account. Nothing was removed.');
+  const locked = await db.auth.admin.updateUserById(userId, { ban_duration: '876000h' });
+  if (locked.error) console.error('clean-up: could not lock sign-in', locked.error.message);
   // The same mailbox cannot come back with a new account.
   const email = (await db.auth.admin.getUserById(userId)).data.user?.email;
   if (email) await blockEmail(adminId, email, `Fake account removed: ${why}`);

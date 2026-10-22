@@ -302,23 +302,30 @@ export async function markPaid(id: string, reference: string, adminId: string | 
   if (p.status === 'scheduled') return fail(409, 'Download the CSV first, then mark it paid after you send the money.');
   const ref = reference.trim();
   if (ref.length < 3 || ref.length > 120) return fail(400, 'Write the transfer reference (3 to 120 characters).');
+  const db = (await pg()) ? createAdminClient() : null;
+  // Claim the row first, so a second click (or "mark failed" in another tab) cannot also act on it.
+  if (db) {
+    const { data, error } = await db
+      .from('payouts')
+      .update({ status: 'paid', reference: ref, paid_at: new Date(now).toISOString(), marked_paid_by: adminId })
+      .eq('id', p.id)
+      .eq('status', 'exported')
+      .select('id');
+    if (error) return fail(500, 'Could not save. Nothing was changed.');
+    if (!data?.length) return fail(409, 'This payout changed in the meantime. Reload the page.');
+  }
   const L = await ledgerStore();
   try {
     await L.post(payoutBatch(p.sellerId, p.amountCents, p.id));
   } catch (e) {
+    if (db) await db.from('payouts').update({ status: 'exported', reference: null, paid_at: null, marked_paid_by: null }).eq('id', p.id).eq('status', 'paid');
     return fail(409, 'The ledger refused this payout: ' + (e instanceof Error ? e.message : 'unknown'));
   }
   for (const orderId of p.orderIds) {
     const r = await move(orderId, 'paid_out', { actorId: adminId, event: 'paid_out', meta: { payoutId: p.id, reference: ref } });
     if (!r.ok && r.status !== 409) console.error('payout: could not move order', orderId, r.error);
   }
-  if (await pg())
-    await createAdminClient()
-      .from('payouts')
-      .update({ status: 'paid', reference: ref, paid_at: new Date(now).toISOString(), marked_paid_by: adminId })
-      .eq('id', p.id)
-      .eq('status', 'exported');
-  else mem.payouts.set(p.id, { ...p, status: 'paid', reference: ref, paidAt: now });
+  if (!db) mem.payouts.set(p.id, { ...p, status: 'paid', reference: ref, paidAt: now });
   await audit(adminId, 'payout_marked_paid', 'payout', p.id, { amountCents: p.amountCents, reference: ref });
   await notify(p.sellerId, 'payout_sent', { amount: `$${(p.amountCents / 100).toFixed(2)}`, method: p.method });
   return { ok: true, payout: { ...p, status: 'paid', reference: ref, paidAt: now } };
@@ -331,8 +338,12 @@ export async function markFailed(id: string, adminId: string | null, note: strin
   if (p.status === 'paid') return fail(409, 'A paid payout cannot be marked failed.');
   if (p.status === 'failed') return fail(409, 'Already marked failed.');
   if (await pg()) {
-    await createAdminClient().from('payout_items').delete().eq('payout_id', id);
-    await createAdminClient().from('payouts').update({ status: 'failed' }).eq('id', id);
+    // Only a payout not yet paid can fail; checked in the same write so it cannot race "mark paid".
+    const db = createAdminClient();
+    const { data, error } = await db.from('payouts').update({ status: 'failed' }).eq('id', id).in('status', ['scheduled', 'exported']).select('id');
+    if (error) return fail(500, 'Could not save. Nothing was changed.');
+    if (!data?.length) return fail(409, 'This payout changed in the meantime. Reload the page.');
+    await db.from('payout_items').delete().eq('payout_id', id);
   } else mem.payouts.set(p.id, { ...p, status: 'failed', orderIds: [] });
   await unclaimReserves(id); // released reserves in this payout go into the next one
   await audit(adminId, 'payout_marked_failed', 'payout', id, { note: note.slice(0, 300) });
